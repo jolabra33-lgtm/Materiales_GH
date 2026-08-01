@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Taller del Índice de Desarrollo Humano: calcula el IDH real de un país paso a paso a partir de la esperanza de vida, la educación y la renta.">
+<title>Taller del Índice de Desarrollo Humano</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IDH">
+<meta name="theme-color" content="#182338">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#182338;
+    --ink-soft:#3C4A66;
+    --muted:#5E6779;
+    --paper:#EDEFE8;
+    --card:#FFFFFF;
+    --line:#E2E0D2;
+    --health:#B0416B;
+    --health-soft:rgba(176,65,107,0.14);
+    --edu:#2C5F8A;
+    --edu-soft:rgba(44,95,138,0.14);
+    --income:#3E8E7E;
+    --income-soft:rgba(62,142,126,0.14);
+    --gold:#B4790F;
+    --gold-2:#E0A83D;
+    --gold-soft:rgba(180,121,15,0.14);
+    --warm:#C1440E;
+    --bajo:#C1440E;
+    --medio:#E0A83D;
+    --alto:#3E8E7E;
+    --muyalto:#1F6E8C;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-sm:0 1px 2px rgba(20,30,50,.05);
+    --shadow-md:0 10px 28px rgba(20,30,50,.08);
+    --shadow-lg:0 20px 46px rgba(20,30,50,.14);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:960px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
+
+  header.hero{
+    position:relative; padding:34px 36px 40px; margin-bottom:30px; border-radius:18px;
+    background:var(--ink); color:var(--paper); overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(224,168,61,0.30), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(176,65,107,0.28), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--gold-2); font-weight:500; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--gold-2); display:inline-block; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(30px, 4.2vw, 44px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
+  }
+  .lede{ max-width:64ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-md); padding:26px 28px 30px; margin-bottom:24px;
+    border-top:3px solid var(--accent, var(--ink)); animation:riseIn .5s ease both;
+  }
+  .panel.p1{ --accent:var(--edu); } .panel.p2{ --accent:var(--gold); } .panel.p3{ --accent:var(--income); }
+  .panel:nth-of-type(2){ animation-delay:.05s; } .panel:nth-of-type(3){ animation-delay:.1s; }
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+
+  .panel-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+  .badge{
+    flex:none; width:36px; height:36px; border-radius:50%; background:var(--accent, var(--ink)); color:#fff;
+    font-family:'Fraunces', serif; font-weight:600; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent, var(--ink)) 14%, transparent);
+  }
+  .panel-head-text h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:21px; margin:5px 0 4px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-head-text h2 svg{ width:19px; height:19px; color:var(--accent, var(--ink)); flex:none; }
+  .panel-head-text p{ margin:0; color:var(--muted); font-size:14.5px; }
+
+  .locate-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .locate-row input[type="text"]{
+    flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink);
+  }
+  input:focus-visible, button:focus-visible{ outline:2px solid var(--edu); outline-offset:2px; }
+
+  button{
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; border-radius:var(--radius-sm);
+    padding:12px 18px; cursor:pointer; border:1px solid transparent;
+    transition:transform .08s ease, background .15s ease, box-shadow .15s ease;
+    display:inline-flex; align-items:center; gap:7px; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button svg{ width:15px; height:15px; flex:none; }
+  button:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--ink); color:var(--paper); }
+  .btn-primary:hover{ background:#2A3B5C; box-shadow:var(--shadow-sm); }
+  .btn-ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn-ghost:hover{ background:rgba(24,35,56,0.05); }
+  .btn-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+
+  /* ---- Input grid (4 indicators) ---- */
+  .inputs-grid{ display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:18px; }
+  @media (min-width:640px){ .inputs-grid{ grid-template-columns:1fr 1fr; } }
+  .input-card{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px; background:#fff; }
+  .input-card label{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--muted); margin-bottom:8px;
+  }
+  .input-card .unit{ font-weight:400; text-transform:none; letter-spacing:0; color:var(--muted); }
+  .input-card input[type="number"]{
+    width:100%; border:none; border-bottom:2px solid var(--line); padding:6px 2px 8px;
+    font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; color:var(--ink); background:transparent;
+  }
+  .input-card.health input{ border-color:var(--health); } .input-card.health label{ color:var(--health); }
+  .input-card.edu input{ border-color:var(--edu); } .input-card.edu label{ color:var(--edu); }
+  .input-card.edu2 input{ border-color:var(--edu); } .input-card.edu2 label{ color:var(--edu); }
+  .input-card.income input{ border-color:var(--income); } .input-card.income label{ color:var(--income); }
+
+  /* ---- Example galleries + saved archive ---- */
+  .examples-wrap{ margin-bottom:22px; }
+  .examples-group{ margin-bottom:14px; }
+  .examples-group-title, .saved-section h3, .save-panel h3{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--muted); margin:0 0 8px;
+  }
+  .examples-chips{ display:flex; flex-wrap:wrap; gap:9px; }
+  .example-chip{
+    display:flex; align-items:center; gap:9px; background:#fff; border:1px solid var(--line); border-radius:11px;
+    padding:10px 14px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .example-chip:hover, .example-chip:active{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .chip-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .chip-text{ display:flex; flex-direction:column; line-height:1.25; min-width:0; }
+  .chip-text strong{ font-size:13.5px; color:var(--ink); }
+  .chip-text span{ font-size:11.5px; color:var(--muted); font-weight:400; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px; }
+  .saved-section{ margin-bottom:20px; }
+  .saved-empty{ font-size:13.5px; color:var(--muted); margin:0; font-style:italic; }
+  .saved-chip{ display:flex; align-items:stretch; border:1px solid var(--line); border-radius:11px; background:#fff; overflow:hidden; transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+  .saved-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .saved-chip-main{ display:flex; align-items:center; gap:9px; border:none; background:transparent; padding:10px 12px 10px 11px; text-align:left; font-weight:500; min-height:44px; -webkit-tap-highlight-color:transparent; }
+  .saved-chip-delete{ border:none; background:transparent; color:var(--muted); padding:0 13px; font-size:17px; line-height:1; border-left:1px solid var(--line); min-height:44px; min-width:40px; -webkit-tap-highlight-color:transparent; }
+  .saved-chip-delete:hover{ color:var(--warm); background:rgba(193,68,14,0.08); }
+
+  .examples-details{ border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:10px; overflow:hidden; background:#fff; }
+  .examples-details summary{
+    cursor:pointer; list-style:none; padding:13px 16px; display:flex; align-items:center; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--ink-soft); font-weight:600; min-height:44px; -webkit-tap-highlight-color:transparent;
+  }
+  .examples-details summary::-webkit-details-marker{ display:none; }
+  .examples-details summary .chevron{ margin-left:auto; color:var(--muted); transition:transform .2s ease; display:flex; }
+  .examples-details summary .chevron svg{ width:16px; height:16px; }
+  .examples-details[open] summary .chevron{ transform:rotate(180deg); }
+  .examples-details summary .count-badge{ background:var(--gold-soft); color:var(--gold); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; }
+  .examples-details .examples-chips{ padding:0 16px 16px; }
+  .examples-details summary .dot-lead{ width:9px; height:9px; border-radius:50%; flex:none; }
+
+  .save-panel{ margin-top:20px; padding-top:18px; border-top:1px dashed var(--line); }
+  .save-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .save-row input[type="text"]{ flex:1; min-width:220px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm); font-family:'Inter', sans-serif; font-size:16px; background:#fff; }
+  .save-status{ font-size:12.8px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; min-height:16px; margin-bottom:2px; }
+  .save-status.warn{ color:var(--warm); }
+
+  /* ---- Calculation breakdown ---- */
+  .calc-steps{ display:flex; flex-direction:column; gap:14px; margin-bottom:22px; }
+  .calc-step{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 18px; background:#fff; }
+  .calc-step-title{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--gold); margin:0 0 6px; }
+  .calc-step-formula{ font-family:'IBM Plex Mono', monospace; font-size:14px; color:var(--ink-soft); margin:0 0 6px; }
+  .calc-step-result{ font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:700; color:var(--ink); }
+  .calc-step.health .calc-step-result{ color:var(--health); }
+  .calc-step.edu .calc-step-result{ color:var(--edu); }
+  .calc-step.income .calc-step-result{ color:var(--income); }
+  .calc-step.final{ background:var(--gold-soft); border-color:rgba(180,121,15,0.28); }
+  .calc-step.final .calc-step-result{ font-size:26px; color:var(--ink); }
+
+  .chart-wrap-gauge{ position:relative; height:150px; margin-bottom:8px; }
+  .chart-empty, .analysis-empty{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; color:var(--muted); font-size:14.5px; padding:0 30px;
+  }
+  .tier-legend{ display:flex; flex-wrap:wrap; gap:10px 20px; margin:14px 0 0; font-size:12.5px; color:var(--ink-soft); }
+  .tier-legend-item{ display:flex; align-items:center; gap:6px; }
+  .tier-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+
+  .fill-note{ margin-top:10px; font-size:13px; color:var(--gold); font-family:'IBM Plex Mono', monospace; }
+
+  /* ---- Analysis ---- */
+  .conclusion{ margin-top:6px; padding:16px 20px; background:var(--gold-soft); border-radius:var(--radius-sm); border:1px solid rgba(180,121,15,0.28); }
+  .conclusion p{ margin:0; color:var(--ink-soft); }
+  .conclusion strong{ color:var(--ink); }
+  .disclaimer{ margin-top:16px; font-size:12.5px; color:var(--muted); font-style:italic; }
+
+  /* ---- Compare tool ---- */
+  .compare-grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:8px; align-items:start; }
+  @media (min-width:760px){ .compare-grid{ grid-template-columns:1fr auto 1fr; } }
+  .compare-card{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px 18px; background:#fff; }
+  .compare-card h4{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:0 0 10px; }
+  .compare-card select{
+    width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink);
+  }
+  .compare-swap{
+    display:flex; align-items:center; justify-content:center; align-self:center;
+    background:transparent; border:1px solid var(--line); border-radius:50%;
+    width:44px; height:44px; min-height:44px; padding:0; color:var(--muted); margin:0 auto;
+  }
+  .compare-swap:hover{ color:var(--ink); border-color:var(--ink); }
+  .compare-results{ margin-top:22px; }
+  .compare-empty{ color:var(--muted); font-size:14px; font-style:italic; padding:20px 0; }
+  .compare-table{ border-collapse:collapse; width:100%; background:#fff; }
+  .compare-table th, .compare-table td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:10px 12px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+  }
+  .compare-table th:last-child, .compare-table td:last-child{ border-right:none; }
+  .compare-table thead th{ background:#F4F3EC; color:var(--ink-soft); font-weight:600; }
+  .compare-table td.rlabel{ text-align:left; font-family:'Inter',sans-serif; font-weight:600; background:#F4F3EC; }
+  .compare-chart-wrap{ position:relative; height:260px; margin-top:22px; }
+
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:18px 14px 70px; }
+    header.hero{ padding:26px 20px 30px; }
+    .panel{ padding:18px 16px; }
+  }
+  @media print{
+    body{ background:#fff; }
+    .no-print{ display:none !important; }
+    header.hero, footer{ display:none !important; }
+    .panel{ box-shadow:none; border:none; padding:0; margin-bottom:22px; break-inside:avoid; animation:none; }
+    .panel.p1 .panel-head, .panel.p1 .examples-wrap, .panel.p1 .saved-section, .panel.p1 .btn-row, .panel.p1 .save-panel{ display:none !important; }
+  }
+  .print-only{ display:none; }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; } *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Geografía · Desarrollo</div>
+      <h1>Taller del Índice de Desarrollo Humano</h1>
+      <p class="lede">Introduce la esperanza de vida, los años de escolarización y la renta de un país, y la aplicación calcula el IDH real paso a paso, exactamente como lo hace Naciones Unidas.</p>
+    </div>
+  </header>
+
+  <!-- STEP 1: DATA -->
+  <section class="panel p1">
+    <div class="panel-head">
+      <div class="badge">1</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="4" x2="9" y2="20"/></svg>Introduce los datos</h2>
+        <p>Escribe el país y el año, y rellena los cuatro indicadores que componen el IDH.</p>
+      </div>
+    </div>
+
+    <div class="locate-row">
+      <input type="text" id="idhPlace" placeholder="País y año (ej.: España, 2023)">
+    </div>
+
+    <div class="inputs-grid">
+      <div class="input-card health">
+        <label>Esperanza de vida al nacer <span class="unit">(años)</span></label>
+        <input type="number" id="inLE" step="0.1" min="0" inputmode="decimal">
+      </div>
+      <div class="input-card income">
+        <label>RNB per cápita <span class="unit">(PPA en $, 2021)</span></label>
+        <input type="number" id="inGNI" step="1" min="0" inputmode="decimal">
+      </div>
+      <div class="input-card edu">
+        <label>Años medios de escolarización <span class="unit">(adultos 25+)</span></label>
+        <input type="number" id="inMYS" step="0.1" min="0" inputmode="decimal">
+      </div>
+      <div class="input-card edu2">
+        <label>Años esperados de escolarización <span class="unit">(niños que empiezan hoy)</span></label>
+        <input type="number" id="inEYS" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="saved-section">
+      <h3>Tus países guardados</h3>
+      <div id="idhSavedWrap"></div>
+    </div>
+
+    <div class="examples-wrap" id="idhExamplesWrap"></div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" id="btnIdhClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>Vaciar</button>
+    </div>
+
+    <div class="save-panel">
+      <h3>Guardar y archivar</h3>
+      <div class="save-row">
+        <input type="text" id="idhSaveName" placeholder="Nombre para guardar (ej. España 2023 · 4ºESO)">
+        <button class="btn-primary" id="btnIdhSave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Guardar país actual</button>
+      </div>
+      <div class="save-status" id="idhSaveStatus" aria-live="polite"></div>
+      <div class="btn-row" style="margin-bottom:0;">
+        <button class="btn-ghost" id="btnIdhExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Exportar todos (.json)</button>
+        <button class="btn-ghost" id="btnIdhImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Importar (.json)</button>
+        <input type="file" id="idhImportFile" accept=".json,application/json" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: CALCULATION -->
+  <section class="panel p2">
+    <div class="panel-head">
+      <div class="badge">2</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>El cálculo, paso a paso</h2>
+        <p>Exactamente la misma fórmula que usa Naciones Unidas para publicar el IDH oficial de cada país.</p>
+      </div>
+    </div>
+    <div id="idhCalcBody">
+      <div class="analysis-empty" id="idhCalcEmpty">El cálculo aparecerá aquí en cuanto rellenes los cuatro datos.</div>
+    </div>
+  </section>
+
+  <!-- STEP 3: ANALYSIS -->
+  <section class="panel p3">
+    <div class="panel-head">
+      <div class="badge">3</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Nivel de desarrollo</h2>
+        <p>Dónde se sitúa este país dentro de las cuatro categorías de la ONU.</p>
+      </div>
+    </div>
+    <div class="print-only" id="idhPrintTitle"></div>
+    <div class="chart-wrap-gauge">
+      <canvas id="idhGauge"></canvas>
+      <div class="chart-empty no-print" id="idhGaugeEmpty">El gráfico aparecerá aquí en cuanto completes los datos.</div>
+    </div>
+    <div class="tier-legend no-print">
+      <span class="tier-legend-item"><span class="tier-dot" style="background:var(--bajo)"></span>Bajo (&lt; 0,550)</span>
+      <span class="tier-legend-item"><span class="tier-dot" style="background:var(--medio)"></span>Medio (0,550-0,699)</span>
+      <span class="tier-legend-item"><span class="tier-dot" style="background:var(--alto)"></span>Alto (0,700-0,799)</span>
+      <span class="tier-legend-item"><span class="tier-dot" style="background:var(--muyalto)"></span>Muy alto (≥ 0,800)</span>
+    </div>
+    <div id="idhAnalysisBody" style="margin-top:18px;">
+      <div class="analysis-empty" id="idhAnalysisEmpty" style="position:static; padding:10px 0;"></div>
+    </div>
+    <div class="btn-row no-print" style="margin-top:16px; margin-bottom:0;">
+      <button class="btn-ghost" id="btnIdhPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir cálculo y resultado</button>
+    </div>
+  </section>
+
+  <!-- STEP 4: COMPARE -->
+  <section class="panel p1">
+    <div class="panel-head">
+      <div class="badge">4</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v18"/><path d="M16 3v18"/><path d="M3 8h5"/><path d="M3 16h5"/><path d="M16 8h5"/><path d="M16 16h5"/></svg>Comparar dos países</h2>
+        <p>Elige dos países (de los ejemplos o de los que hayas guardado) para comparar sus índices.</p>
+      </div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4>País A</h4>
+        <select id="cmpASelect"></select>
+      </div>
+      <button type="button" class="compare-swap" id="btnCompareSwap" aria-label="Intercambiar A y B">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/></svg>
+      </button>
+      <div class="compare-card">
+        <h4>País B</h4>
+        <select id="cmpBSelect"></select>
+      </div>
+    </div>
+
+    <div class="compare-results" id="compareResults">
+      <p class="compare-empty" id="compareEmpty">Elige un país para A y otro para B.</p>
+    </div>
+  </section>
+
+  <footer>
+    Herramienta creada para el aula de Geografía. Los datos se procesan en tu propio navegador: no se envían ni se guardan en ningún servidor. La fórmula reproduce la metodología oficial del Programa de las Naciones Unidas para el Desarrollo (PNUD): índice de esperanza de vida, índice de educación (media de años medios y esperados de escolarización) e índice de renta (logarítmico), combinados mediante media geométrica. Los ejemplos son datos reales publicados en los Informes sobre Desarrollo Humano del PNUD (2022-2023, según el país); se han comprobado uno a uno para que el cálculo de esta aplicación reproduzca el valor de IDH oficialmente publicado.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function genId(){ return 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function downloadJSON(payload, filename){
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function fmt3(n){ return (typeof n === 'number' && isFinite(n)) ? n.toFixed(3) : '—'; }
+
+  /* ---------------------------------------------------------------
+     EXAMPLES — real, verified UNDP Human Development Report data
+  ----------------------------------------------------------------*/
+  var IDH_EXAMPLES = [
+    { id:'islandia', name:'Islandia', year:2023, group:'muyalto', le:82.7, mys:13.9, eys:18.9, gni:69117 },
+    { id:'noruega', name:'Noruega', year:2023, group:'muyalto', le:83.3, mys:13.1, eys:18.8, gni:112710 },
+    { id:'suiza', name:'Suiza', year:2023, group:'muyalto', le:84.0, mys:13.9, eys:16.7, gni:81949 },
+    { id:'alemania', name:'Alemania', year:2023, group:'muyalto', le:81.4, mys:14.3, eys:17.3, gni:64053 },
+    { id:'reinounido', name:'Reino Unido', year:2023, group:'muyalto', le:81.3, mys:13.5, eys:17.8, gni:54372 },
+    { id:'canada', name:'Canadá', year:2023, group:'muyalto', le:82.6, mys:13.9, eys:15.9, gni:54688 },
+    { id:'eeuu', name:'Estados Unidos', year:2023, group:'muyalto', le:79.3, mys:13.9, eys:15.9, gni:73650 },
+    { id:'japon', name:'Japón', year:2023, group:'muyalto', le:84.7, mys:12.7, eys:15.5, gni:47775 },
+    { id:'espana', name:'España', year:2023, group:'muyalto', le:83.7, mys:10.8, eys:17.8, gni:46008 },
+    { id:'chile', name:'Chile', year:2023, group:'muyalto', le:81.2, mys:11.3, eys:16.9, gni:28047 },
+    { id:'oman', name:'Omán', year:2023, group:'muyalto', le:80.0, mys:11.9, eys:13.4, gni:36096 },
+    { id:'china', name:'China', year:2023, group:'alto', le:78.0, mys:8.0, eys:15.5, gni:22029 },
+    { id:'mexico', name:'México', year:2023, group:'alto', le:75.1, mys:9.3, eys:14.5, gni:21813 },
+    { id:'colombia', name:'Colombia', year:2023, group:'alto', le:77.7, mys:9.0, eys:14.3, gni:18666 },
+    { id:'brasil', name:'Brasil', year:2023, group:'alto', le:75.8, mys:8.4, eys:15.8, gni:18011 },
+    { id:'egipto', name:'Egipto', year:2023, group:'alto', le:71.6, mys:10.1, eys:13.1, gni:16218 },
+    { id:'sudafrica', name:'Sudáfrica', year:2023, group:'alto', le:66.1, mys:11.6, eys:13.8, gni:13694 },
+    { id:'indonesia', name:'Indonesia', year:2023, group:'alto', le:71.1, mys:8.7, eys:13.3, gni:13700 },
+    { id:'srilanka', name:'Sri Lanka', year:2023, group:'alto', le:77.5, mys:10.8, eys:13.1, gni:12616 },
+    { id:'india', name:'India', year:2023, group:'medio', le:72.0, mys:6.9, eys:13.0, gni:9047 },
+    { id:'bangladesh', name:'Bangladés', year:2023, group:'medio', le:74.7, mys:6.8, eys:12.3, gni:8498 },
+    { id:'guatemala', name:'Guatemala', year:2023, group:'medio', le:72.6, mys:5.8, eys:10.7, gni:12459 },
+    { id:'kenia', name:'Kenia', year:2023, group:'medio', le:63.6, mys:8.6, eys:11.5, gni:5608 },
+    { id:'nepal', name:'Nepal', year:2023, group:'medio', le:70.4, mys:4.5, eys:13.8, gni:4726 },
+    { id:'ghana', name:'Ghana', year:2023, group:'medio', le:65.5, mys:7.1, eys:11.4, gni:6846 },
+    { id:'nigeria', name:'Nigeria', year:2023, group:'medio', le:54.5, mys:7.6, eys:10.5, gni:5569 },
+    { id:'rdcongo', name:'R.D. Congo', year:2023, group:'bajo', le:61.9, mys:7.4, eys:10.9, gni:1431 },
+    { id:'niger', name:'Níger', year:2023, group:'bajo', le:61.2, mys:1.4, eys:8.3, gni:1590 },
+    { id:'chad', name:'Chad', year:2023, group:'bajo', le:55.1, mys:2.3, eys:8.3, gni:1748 },
+    { id:'somalia', name:'Somalia', year:2023, group:'bajo', le:58.8, mys:1.9, eys:7.5, gni:1475 }
+  ];
+  var GROUP_META = {
+    muyalto:{ title:'Muy alto desarrollo humano', color:'var(--muyalto)' },
+    alto:{ title:'Alto desarrollo humano', color:'var(--alto)' },
+    medio:{ title:'Desarrollo humano medio', color:'var(--medio)' },
+    bajo:{ title:'Desarrollo humano bajo', color:'var(--bajo)' }
+  };
+  var GROUP_ORDER = ['muyalto','alto','medio','bajo'];
+
+  var idhGaugeChart = null;
+  var idhDebounce = null;
+  var idhSaved = [];
+  var IDH_STORAGE_KEY = 'idh_guardados_v1';
+
+  var fields = ['inLE','inGNI','inMYS','inEYS'];
+  fields.forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){
+      if(idhDebounce) clearTimeout(idhDebounce);
+      idhDebounce = setTimeout(idhUpdate, 250);
+    });
+  });
+  document.getElementById('idhPlace').addEventListener('input', function(){
+    if(idhDebounce) clearTimeout(idhDebounce);
+    idhDebounce = setTimeout(idhUpdate, 250);
+  });
+
+  /* ---------------------------------------------------------------
+     EXAMPLE GALLERY
+  ----------------------------------------------------------------*/
+  (function buildExamplesGallery(){
+    var wrap = document.getElementById('idhExamplesWrap');
+    var intro = document.createElement('p');
+    intro.className = 'saved-empty'; intro.style.marginBottom = '10px';
+    intro.textContent = 'Ejemplos de referencia con datos reales, uno de cada nivel de desarrollo (fuente: Informes del PNUD).';
+    wrap.appendChild(intro);
+    GROUP_ORDER.forEach(function(g, gi){
+      var meta = GROUP_META[g];
+      var examplesInGroup = IDH_EXAMPLES.filter(function(ex){ return ex.group === g; });
+      if(!examplesInGroup.length) return;
+      var details = document.createElement('details'); details.className='examples-details';
+      if(gi===0) details.open = true;
+      var summary = document.createElement('summary');
+      var dotLead = document.createElement('span'); dotLead.className='dot-lead'; dotLead.style.background = meta.color;
+      var summaryText = document.createElement('span'); summaryText.textContent = meta.title;
+      var count = document.createElement('span'); count.className='count-badge'; count.textContent = examplesInGroup.length;
+      var chevron = document.createElement('span'); chevron.className='chevron';
+      chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      summary.appendChild(dotLead); summary.appendChild(summaryText); summary.appendChild(count); summary.appendChild(chevron);
+      details.appendChild(summary);
+      var chips = document.createElement('div'); chips.className='examples-chips';
+      examplesInGroup.forEach(function(ex){
+        var btn = document.createElement('button'); btn.type='button'; btn.className='example-chip';
+        var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background = meta.color;
+        var text = document.createElement('span'); text.className='chip-text';
+        text.innerHTML = '<strong>'+escapeHtml(ex.name)+' ('+ex.year+')</strong><span>'+escapeHtml(meta.title)+'</span>';
+        btn.appendChild(dot); btn.appendChild(text);
+        btn.addEventListener('click', function(){ loadExample(ex); });
+        chips.appendChild(btn);
+      });
+      details.appendChild(chips);
+      wrap.appendChild(details);
+    });
+  })();
+
+  function loadExample(ex){
+    document.getElementById('idhPlace').value = ex.name + ', ' + ex.year;
+    document.getElementById('inLE').value = ex.le;
+    document.getElementById('inMYS').value = ex.mys;
+    document.getElementById('inEYS').value = ex.eys;
+    document.getElementById('inGNI').value = ex.gni;
+    idhUpdate();
+  }
+
+  document.getElementById('btnIdhClear').addEventListener('click', function(){
+    document.getElementById('idhPlace').value = '';
+    fields.forEach(function(id){ document.getElementById(id).value = ''; });
+    idhUpdate();
+  });
+  document.getElementById('btnIdhPrint').addEventListener('click', function(){ window.print(); });
+
+  /* ---------------------------------------------------------------
+     HDI CALCULATION (verified against official UNDP published values)
+  ----------------------------------------------------------------*/
+  function calcIDH(le, mys, eys, gni){
+    var LEI = Math.min(1, Math.max(0, (le - 20) / (85 - 20)));
+    var MYSI = Math.min(1, Math.max(0, mys / 15));
+    var EYSI = Math.min(1, Math.max(0, eys / 18));
+    var EI = (MYSI + EYSI) / 2;
+    var II = Math.min(1, Math.max(0, (Math.log(gni) - Math.log(100)) / (Math.log(75000) - Math.log(100))));
+    var HDI = Math.pow(LEI * EI * II, 1/3);
+    var tier, tierLabel;
+    if(HDI >= 0.800){ tier='muyalto'; tierLabel='muy alto desarrollo humano'; }
+    else if(HDI >= 0.700){ tier='alto'; tierLabel='alto desarrollo humano'; }
+    else if(HDI >= 0.550){ tier='medio'; tierLabel='desarrollo humano medio'; }
+    else { tier='bajo'; tierLabel='desarrollo humano bajo'; }
+    return { LEI:LEI, MYSI:MYSI, EYSI:EYSI, EI:EI, II:II, HDI:HDI, tier:tier, tierLabel:tierLabel };
+  }
+
+  /* ---------------------------------------------------------------
+     GAUGE CHART
+  ----------------------------------------------------------------*/
+  var gaugeBandsPlugin = {
+    id: 'gaugeBands',
+    beforeDatasetsDraw: function(chart){
+      var opts = chart.options.plugins && chart.options.plugins.gaugeBands;
+      if(!opts) return;
+      var ctx = chart.ctx;
+      var xScale = chart.scales.x, yScale = chart.scales.y;
+      var area = chart.chartArea;
+      var bands = [
+        { from:0, to:0.550, color:'rgba(193,68,14,0.18)' },
+        { from:0.550, to:0.700, color:'rgba(224,168,61,0.22)' },
+        { from:0.700, to:0.800, color:'rgba(62,142,126,0.20)' },
+        { from:0.800, to:1.0, color:'rgba(31,110,140,0.20)' }
+      ];
+      ctx.save();
+      bands.forEach(function(b){
+        var x0 = xScale.getPixelForValue(b.from), x1 = xScale.getPixelForValue(b.to);
+        ctx.fillStyle = b.color;
+        ctx.fillRect(x0, area.top, x1-x0, area.bottom-area.top);
+      });
+      ctx.restore();
+    }
+  };
+  Chart.register(gaugeBandsPlugin);
+
+  function tierColor(tier){
+    return tier==='muyalto' ? '#1F6E8C' : tier==='alto' ? '#3E8E7E' : tier==='medio' ? '#E0A83D' : '#C1440E';
+  }
+
+  function renderGauge(hdi, tier){
+    var canvas = document.getElementById('idhGauge');
+    var color = tierColor(tier);
+    if(!idhGaugeChart){
+      var ctx = canvas.getContext('2d');
+      idhGaugeChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels:['IDH'], datasets:[{ data:[hdi], backgroundColor:color, borderRadius:4, barPercentage:0.5 }] },
+        options: {
+          indexAxis:'y', responsive:true, maintainAspectRatio:false,
+          plugins: {
+            legend:{display:false}, gaugeBands:{},
+            tooltip:{
+              backgroundColor:'#182338', bodyFont:{family:"'IBM Plex Mono', monospace", size:13},
+              callbacks:{ label:function(item){ return 'IDH = ' + item.raw.toFixed(3); } }
+            }
+          },
+          scales:{
+            x:{ min:0, max:1, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{display:false} },
+            y:{ display:false, grid:{display:false} }
+          }
+        }
+      });
+    } else {
+      idhGaugeChart.data.datasets[0].data = [hdi];
+      idhGaugeChart.data.datasets[0].backgroundColor = color;
+      idhGaugeChart.update();
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     RENDER CALCULATION + ANALYSIS
+  ----------------------------------------------------------------*/
+  function renderCalc(le, mys, eys, gni, r){
+    var html = '<div class="calc-steps">';
+
+    html += '<div class="calc-step health">';
+    html += '<p class="calc-step-title">1 · Índice de esperanza de vida</p>';
+    html += '<p class="calc-step-formula">(Esperanza de vida − 20) ÷ (85 − 20)</p>';
+    html += '<p class="calc-step-result">(' + le + ' − 20) ÷ 65 = ' + fmt3(r.LEI) + '</p>';
+    html += '</div>';
+
+    html += '<div class="calc-step edu">';
+    html += '<p class="calc-step-title">2 · Índice de educación</p>';
+    html += '<p class="calc-step-formula">Índice de años medios = ' + mys + ' ÷ 15 = ' + fmt3(r.MYSI) + '<br>Índice de años esperados = ' + eys + ' ÷ 18 = ' + fmt3(r.EYSI) + '</p>';
+    html += '<p class="calc-step-result">(' + fmt3(r.MYSI) + ' + ' + fmt3(r.EYSI) + ') ÷ 2 = ' + fmt3(r.EI) + '</p>';
+    html += '</div>';
+
+    html += '<div class="calc-step income">';
+    html += '<p class="calc-step-title">3 · Índice de renta</p>';
+    html += '<p class="calc-step-formula">(ln(RNB) − ln(100)) ÷ (ln(75.000) − ln(100))</p>';
+    html += '<p class="calc-step-result">(ln(' + gni.toLocaleString('es-ES') + ') − ln(100)) ÷ (ln(75.000) − ln(100)) = ' + fmt3(r.II) + '</p>';
+    html += '</div>';
+
+    html += '<div class="calc-step final">';
+    html += '<p class="calc-step-title">4 · Índice de Desarrollo Humano (media geométrica)</p>';
+    html += '<p class="calc-step-formula">∛(Índice salud × Índice educación × Índice renta)</p>';
+    html += '<p class="calc-step-result">∛(' + fmt3(r.LEI) + ' × ' + fmt3(r.EI) + ' × ' + fmt3(r.II) + ') = ' + fmt3(r.HDI) + '</p>';
+    html += '</div>';
+
+    html += '</div>';
+    document.getElementById('idhCalcBody').innerHTML = html;
+  }
+
+  function renderAnalysis(r, place){
+    var html = '<div class="conclusion"><p>';
+    html += (place ? '<strong>' + escapeHtml(place) + '</strong>' : 'Este país') + ' tiene un IDH de <strong>' + fmt3(r.HDI) + '</strong>, lo que lo sitúa en el grupo de <strong>' + r.tierLabel + '</strong> según la clasificación de Naciones Unidas.';
+    html += '</p></div>';
+    html += '<p class="disclaimer">El IDH es un indicador sintético: dos países con el mismo valor pueden tener perfiles muy distintos (uno más fuerte en renta, otro en educación o salud). No mide desigualdad interna, sostenibilidad ni bienestar subjetivo.</p>';
+    document.getElementById('idhAnalysisBody').innerHTML = html;
+  }
+
+  /* ---------------------------------------------------------------
+     MAIN UPDATE
+  ----------------------------------------------------------------*/
+  function idhUpdate(){
+    var place = document.getElementById('idhPlace').value.trim();
+    document.getElementById('idhPrintTitle').textContent = 'IDH' + (place ? ' — ' + place : '');
+
+    var le = parseFloat(document.getElementById('inLE').value);
+    var mys = parseFloat(document.getElementById('inMYS').value);
+    var eys = parseFloat(document.getElementById('inEYS').value);
+    var gni = parseFloat(document.getElementById('inGNI').value);
+
+    var calcEmpty = document.getElementById('idhCalcEmpty');
+    var gaugeEmpty = document.getElementById('idhGaugeEmpty');
+    var analysisEmpty = document.getElementById('idhAnalysisEmpty');
+
+    var hasAny = !isNaN(le) || !isNaN(mys) || !isNaN(eys) || !isNaN(gni);
+    var hasAll = !isNaN(le) && !isNaN(mys) && !isNaN(eys) && !isNaN(gni) && gni > 0;
+
+    if(!hasAny){
+      document.getElementById('idhCalcBody').innerHTML = '';
+      document.getElementById('idhCalcBody').appendChild(calcEmpty);
+      gaugeEmpty.style.display = 'flex';
+      document.getElementById('idhGauge').style.visibility = 'hidden';
+      document.getElementById('idhAnalysisBody').innerHTML = '';
+      return;
+    }
+    if(!hasAll){
+      document.getElementById('idhCalcBody').innerHTML = '';
+      calcEmpty.textContent = 'Faltan datos: rellena los cuatro indicadores para completar el cálculo.';
+      document.getElementById('idhCalcBody').appendChild(calcEmpty);
+      gaugeEmpty.style.display = 'flex';
+      document.getElementById('idhGauge').style.visibility = 'hidden';
+      document.getElementById('idhAnalysisBody').innerHTML = '';
+      return;
+    }
+
+    gaugeEmpty.style.display = 'none';
+    document.getElementById('idhGauge').style.visibility = 'visible';
+
+    var r = calcIDH(le, mys, eys, gni);
+    renderCalc(le, mys, eys, gni, r);
+    renderGauge(r.HDI, r.tier);
+    renderAnalysis(r, place);
+  }
+
+  /* ---------------------------------------------------------------
+     SAVE / LOAD / EXPORT / IMPORT
+  ----------------------------------------------------------------*/
+  function idhLoadFromStorage(){
+    try{
+      var raw = localStorage.getItem(IDH_STORAGE_KEY);
+      idhSaved = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(idhSaved)) idhSaved = [];
+    } catch(e){ idhSaved = []; }
+  }
+  function idhPersist(){
+    try{ localStorage.setItem(IDH_STORAGE_KEY, JSON.stringify(idhSaved)); return true; }
+    catch(e){ idhSetSaveStatus('No se ha podido guardar en este navegador (memoria llena o modo privado).', true); return false; }
+  }
+  function idhSetSaveStatus(text, warn){
+    var el = document.getElementById('idhSaveStatus');
+    el.textContent = text; el.className = 'save-status' + (warn?' warn':'');
+  }
+  function idhRenderSaved(){
+    var wrap = document.getElementById('idhSavedWrap');
+    wrap.innerHTML = '';
+    if(!idhSaved.length){
+      var p = document.createElement('p'); p.className='saved-empty';
+      p.textContent = 'Todavía no has guardado ningún país en este dispositivo.';
+      wrap.appendChild(p);
+      if(typeof populateCompareSelects === 'function') populateCompareSelects();
+      return;
+    }
+    var chips = document.createElement('div'); chips.className='examples-chips';
+    idhSaved.forEach(function(entry){
+      var chip = document.createElement('div'); chip.className='saved-chip';
+      var mainBtn = document.createElement('button'); mainBtn.type='button'; mainBtn.className='saved-chip-main';
+      var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background='var(--gold)';
+      var text = document.createElement('span'); text.className='chip-text';
+      text.innerHTML = '<strong>'+escapeHtml(entry.name)+'</strong><span>'+escapeHtml(entry.place||'Sin etiqueta')+'</span>';
+      mainBtn.appendChild(dot); mainBtn.appendChild(text);
+      mainBtn.addEventListener('click', function(){
+        document.getElementById('idhPlace').value = entry.place || '';
+        document.getElementById('inLE').value = entry.le;
+        document.getElementById('inMYS').value = entry.mys;
+        document.getElementById('inEYS').value = entry.eys;
+        document.getElementById('inGNI').value = entry.gni;
+        idhUpdate();
+        idhSetSaveStatus('Cargado "'+entry.name+'".');
+      });
+      var delBtn = document.createElement('button'); delBtn.type='button'; delBtn.className='saved-chip-delete';
+      delBtn.setAttribute('aria-label','Eliminar '+entry.name); delBtn.textContent='×';
+      delBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(window.confirm('¿Eliminar "'+entry.name+'"?')){
+          idhSaved = idhSaved.filter(function(c){ return c.id!==entry.id; });
+          idhPersist(); idhRenderSaved();
+        }
+      });
+      chip.appendChild(mainBtn); chip.appendChild(delBtn); chips.appendChild(chip);
+    });
+    wrap.appendChild(chips);
+    if(typeof populateCompareSelects === 'function') populateCompareSelects();
+  }
+  document.getElementById('btnIdhSave').addEventListener('click', function(){
+    var le = parseFloat(document.getElementById('inLE').value);
+    var mys = parseFloat(document.getElementById('inMYS').value);
+    var eys = parseFloat(document.getElementById('inEYS').value);
+    var gni = parseFloat(document.getElementById('inGNI').value);
+    if(isNaN(le) || isNaN(mys) || isNaN(eys) || isNaN(gni)){
+      idhSetSaveStatus('Rellena los cuatro datos antes de guardar.', true); return;
+    }
+    var nameInput = document.getElementById('idhSaveName');
+    var place = document.getElementById('idhPlace').value.trim();
+    var name = nameInput.value.trim() || place || 'País sin título';
+    var existing = idhSaved.find(function(c){ return c.name===name; });
+    if(existing && !window.confirm('Ya existe un país guardado como "'+name+'". ¿Sobrescribirlo?')){
+      idhSetSaveStatus('Guardado cancelado.', true); return;
+    }
+    var entry = { id: existing?existing.id:genId(), name:name, place:place, createdAt:new Date().toISOString(), le:le, mys:mys, eys:eys, gni:gni };
+    if(existing) idhSaved = idhSaved.map(function(c){ return c.id===entry.id?entry:c; });
+    else idhSaved.push(entry);
+    if(idhPersist()){ idhSetSaveStatus('Guardado como "'+name+'".'); nameInput.value=''; idhRenderSaved(); }
+  });
+  document.getElementById('btnIdhExport').addEventListener('click', function(){
+    if(!idhSaved.length){ idhSetSaveStatus('No tienes países guardados para exportar.', true); return; }
+    downloadJSON({ app:'Taller del IDH', version:1, exportedAt:new Date().toISOString(), paises:idhSaved },
+      'idh-' + new Date().toISOString().slice(0,10) + '.json');
+    idhSetSaveStatus('Exportados ' + idhSaved.length + ' país(es).');
+  });
+  document.getElementById('btnIdhImport').addEventListener('click', function(){ document.getElementById('idhImportFile').click(); });
+  document.getElementById('idhImportFile').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = JSON.parse(evt.target.result);
+        var incoming = Array.isArray(data) ? data : (data.paises || []);
+        incoming = incoming.filter(function(c){ return c && typeof c.le==='number' && typeof c.mys==='number' && typeof c.eys==='number' && typeof c.gni==='number'; });
+        if(!incoming.length){ idhSetSaveStatus('El archivo no contiene países válidos.', true); return; }
+        var existingIds = idhSaved.map(function(c){return c.id;});
+        incoming.forEach(function(c){
+          if(!c.id || existingIds.indexOf(c.id)!==-1) c.id = genId();
+          if(!c.name) c.name = c.place || 'País importado';
+          idhSaved.push(c); existingIds.push(c.id);
+        });
+        idhPersist(); idhRenderSaved();
+        idhSetSaveStatus('Importados ' + incoming.length + ' país(es).');
+      } catch(err){ idhSetSaveStatus('El archivo no tiene un formato JSON válido.', true); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  idhLoadFromStorage();
+  idhRenderSaved();
+  idhUpdate();
+
+
+  /* ---------------------------------------------------------------
+     COMPARE TWO COUNTRIES
+  ----------------------------------------------------------------*/
+  var cmpChart = null;
+
+  function getAllIdhSources(){
+    var list = [];
+    IDH_EXAMPLES.forEach(function(ex){
+      list.push({ key:'example:'+ex.id, kind:'example', name:ex.name+' ('+ex.year+')', le:ex.le, mys:ex.mys, eys:ex.eys, gni:ex.gni });
+    });
+    idhSaved.forEach(function(s){
+      list.push({ key:'saved:'+s.id, kind:'saved', name:s.name, le:s.le, mys:s.mys, eys:s.eys, gni:s.gni });
+    });
+    return list;
+  }
+
+  function populateCompareSelects(){
+    var sources = getAllIdhSources();
+    ['A','B'].forEach(function(side){
+      var sel = document.getElementById('cmp'+side+'Select');
+      var prevValue = sel.value;
+      sel.innerHTML = '';
+      var exGroup = document.createElement('optgroup'); exGroup.label = 'Ejemplos';
+      var savedGroup = document.createElement('optgroup'); savedGroup.label = 'Tus países guardados';
+      sources.forEach(function(src){
+        var opt = document.createElement('option');
+        opt.value = src.key; opt.textContent = src.name;
+        (src.kind === 'example' ? exGroup : savedGroup).appendChild(opt);
+      });
+      if(exGroup.children.length) sel.appendChild(exGroup);
+      if(savedGroup.children.length) sel.appendChild(savedGroup);
+      if(prevValue && sources.some(function(s){ return s.key === prevValue; })){ sel.value = prevValue; }
+    });
+    renderComparison();
+  }
+
+  document.getElementById('cmpASelect').addEventListener('change', renderComparison);
+  document.getElementById('cmpBSelect').addEventListener('change', renderComparison);
+  document.getElementById('btnCompareSwap').addEventListener('click', function(){
+    var a = document.getElementById('cmpASelect'), b = document.getElementById('cmpBSelect');
+    var tmp = a.value; a.value = b.value; b.value = tmp;
+    renderComparison();
+  });
+
+  function destroyCompareChart(){ if(cmpChart){ cmpChart.destroy(); cmpChart = null; } }
+
+  function renderComparison(){
+    destroyCompareChart();
+    var sources = getAllIdhSources();
+    var srcA = sources.find(function(s){ return s.key === document.getElementById('cmpASelect').value; });
+    var srcB = sources.find(function(s){ return s.key === document.getElementById('cmpBSelect').value; });
+    var results = document.getElementById('compareResults');
+    if(!srcA || !srcB){
+      results.innerHTML = '<p class="compare-empty">Elige un país para A y otro para B.</p>';
+      return;
+    }
+
+    var rA = calcIDH(srcA.le, srcA.mys, srcA.eys, srcA.gni);
+    var rB = calcIDH(srcB.le, srcB.mys, srcB.eys, srcB.gni);
+
+    var html = '<div class="table-scroll"><table class="compare-table"><thead><tr><th></th><th>'+escapeHtml(srcA.name)+'</th><th>'+escapeHtml(srcB.name)+'</th></tr></thead><tbody>';
+    html += '<tr><td class="rlabel">Esperanza de vida</td><td>'+srcA.le+'</td><td>'+srcB.le+'</td></tr>';
+    html += '<tr><td class="rlabel">Años medios escolarización</td><td>'+srcA.mys+'</td><td>'+srcB.mys+'</td></tr>';
+    html += '<tr><td class="rlabel">Años esperados escolarización</td><td>'+srcA.eys+'</td><td>'+srcB.eys+'</td></tr>';
+    html += '<tr><td class="rlabel">RNB per cápita ($)</td><td>'+srcA.gni.toLocaleString('es-ES')+'</td><td>'+srcB.gni.toLocaleString('es-ES')+'</td></tr>';
+    html += '<tr><td class="rlabel">Índice salud</td><td>'+fmt3(rA.LEI)+'</td><td>'+fmt3(rB.LEI)+'</td></tr>';
+    html += '<tr><td class="rlabel">Índice educación</td><td>'+fmt3(rA.EI)+'</td><td>'+fmt3(rB.EI)+'</td></tr>';
+    html += '<tr><td class="rlabel">Índice renta</td><td>'+fmt3(rA.II)+'</td><td>'+fmt3(rB.II)+'</td></tr>';
+    html += '<tr><td class="rlabel">IDH</td><td><strong>'+fmt3(rA.HDI)+'</strong></td><td><strong>'+fmt3(rB.HDI)+'</strong></td></tr>';
+    html += '<tr><td class="rlabel">Nivel</td><td>'+rA.tierLabel+'</td><td>'+rB.tierLabel+'</td></tr>';
+    html += '</tbody></table></div>';
+    html += '<div class="compare-chart-wrap"><canvas id="cmpChart"></canvas></div>';
+    results.innerHTML = html;
+
+    var ctx = document.getElementById('cmpChart').getContext('2d');
+    cmpChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Índice salud','Índice educación','Índice renta','IDH'],
+        datasets: [
+          { label: srcA.name, data:[rA.LEI, rA.EI, rA.II, rA.HDI], backgroundColor:'#2C5F8A', borderRadius:3 },
+          { label: srcB.name, data:[rB.LEI, rB.EI, rB.II, rB.HDI], backgroundColor:'#B0416B', borderRadius:3 }
+        ]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display:true, position:'bottom', labels:{ font:{family:"'Inter', sans-serif", size:12.5}, boxWidth:14, boxHeight:14, color:'#3C4A66' } },
+          tooltip: {
+            backgroundColor:'#182338', bodyFont:{family:"'IBM Plex Mono', monospace", size:12.5}, padding:11, cornerRadius:8,
+            callbacks: { label: function(item){ return item.dataset.label + ': ' + item.raw.toFixed(3); } }
+          }
+        },
+        scales: {
+          x: { min:0, max:1, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{color:'#E3E1D4'} },
+          y: { ticks:{ font:{family:"'IBM Plex Mono', monospace", size:12} }, grid:{display:false} }
+        }
+      }
+    });
+  }
+
+  populateCompareSelects();
+
+})();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

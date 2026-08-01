@@ -1,0 +1,2426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Taller de Demografía: construye pirámides de población, calcula tasas demográficas y visualiza su evolución.">
+<title>Taller de Demografía</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Demografía">
+<meta name="theme-color" content="#182338">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#182338;
+    --ink-soft:#3C4A66;
+    --muted:#5E6779;
+    --paper:#EDEFE8;
+    --card:#FFFFFF;
+    --line:#E2E0D2;
+    --male:#2C5F8A;
+    --male-soft:rgba(44,95,138,0.12);
+    --female:#B0416B;
+    --female-soft:rgba(176,65,107,0.12);
+    --young:#3E8E7E;
+    --young-soft:rgba(62,142,126,0.14);
+    --old:#B4790F;
+    --old-soft:rgba(180,121,15,0.14);
+    --gold:#B4790F;
+    --gold-2:#E0A83D;
+    --gold-soft:rgba(180,121,15,0.14);
+    --warm:#C1440E;
+    --cool:#1F6E8C;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-sm:0 1px 2px rgba(20,30,50,.05);
+    --shadow-md:0 10px 28px rgba(20,30,50,.08);
+    --shadow-lg:0 20px 46px rgba(20,30,50,.14);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:980px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
+
+  header.hero{
+    position:relative; padding:34px 36px 40px; margin-bottom:30px; border-radius:18px;
+    background:var(--ink); color:var(--paper); overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(224,168,61,0.30), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(176,65,107,0.28), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--gold-2); font-weight:500; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--gold-2); display:inline-block; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(30px, 4.2vw, 44px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
+  }
+  .lede{ max-width:64ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+
+  .part-title{
+    display:flex; align-items:baseline; gap:12px; margin:0 0 4px;
+  }
+  .part-eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--gold); font-weight:600;
+  }
+  .part-title h2{ font-family:'Fraunces', serif; font-weight:600; font-size:24px; margin:0; }
+  .part-desc{ color:var(--muted); font-size:14.5px; margin:6px 0 20px; }
+
+  /* ---- Tabs ---- */
+  .top-tabs-sticky{
+    position:sticky; top:0; z-index:20; background:var(--paper);
+    padding:14px 0 12px; margin:0 0 26px;
+    box-shadow:0 12px 18px -14px rgba(20,30,50,0.18);
+  }
+  .tabs{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab-btn{
+    flex:none; background:#fff; border:1px solid var(--line); color:var(--muted);
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; padding:11px 18px;
+    border-radius:999px; cursor:pointer; white-space:nowrap; min-height:44px;
+    transition:background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tab-btn:hover{ border-color:var(--ink); color:var(--ink); }
+  .top-tabs .tab-btn.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); box-shadow:var(--shadow-sm); }
+  .sub-tabs{ margin-bottom:22px; }
+  .sub-tabs .tab-btn{ padding:9px 15px; font-size:13.5px; min-height:40px; }
+  .sub-tabs .tab-btn.active{ background:var(--gold-soft); color:var(--ink); border-color:var(--gold); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+  .subtab-panel{ display:none; }
+  .subtab-panel.active{ display:block; }
+
+  /* ---- Sources tab ---- */
+  .sources-grid{ display:grid; grid-template-columns:1fr; gap:14px; }
+  @media (min-width:700px){ .sources-grid{ grid-template-columns:1fr 1fr; } }
+  .source-card{
+    border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px 18px; background:#fff;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .source-card h4{ font-family:'Fraunces', serif; font-size:16px; margin:0; color:var(--ink); }
+  .source-card p{ margin:0; font-size:13.5px; color:var(--muted); line-height:1.5; }
+  .source-card a{
+    margin-top:6px; font-size:13.5px; font-weight:600; color:var(--male); text-decoration:none;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .source-card a:hover{ text-decoration:underline; }
+  .source-card a svg{ width:13px; height:13px; }
+
+  /* ---- Compare tool ---- */
+  .compare-grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:8px; align-items:start; }
+  @media (min-width:760px){ .compare-grid{ grid-template-columns:1fr auto 1fr; } }
+  .compare-card{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px 18px; background:#fff; }
+  .compare-card h4{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:0 0 10px; }
+  .compare-card select{
+    width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink); margin-bottom:10px;
+  }
+  .compare-mode label{ display:flex; align-items:center; gap:7px; font-size:13.5px; color:var(--ink-soft); margin-bottom:6px; cursor:pointer; }
+  .compare-mode select{ margin-top:4px; margin-bottom:0; }
+  .compare-swap{
+    display:flex; align-items:center; justify-content:center; align-self:center;
+    background:transparent; border:1px solid var(--line); border-radius:50%;
+    width:44px; height:44px; min-height:44px; padding:0; color:var(--muted);
+    margin:0 auto;
+  }
+  .compare-swap:hover{ color:var(--ink); border-color:var(--ink); }
+  .compare-results{ margin-top:22px; }
+  .compare-empty{ color:var(--muted); font-size:14px; font-style:italic; padding:20px 0; }
+  .compare-note{ font-size:12.5px; color:var(--muted); margin:8px 0 0; font-style:italic; }
+  .compare-side-charts{ display:grid; grid-template-columns:1fr; gap:18px; }
+  @media (min-width:760px){ .compare-side-charts{ grid-template-columns:1fr 1fr; } }
+  .compare-side-charts .chart-wrap{ height:320px; }
+  .compare-side-title{ font-family:'Fraunces', serif; font-weight:600; font-size:15px; margin:0 0 8px; text-align:center; }
+  .compare-table{ border-collapse:collapse; width:100%; background:#fff; }
+  .compare-table th, .compare-table td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:10px 12px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+  }
+  .compare-table th:last-child, .compare-table td:last-child{ border-right:none; }
+  .compare-table thead th{ background:#F4F3EC; color:var(--ink-soft); font-weight:600; }
+  .compare-table td.rlabel{ text-align:left; font-family:'Inter',sans-serif; font-weight:600; background:#F4F3EC; }
+  .compare-table td.better{ color:var(--young); font-weight:600; }
+
+  /* ---- Formulas / worked-example tab ---- */
+  .example-ref-box{
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:18px 20px; margin-bottom:24px;
+  }
+  .example-ref-box h4{ font-family:'Fraunces', serif; font-size:16.5px; margin:0 0 12px; color:var(--ink); }
+  .example-ref-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; }
+  @media (min-width:640px){ .example-ref-grid{ grid-template-columns:1fr 1fr 1fr; } }
+  .example-ref-grid > div{ display:flex; flex-direction:column; gap:2px; }
+  .example-ref-grid span{ font-size:11.5px; color:var(--muted); font-family:'IBM Plex Mono', monospace; }
+  .example-ref-grid strong{ font-size:16px; color:var(--ink); font-family:'IBM Plex Mono', monospace; }
+
+  .formula-cards{ display:grid; grid-template-columns:1fr; gap:16px; }
+  @media (min-width:760px){ .formula-cards{ grid-template-columns:1fr 1fr; } }
+  .formula-card{
+    border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff;
+    padding:18px 20px 20px; position:relative;
+  }
+  .formula-card-eyebrow{
+    position:absolute; top:14px; right:16px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--line); font-weight:600;
+  }
+  .formula-card h3{ font-family:'Fraunces', serif; font-weight:600; font-size:17px; margin:0 0 6px; color:var(--ink); padding-right:24px; }
+  .formula-card-desc{ font-size:13px; color:var(--muted); margin:0 0 14px; line-height:1.5; }
+
+  .formula{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; }
+  .formula-frac{ display:inline-flex; flex-direction:column; align-items:center; font-family:'IBM Plex Mono', monospace; font-size:13px; line-height:1.3; }
+  .formula-frac .num{ padding:0 6px 4px; border-bottom:1.5px solid var(--ink); white-space:nowrap; }
+  .formula-frac .den{ padding:4px 6px 0; white-space:nowrap; }
+  .formula-mult{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .formula-plain{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink-soft); }
+
+  .formula-worked{
+    background:var(--young-soft); border:1px solid rgba(62,142,126,0.28); border-radius:8px;
+    padding:11px 14px; font-family:'IBM Plex Mono', monospace; font-size:13.5px; color:var(--ink);
+  }
+  .formula-worked-label{ display:block; font-family:'Inter', sans-serif; font-size:11.5px; color:var(--muted); margin-bottom:4px; }
+  .formula-worked strong{ color:var(--young); }
+
+  /* ---- Collapsible example groups ---- */
+  .examples-details{
+    border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:10px; overflow:hidden; background:#fff;
+  }
+  .examples-details + .examples-details{ margin-top:0; }
+  .examples-details summary{
+    cursor:pointer; list-style:none; padding:13px 16px; display:flex; align-items:center; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--ink-soft); font-weight:600; min-height:44px; -webkit-tap-highlight-color:transparent;
+  }
+  .examples-details summary::-webkit-details-marker{ display:none; }
+  .examples-details summary::marker{ content:""; }
+  .examples-details summary .chevron{ margin-left:auto; color:var(--muted); transition:transform .2s ease; display:flex; }
+  .examples-details summary .chevron svg{ width:16px; height:16px; }
+  .examples-details[open] summary .chevron{ transform:rotate(180deg); }
+  .examples-details summary .count-badge{
+    background:var(--gold-soft); color:var(--gold); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700;
+  }
+  .examples-details .examples-chips{ padding:0 16px 16px; }
+  .examples-details summary .dot-lead{ width:9px; height:9px; border-radius:50%; flex:none; }
+
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-md); padding:26px 28px 30px; margin-bottom:24px;
+    border-top:3px solid var(--accent, var(--ink)); animation:riseIn .5s ease both;
+  }
+  .panel.pa1{ --accent:var(--male); } .panel.pa2{ --accent:var(--female); } .panel.pa3{ --accent:var(--gold); }
+  .panel.pb1{ --accent:var(--young); } .panel.pb2{ --accent:var(--ink); }
+  .panel.pb3{ --accent:var(--warm); } .panel.pb4{ --accent:var(--old); }
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+
+  .panel-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+  .badge{
+    flex:none; width:36px; height:36px; border-radius:50%; background:var(--accent, var(--ink)); color:#fff;
+    font-family:'Fraunces', serif; font-weight:600; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent, var(--ink)) 14%, transparent);
+  }
+  .panel-head-text h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:21px; margin:5px 0 4px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-head-text h2 svg{ width:19px; height:19px; color:var(--accent, var(--ink)); flex:none; }
+  .panel-head-text p{ margin:0; color:var(--muted); font-size:14.5px; }
+
+  .locate-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .locate-row input[type="text"]{
+    flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink);
+  }
+  input:focus-visible, button:focus-visible{ outline:2px solid var(--male); outline-offset:2px; }
+
+  button{
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; border-radius:var(--radius-sm);
+    padding:12px 18px; cursor:pointer; border:1px solid transparent;
+    transition:transform .08s ease, background .15s ease, box-shadow .15s ease;
+    display:inline-flex; align-items:center; gap:7px; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button svg{ width:15px; height:15px; flex:none; }
+  button:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--ink); color:var(--paper); }
+  .btn-primary:hover{ background:#2A3B5C; box-shadow:var(--shadow-sm); }
+  .btn-ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn-ghost:hover{ background:rgba(24,35,56,0.05); }
+  .btn-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+  .btn-sm{ padding:8px 12px; min-height:36px; font-size:13px; }
+
+  /* ---- chip galleries (examples + saved archive), shared look ---- */
+  .examples-wrap{ margin-bottom:22px; }
+  .examples-group{ margin-bottom:14px; }
+  .examples-group:last-child{ margin-bottom:0; }
+  .examples-group-title, .saved-section h3, .save-panel h3{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--muted); margin:0 0 8px;
+  }
+  .examples-chips{ display:flex; flex-wrap:wrap; gap:9px; }
+  .example-chip{
+    display:flex; align-items:center; gap:9px; background:#fff; border:1px solid var(--line); border-radius:11px;
+    padding:10px 14px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .example-chip:hover, .example-chip:active{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .chip-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .chip-text{ display:flex; flex-direction:column; line-height:1.25; min-width:0; }
+  .chip-text strong{ font-size:13.5px; color:var(--ink); }
+  .chip-text span{
+    font-size:11.5px; color:var(--muted); font-weight:400;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px;
+  }
+  .saved-section{ margin-bottom:20px; }
+  .saved-empty{ font-size:13.5px; color:var(--muted); margin:0; font-style:italic; }
+  .saved-chip{
+    display:flex; align-items:stretch; border:1px solid var(--line); border-radius:11px; background:#fff; overflow:hidden;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .saved-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .saved-chip-main{
+    display:flex; align-items:center; gap:9px; border:none; background:transparent;
+    padding:10px 12px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .saved-chip-delete{
+    border:none; background:transparent; color:var(--muted); padding:0 13px; font-size:17px; line-height:1;
+    border-left:1px solid var(--line); min-height:44px; min-width:40px; -webkit-tap-highlight-color:transparent;
+  }
+  .saved-chip-delete:hover{ color:var(--warm); background:rgba(193,68,14,0.08); }
+
+  .save-panel{ margin-top:20px; padding-top:18px; border-top:1px dashed var(--line); }
+  .save-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .save-row input[type="text"]{
+    flex:1; min-width:220px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff;
+  }
+  .save-status{
+    font-size:12.8px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; min-height:16px; margin-bottom:2px;
+  }
+  .save-status.warn{ color:var(--warm); }
+  .status-card{
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:12px 14px; font-family:'IBM Plex Mono', monospace; font-size:12.8px; color:var(--ink-soft); min-height:20px;
+  }
+
+  /* ---- Pyramid table (rows = age bands) ---- */
+  .table-scroll{ overflow-x:auto; border-radius:var(--radius-sm); border:1px solid var(--line); }
+  table.pyr-table{ border-collapse:collapse; width:100%; min-width:420px; background:#fff; }
+  table.pyr-table th, table.pyr-table td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:0; text-align:center;
+    position:relative;
+  }
+  table.pyr-table th:last-child, table.pyr-table td:last-child{ border-right:none; }
+  table.pyr-table thead th{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);
+    background:#F4F3EC; padding:10px 6px; font-weight:500;
+  }
+  table.pyr-table td.rowlabel{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600; text-align:left;
+    padding:9px 12px; white-space:nowrap; background:#F4F3EC; position:sticky; left:0; color:var(--ink-soft);
+  }
+  table.pyr-table input[type="number"]{
+    width:100%; min-width:96px; border:none; text-align:center; padding:10px 6px;
+    font-family:'IBM Plex Mono', monospace; font-size:16px; background:transparent; color:inherit;
+    -moz-appearance:textfield;
+  }
+  table.pyr-table input::-webkit-outer-spin-button, table.pyr-table input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  table.pyr-table td.col-m input:focus-visible{ background:var(--male-soft); }
+  table.pyr-table td.col-f input:focus-visible{ background:var(--female-soft); }
+  .col-m{ color:var(--male); } .col-f{ color:var(--female); }
+  .fill-note{ margin-top:10px; font-size:13px; color:var(--gold); font-family:'IBM Plex Mono', monospace; }
+
+  /* ---- Years table (Part B) ---- */
+  table.years-table{ border-collapse:collapse; width:100%; min-width:1080px; background:#fff; }
+  table.years-table th, table.years-table td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:0; text-align:center; white-space:nowrap;
+  }
+  table.years-table th:last-child, table.years-table td:last-child{ border-right:none; }
+  table.years-table thead th{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft);
+    background:#F4F3EC; padding:9px 4px; font-weight:500; line-height:1.3;
+  }
+  table.years-table input[type="number"], table.years-table input[type="text"]{
+    width:100%; min-width:92px; border:none; text-align:center; padding:10px 4px;
+    font-family:'IBM Plex Mono', monospace; font-size:16px; background:transparent; color:inherit;
+    -moz-appearance:textfield;
+  }
+  table.years-table input::-webkit-outer-spin-button, table.years-table input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  table.years-table input:focus-visible{ background:var(--young-soft); }
+  table.years-table td.rowdel{ padding:0; }
+  table.years-table .rowdel-btn{
+    border:none; background:transparent; color:var(--muted); width:100%; height:100%; min-height:40px;
+    cursor:pointer; font-size:16px;
+  }
+  table.years-table .rowdel-btn:hover{ color:var(--warm); background:rgba(193,68,14,0.08); }
+  .add-year-row{ margin-top:12px; }
+
+  .results-table{ border-collapse:collapse; width:100%; min-width:900px; background:#fff; }
+  .results-table th, .results-table td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:9px 10px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; font-size:13px; white-space:nowrap;
+  }
+  .results-table th:last-child, .results-table td:last-child{ border-right:none; }
+  .results-table thead th{ background:#F4F3EC; color:var(--ink-soft); font-weight:600; }
+  .results-table td.rlabel{ text-align:left; font-family:'Inter',sans-serif; font-weight:600; background:#F4F3EC; position:sticky; left:0; }
+  .results-table td.neg{ color:var(--warm); }
+
+  /* ---- Charts ---- */
+  .chart-wrap{ position:relative; height:560px; }
+  .chart-wrap.short{ height:380px; }
+  canvas{ width:100%; height:100%; }
+  .chart-empty, .analysis-empty{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; color:var(--muted); font-size:14.5px; padding:0 30px;
+  }
+  .legend-row{
+    display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px; padding-top:16px;
+    border-top:1px dashed var(--line); font-size:13.5px; color:var(--ink-soft);
+  }
+  .legend-item{ display:flex; align-items:center; gap:7px; }
+  .swatch{ width:16px; height:10px; border-radius:2px; display:inline-block; }
+  .swatch.male{ background:var(--male); } .swatch.female{ background:var(--female); }
+  .swatch.young{ background:var(--young); } .swatch.working{ background:var(--ink-soft); } .swatch.old{ background:var(--old); }
+  .swatch.grow{ background:rgba(62,142,126,0.55); } .swatch.shrink{ background:rgba(193,68,14,0.45); }
+
+  /* ---- Analysis ---- */
+  .analysis-grid{ display:grid; grid-template-columns:1fr; gap:2px 32px; }
+  @media (min-width:760px){ .analysis-grid{ grid-template-columns:1fr 1fr; } }
+  .analysis-block{ margin-bottom:15px; }
+  .analysis-block .k{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--gold); display:block; margin-bottom:4px;
+  }
+  .analysis-block p{ margin:0; color:var(--ink-soft); max-width:62ch; }
+  .conclusion{
+    margin-top:6px; padding:16px 20px; background:var(--gold-soft); border-radius:var(--radius-sm);
+    border:1px solid rgba(180,121,15,0.28);
+  }
+  .conclusion p{ max-width:90ch; margin:0; color:var(--ink-soft); }
+  .conclusion strong{ color:var(--ink); }
+  .disclaimer{ margin-top:16px; font-size:12.5px; color:var(--muted); font-style:italic; max-width:90ch; }
+
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:18px 14px 70px; }
+    header.hero{ padding:26px 20px 30px; }
+    .panel{ padding:18px 16px; }
+  }
+  @media print{
+    body{ background:#fff; }
+    .no-print{ display:none !important; }
+    header.hero, footer, .top-tabs-sticky, .sub-tabs{ display:none !important; }
+    .panel{ box-shadow:none; border:none; padding:0; margin-bottom:22px; break-inside:avoid; animation:none; }
+    .table-scroll{ border:1px solid #999; }
+    table th, table td{ border-color:#999 !important; }
+    .print-only{ display:block; font-family:'Fraunces', serif; font-weight:600; font-size:19px; color:#000; margin:0 0 14px; }
+
+    body.print-a .part-b{ display:none !important; }
+    body.print-a .part-a .subtab-panel{ display:block !important; }
+    body.print-a .save-panel, body.print-a .saved-section,
+    body.print-a .examples-wrap, body.print-a .btn-row, body.print-a .fill-note,
+    body.print-a .panel-head, body.print-a .legend-row{ display:none !important; }
+    body.print-a #pyrPrintTitle{ display:block !important; }
+
+    body.print-b .part-a{ display:none !important; }
+    body.print-b .part-b .subtab-panel{ display:block !important; }
+    body.print-b [data-subtabpanel="pb-sources"], body.print-b [data-subtabpanel="pb-compare"], body.print-b [data-subtabpanel="pb-formulas"]{ display:none !important; }
+    body.print-b .save-panel, body.print-b .saved-section,
+    body.print-b .examples-wrap, body.print-b .btn-row, body.print-b .add-year-row,
+    body.print-b .panel-head, body.print-b .legend-row{ display:none !important; }
+    body.print-b #ratesPrintTitle{ display:block !important; }
+  }
+  .print-only{ display:none; }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; } *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Geografía · Demografía</div>
+      <h1>Taller de Demografía</h1>
+      <p class="lede">Construye pirámides de población, calcula las principales tasas demográficas y visualiza su evolución en el tiempo con gráficos de líneas y de barras.</p>
+    </div>
+  </header>
+
+  <div class="top-tabs-sticky">
+    <div class="tabs top-tabs" role="tablist" aria-label="Secciones principales">
+      <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="panel-pyramid" id="tab-pyramid" data-tab="pyramid">Pirámide de población</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-rates" id="tab-rates" data-tab="rates">Tasas demográficas y su evolución</button>
+    </div>
+  </div>
+
+  <!-- ============ PART A: PIRÁMIDE DE POBLACIÓN ============ -->
+  <div class="tab-panel part-a active" data-tabpanel="pyramid" id="panel-pyramid" role="tabpanel" aria-labelledby="tab-pyramid">
+  <div class="part-title"><span class="part-eyebrow">Parte 1</span><h2>Pirámide de población</h2></div>
+  <p class="part-desc">Introduce la población por sexo y grupo de edad de un lugar y un momento concreto. La aplicación dibuja la pirámide y propone su tipo (progresiva, estancada o regresiva).</p>
+
+  <div class="tabs sub-tabs" role="tablist" aria-label="Secciones de la pirámide de población">
+    <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-subtab="pa-data">Datos</button>
+    <button type="button" class="tab-btn" role="tab" aria-selected="false" data-subtab="pa-results">Resultados</button>
+  </div>
+
+  <div class="subtab-panel active" data-subtabpanel="pa-data">
+  <section class="panel pa1">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="4" x2="9" y2="20"/></svg>Introduce los datos</h2>
+        <p>Escribe el lugar y el año, y rellena la población de hombres y mujeres en cada grupo de edad (puedes usar cifras absolutas de un censo real).</p>
+      </div>
+    </div>
+
+    <div class="locate-row">
+      <input type="text" id="pyrPlace" placeholder="Lugar y año (ej.: España, 2023)">
+    </div>
+
+    <div class="saved-section">
+      <h3>Tus pirámides guardadas</h3>
+      <div id="pyrSavedWrap"></div>
+    </div>
+
+    <div class="examples-wrap" id="pyrExamplesWrap"></div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" id="btnPyrClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>Vaciar tabla</button>
+    </div>
+
+    <div class="table-scroll">
+      <table class="pyr-table" id="pyrTable">
+        <thead><tr><th style="text-align:left; padding-left:12px;">Grupo de edad</th><th class="col-m">Hombres</th><th class="col-f">Mujeres</th></tr></thead>
+        <tbody id="pyrTableBody"></tbody>
+      </table>
+    </div>
+    <div class="fill-note" id="pyrFillNote" style="display:none;"></div>
+
+    <div class="save-panel">
+      <h3>Guardar y archivar</h3>
+      <div class="save-row">
+        <input type="text" id="pyrSaveName" placeholder="Nombre para guardar (ej. España 2023 · 1ºBach)">
+        <button class="btn-primary" id="btnPyrSave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Guardar pirámide actual</button>
+      </div>
+      <div class="save-status" id="pyrSaveStatus" aria-live="polite"></div>
+      <div class="btn-row" style="margin-bottom:0;">
+        <button class="btn-ghost" id="btnPyrExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Exportar todas (.json)</button>
+        <button class="btn-ghost" id="btnPyrImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Importar (.json)</button>
+        <input type="file" id="pyrImportFile" accept=".json,application/json" style="display:none">
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div class="subtab-panel" data-subtabpanel="pa-results">
+  <section class="panel pa2">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="12" width="3" height="7"/><rect x="11" y="7" width="3" height="12"/><rect x="16" y="3" width="3" height="16"/></svg>La pirámide</h2>
+        <p>Hombres a la izquierda, mujeres a la derecha; de los grupos de edad más jóvenes (abajo) a los más mayores (arriba).</p>
+      </div>
+    </div>
+    <div class="print-only" id="pyrPrintTitle"></div>
+    <div class="chart-wrap">
+      <canvas id="pyrChart"></canvas>
+      <div class="chart-empty no-print" id="pyrChartEmpty">La pirámide aparecerá aquí en cuanto completes la tabla de datos.</div>
+    </div>
+    <div class="legend-row no-print">
+      <span class="legend-item"><span class="swatch male"></span>Hombres</span>
+      <span class="legend-item"><span class="swatch female"></span>Mujeres</span>
+    </div>
+    <div class="btn-row no-print" style="margin-top:16px; margin-bottom:0;">
+      <button class="btn-ghost" id="btnPyrPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir tabla y pirámide</button>
+    </div>
+  </section>
+
+  <section class="panel pa3">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Análisis (aproximado)</h2>
+        <p>Interpretación automática de la estructura por sexo y edad.</p>
+      </div>
+    </div>
+    <div id="pyrAnalysisBody">
+      <div class="analysis-empty" id="pyrAnalysisEmpty">El análisis aparecerá aquí en cuanto completes la tabla de datos.</div>
+    </div>
+  </section>
+  </div>
+  </div>
+
+  <!-- ============ PART B: TASAS DEMOGRÁFICAS Y SU EVOLUCIÓN ============ -->
+  <div class="tab-panel part-b" data-tabpanel="rates" id="panel-rates" role="tabpanel" aria-labelledby="tab-rates">
+  <div class="part-title"><span class="part-eyebrow">Parte 2</span><h2>Tasas demográficas y su evolución</h2></div>
+  <p class="part-desc">Añade una fila por cada año que quieras estudiar con sus datos básicos (población, nacimientos, defunciones...). La aplicación calcula las tasas y las representa en un gráfico de líneas y otro de barras.</p>
+
+  <div class="tabs sub-tabs" role="tablist" aria-label="Secciones de tasas demográficas">
+    <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-subtab="pb-data">Datos</button>
+    <button type="button" class="tab-btn" role="tab" aria-selected="false" data-subtab="pb-results">Resultados</button>
+    <button type="button" class="tab-btn" role="tab" aria-selected="false" data-subtab="pb-formulas">Fórmulas y ejemplo</button>
+    <button type="button" class="tab-btn" role="tab" aria-selected="false" data-subtab="pb-sources">Fuentes de datos</button>
+    <button type="button" class="tab-btn" role="tab" aria-selected="false" data-subtab="pb-compare">Comparar países</button>
+  </div>
+
+  <div class="subtab-panel active" data-subtabpanel="pb-data">
+  <section class="panel pb1">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="4" x2="9" y2="20"/></svg>Datos por año</h2>
+        <p>Población, nacimientos y defunciones son obligatorios. Los demás campos son opcionales: si los rellenas, se calculan también la fecundidad, la mortalidad infantil, la migración, el envejecimiento y la dependencia.</p>
+      </div>
+    </div>
+
+    <div class="saved-section">
+      <h3>Tus series guardadas</h3>
+      <div id="ratesSavedWrap"></div>
+    </div>
+
+    <div class="examples-wrap" id="ratesExamplesWrap"></div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" id="btnRatesClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>Vaciar todo</button>
+    </div>
+
+    <div class="table-scroll">
+      <table class="years-table" id="yearsTable">
+        <thead>
+          <tr>
+            <th>Año</th><th>Población</th><th>Nacim.</th><th>Defunc.</th><th>Inmigr.</th><th>Emigr.</th>
+            <th>Def. &lt;1 año</th><th>Mujeres 15-49</th><th>Pob. 0-14</th><th>Pob. 15-64</th><th>Pob. 65+</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="yearsTableBody"></tbody>
+      </table>
+    </div>
+    <div class="add-year-row">
+      <button class="btn-ghost btn-sm" id="btnAddYear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Añadir año</button>
+    </div>
+
+    <div class="save-panel">
+      <h3>Guardar y archivar</h3>
+      <div class="save-row">
+        <input type="text" id="ratesSaveName" placeholder="Nombre para guardar (ej. España 1900-2023)">
+        <button class="btn-primary" id="btnRatesSave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Guardar serie actual</button>
+      </div>
+      <div class="save-status" id="ratesSaveStatus" aria-live="polite"></div>
+      <div class="btn-row" style="margin-bottom:0;">
+        <button class="btn-ghost" id="btnRatesExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Exportar todas (.json)</button>
+        <button class="btn-ghost" id="btnRatesImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Importar (.json)</button>
+        <input type="file" id="ratesImportFile" accept=".json,application/json" style="display:none">
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div class="subtab-panel" data-subtabpanel="pb-results">
+  <section class="panel pb2">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l3-4 3 2 4-6"/></svg>Tasas calculadas</h2>
+        <p>Una columna por año, con todas las tasas que se pueden calcular a partir de los datos introducidos.</p>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="results-table" id="resultsTable"><thead></thead><tbody></tbody></table>
+    </div>
+    <div class="analysis-empty" id="resultsEmpty" style="position:static; padding:20px 0; display:none;">Introduce al menos un año con población, nacimientos y defunciones para ver las tasas.</div>
+  </section>
+
+  <section class="panel pb3">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M6 15l4-6 4 3 6-8"/></svg>Evolución de natalidad y mortalidad</h2>
+        <p>El espacio entre las dos líneas es el crecimiento vegetativo: verde cuando la natalidad supera a la mortalidad, ocre cuando ocurre lo contrario.</p>
+      </div>
+    </div>
+    <div class="print-only" id="ratesPrintTitle"></div>
+    <div class="chart-wrap short">
+      <canvas id="ratesLineChart"></canvas>
+      <div class="chart-empty no-print" id="ratesLineEmpty">El gráfico aparecerá aquí en cuanto añadas datos de al menos dos años.</div>
+    </div>
+    <div class="legend-row no-print">
+      <span class="legend-item"><span class="swatch" style="background:var(--warm)"></span>Natalidad (‰)</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--cool)"></span>Mortalidad (‰)</span>
+      <span class="legend-item"><span class="swatch grow"></span>Crecimiento vegetativo positivo</span>
+      <span class="legend-item"><span class="swatch shrink"></span>Crecimiento vegetativo negativo</span>
+    </div>
+  </section>
+
+  <section class="panel pb4">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>Evolución de la estructura por edades</h2>
+        <p>Solo se dibuja con los años en los que hayas rellenado la población de 0-14, 15-64 y 65+.</p>
+      </div>
+    </div>
+    <div class="chart-wrap short">
+      <canvas id="ratesStackChart"></canvas>
+      <div class="chart-empty no-print" id="ratesStackEmpty">Rellena la población por grandes grupos de edad en al menos un año para ver este gráfico.</div>
+    </div>
+    <div class="legend-row no-print">
+      <span class="legend-item"><span class="swatch young"></span>0-14 años</span>
+      <span class="legend-item"><span class="swatch working"></span>15-64 años</span>
+      <span class="legend-item"><span class="swatch old"></span>65 años o más</span>
+    </div>
+    <div class="btn-row no-print" style="margin-top:16px; margin-bottom:0;">
+      <button class="btn-ghost" id="btnRatesPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir tabla y gráficos</button>
+    </div>
+  </section>
+
+  <section class="panel pb2">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Comentario de la evolución (aproximado)</h2>
+        <p>Lectura automática de la tendencia entre el primer y el último año introducidos.</p>
+      </div>
+    </div>
+    <div id="ratesAnalysisBody">
+      <div class="analysis-empty" id="ratesAnalysisEmpty">El comentario aparecerá aquí en cuanto añadas al menos dos años de datos.</div>
+    </div>
+  </section>
+  </div>
+
+  <div class="subtab-panel" data-subtabpanel="pb-formulas">
+  <section class="panel pb2">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Fórmulas y ejemplo paso a paso</h2>
+        <p>Las tasas demográficas más utilizadas, explicadas una a una con un mismo ejemplo numérico que puedes seguir de principio a fin.</p>
+      </div>
+    </div>
+
+    <div class="example-ref-box">
+      <h4>Ciudad Ejemplo — datos de partida</h4>
+      <div class="example-ref-grid">
+        <div><span>Población total</span><strong>200.000</strong></div>
+        <div><span>Nacimientos</span><strong>4.000</strong></div>
+        <div><span>Defunciones</span><strong>1.600</strong></div>
+        <div><span>Defunciones de menores de 1 año</span><strong>40</strong></div>
+        <div><span>Inmigrantes</span><strong>1.200</strong></div>
+        <div><span>Emigrantes</span><strong>800</strong></div>
+        <div><span>Mujeres de 15 a 49 años</span><strong>50.000</strong></div>
+        <div><span>Población de 0 a 14 años</span><strong>50.000</strong></div>
+        <div><span>Población de 15 a 64 años</span><strong>125.000</strong></div>
+        <div><span>Población de 65 años o más</span><strong>25.000</strong></div>
+      </div>
+      <p class="disclaimer" style="margin-top:12px;">Usamos siempre estos mismos datos en los ejemplos de cada tarjeta, para que puedas comprobar tú mismo cada cálculo con lápiz y papel.</p>
+    </div>
+
+    <div class="formula-cards">
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">01</span>
+        <h3>Tasa de natalidad</h3>
+        <p class="formula-card-desc">Número de nacidos vivos por cada 1.000 habitantes en un año. Es el principal motor del crecimiento de la población.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Nacimientos</span><span class="den">Población total</span></div>
+          <span class="formula-mult">× 1000</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>4.000 ÷ 200.000 × 1000 = <strong>20 ‰</strong></div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">02</span>
+        <h3>Tasa de mortalidad</h3>
+        <p class="formula-card-desc">Número de fallecidos por cada 1.000 habitantes en un año.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Defunciones</span><span class="den">Población total</span></div>
+          <span class="formula-mult">× 1000</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>1.600 ÷ 200.000 × 1000 = <strong>8 ‰</strong></div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">03</span>
+        <h3>Crecimiento vegetativo (o natural)</h3>
+        <p class="formula-card-desc">Diferencia entre nacimientos y defunciones. Indica si la población crece o decrece por dinámica natural, sin contar las migraciones.</p>
+        <div class="formula">
+          <span class="formula-plain">Natalidad − Mortalidad</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>20 ‰ − 8 ‰ = <strong>12 ‰</strong> &nbsp;(o bien 4.000 − 1.600 = 2.400 personas)</div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">04</span>
+        <h3>Tasa de migración neta</h3>
+        <p class="formula-card-desc">Diferencia entre las personas que llegan y las que se van, por cada 1.000 habitantes.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Inmigrantes − Emigrantes</span><span class="den">Población total</span></div>
+          <span class="formula-mult">× 1000</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>(1.200 − 800) ÷ 200.000 × 1000 = <strong>2 ‰</strong></div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">05</span>
+        <h3>Tasa de crecimiento real</h3>
+        <p class="formula-card-desc">Crecimiento total de la población: suma la dinámica natural (nacimientos y defunciones) y las migraciones.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Nac. − Def. + Inm. − Emi.</span><span class="den">Población total</span></div>
+          <span class="formula-mult">× 1000</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>12 ‰ + 2 ‰ = <strong>14 ‰</strong></div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">06</span>
+        <h3>Tasa de mortalidad infantil</h3>
+        <p class="formula-card-desc">Fallecidos antes de cumplir un año por cada 1.000 nacidos vivos. Es uno de los indicadores más sensibles del nivel sanitario y de desarrollo de un país.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Def. de menores de 1 año</span><span class="den">Nacimientos</span></div>
+          <span class="formula-mult">× 1000</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>40 ÷ 4.000 × 1000 = <strong>10 ‰</strong></div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">07</span>
+        <h3>Tasa de fecundidad general</h3>
+        <p class="formula-card-desc">Nacimientos por cada 1.000 mujeres en edad fértil (15-49 años). Es más precisa que la natalidad porque solo tiene en cuenta a la población que puede tener hijos.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Nacimientos</span><span class="den">Mujeres de 15 a 49 años</span></div>
+          <span class="formula-mult">× 1000</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>4.000 ÷ 50.000 × 1000 = <strong>80 ‰</strong></div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">08</span>
+        <h3>Índice de envejecimiento</h3>
+        <p class="formula-card-desc">Compara el peso de la población mayor con el de la población infantil. Un valor superior a 100 indica que hay más personas mayores que niños.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Población de 65 años o más</span><span class="den">Población de 0 a 14 años</span></div>
+          <span class="formula-mult">× 100</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>25.000 ÷ 50.000 × 100 = <strong>50</strong></div>
+      </div>
+
+      <div class="formula-card">
+        <span class="formula-card-eyebrow">09</span>
+        <h3>Tasa de dependencia</h3>
+        <p class="formula-card-desc">Personas "dependientes" (que no suelen trabajar por su edad) por cada 100 personas en edad activa.</p>
+        <div class="formula">
+          <div class="formula-frac"><span class="num">Pob. 0-14 + Pob. 65 y más</span><span class="den">Población de 15 a 64 años</span></div>
+          <span class="formula-mult">× 100</span>
+        </div>
+        <div class="formula-worked"><span class="formula-worked-label">Con los datos de Ciudad Ejemplo:</span>(50.000 + 25.000) ÷ 125.000 × 100 = <strong>60 %</strong></div>
+      </div>
+
+    </div>
+
+    <p class="disclaimer" style="margin-top:20px;">Estas son las tasas que calcula automáticamente la pestaña "Resultados" a partir de los datos que introduzcas en "Datos". Los símbolos ‰ (tanto por mil) y % (tanto por cien) indican la unidad de cada tasa.</p>
+  </section>
+  </div>
+
+  <div class="subtab-panel" data-subtabpanel="pb-sources">
+  <section class="panel pb2">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg>Fuentes de datos fiables</h2>
+        <p>Estadísticas oficiales para rellenar la tabla de datos con cifras reales de cualquier país o época.</p>
+      </div>
+    </div>
+    <div class="sources-grid">
+      <div class="source-card">
+        <h4>INE — Instituto Nacional de Estadística (España)</h4>
+        <p>Cifras de población, nacimientos, defunciones e indicadores demográficos básicos de España y sus comunidades autónomas y provincias.</p>
+        <a href="https://www.ine.es/dyngs/INEbase/es/categoria.htm?c=Estadistica_P&cid=1254734710984" target="_blank" rel="noopener noreferrer">Ir a INE · Demografía y población <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg></a>
+      </div>
+      <div class="source-card">
+        <h4>Eurostat</h4>
+        <p>Base de datos de demografía de la Unión Europea: natalidad, mortalidad, migraciones y estructura por edades de todos los países miembros.</p>
+        <a href="https://ec.europa.eu/eurostat/web/population-demography/demography-population-stock-balance/database" target="_blank" rel="noopener noreferrer">Ir a Eurostat · Población y demografía <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg></a>
+      </div>
+      <div class="source-card">
+        <h4>Naciones Unidas — World Population Prospects</h4>
+        <p>Series históricas (desde 1950) y proyecciones de población, natalidad, mortalidad y estructura por edades de todos los países del mundo.</p>
+        <a href="https://population.un.org/wpp/" target="_blank" rel="noopener noreferrer">Ir a UN World Population Prospects <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg></a>
+      </div>
+      <div class="source-card">
+        <h4>World Bank Open Data</h4>
+        <p>Indicadores demográficos comparables entre países (natalidad, mortalidad, fecundidad, esperanza de vida) descargables en hojas de cálculo.</p>
+        <a href="https://data.worldbank.org/indicator/SP.POP.TOTL" target="_blank" rel="noopener noreferrer">Ir a World Bank Open Data <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg></a>
+      </div>
+      <div class="source-card">
+        <h4>PopulationPyramid.net</h4>
+        <p>Pirámides de población interactivas de todos los países del mundo, de 1950 a 2100, con los datos numéricos de cada grupo de edad — muy útil también para la Parte 1.</p>
+        <a href="https://www.populationpyramid.net/" target="_blank" rel="noopener noreferrer">Ir a PopulationPyramid.net <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg></a>
+      </div>
+      <div class="source-card">
+        <h4>Our World in Data</h4>
+        <p>Gráficos y datos descargables sobre la transición demográfica, la natalidad, la mortalidad y el crecimiento de la población a muy largo plazo.</p>
+        <a href="https://ourworldindata.org/population-growth" target="_blank" rel="noopener noreferrer">Ir a Our World in Data · Población <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg></a>
+      </div>
+    </div>
+    <p class="disclaimer" style="margin-top:18px;">Estos enlaces llevan a portales oficiales o de referencia externos a esta aplicación; sus contenidos y disponibilidad dependen de cada organismo.</p>
+  </section>
+  </div>
+
+  <div class="subtab-panel" data-subtabpanel="pb-compare">
+  <section class="panel pb2">
+    <div class="panel-head">
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v18"/><path d="M16 3v18"/><path d="M3 8h5"/><path d="M3 16h5"/><path d="M16 8h5"/><path d="M16 16h5"/></svg>Comparar dos países o series</h2>
+        <p>Elige dos series (un ejemplo de referencia o una de tus series guardadas) para comparar su evolución completa o un año concreto de cada una.</p>
+      </div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4>País / serie A</h4>
+        <select id="cmpASelect"></select>
+        <div class="compare-mode">
+          <label><input type="radio" name="cmpAMode" value="all" checked> Ver todos los años</label>
+          <label><input type="radio" name="cmpAMode" value="single"> Ver solo un año:
+            <select id="cmpAYear" disabled></select>
+          </label>
+        </div>
+      </div>
+
+      <button type="button" class="compare-swap" id="btnCompareSwap" aria-label="Intercambiar A y B">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/></svg>
+      </button>
+
+      <div class="compare-card">
+        <h4>País / serie B</h4>
+        <select id="cmpBSelect"></select>
+        <div class="compare-mode">
+          <label><input type="radio" name="cmpBMode" value="all" checked> Ver todos los años</label>
+          <label><input type="radio" name="cmpBMode" value="single"> Ver solo un año:
+            <select id="cmpBYear" disabled></select>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare-results" id="compareResults">
+      <p class="compare-empty" id="compareEmpty">Elige una serie para el país A y otra para el país B.</p>
+    </div>
+  </section>
+  </div>
+  </div>
+
+  <footer>
+    Herramienta creada para el aula de Geografía. Los datos se procesan en tu propio navegador: no se envían ni se guardan en ningún servidor. Hay 32 ejemplos de pirámides y 32 series de tasas (8 países con dos años, para ver su evolución, y 24 países más con un año reciente), cubriendo Europa, África, América y Asia/Oceanía. Los ejemplos de pirámides reparten la población en grupos de 5 años de forma aproximada, ajustada para que los grandes grupos (0-14, 15-64, 65+) y el año coincidan con los perfiles demográficos nacionales más recientes disponibles (Wikipedia / CIA World Factbook / ONU, según el país); no son censos exactos grupo a grupo. Los años de tasas están tomados de archivos históricos del CIA World Factbook cuando fue posible, y en el resto son una estimación razonada a partir de series de la ONU y el Banco Mundial. La serie de España 1900-2023 es una reconstrucción aproximada a partir de fuentes del INE y series históricas contrastadas. Ninguna de las clasificaciones o tasas sustituye un análisis demográfico riguroso.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     SHARED HELPERS
+  =============================================================*/
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function genId(){ return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function fmt(n){ return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('es-ES', {maximumFractionDigits:1}) : '—'; }
+  function fmtInt(n){ return (typeof n === 'number' && isFinite(n)) ? Math.round(n).toLocaleString('es-ES') : '—'; }
+
+  function downloadJSON(payload, filename){
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function printSection(part){
+    document.body.classList.add('print-' + part);
+    window.print();
+    setTimeout(function(){ document.body.classList.remove('print-' + part); }, 600);
+  }
+
+  /* ============================================================
+     PART A — POPULATION PYRAMID
+  =============================================================*/
+  var AGE_BANDS = ["0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+                    "40-44","45-49","50-54","55-59","60-64","65-69","70-74","75-79","80-84","85+"];
+  var NB = AGE_BANDS.length;
+
+  var PYR_EXAMPLES = [
+    { id:'niger', name:'Níger', year:2022, group:'progresiva',
+      M:[95700,81400,69100,38500,32700,27800,23500,19900,16800,14200,12100,10100,8600,2700,2200,1900,1600,1400],
+      F:[91300,80500,70900,41100,36200,32000,28100,24700,21800,19200,16900,14800,13000,4200,3700,3200,2800,2500] },
+    { id:'uganda', name:'Uganda', year:2022, group:'progresiva',
+      M:[95400,80100,67200,43800,36700,30700,25700,21500,18000,15100,12600,10500,8800,2500,2100,1700,1400,1200],
+      F:[91000,79300,69100,46800,40700,35500,30900,26800,23300,20300,17600,15300,13300,3900,3400,2900,2500,2200] },
+    { id:'india', name:'India', year:2023, group:'estancada',
+      M:[41400,43000,44500,36100,35300,34600,33900,33200,32500,28800,25200,21700,18400,9200,6500,4500,3200,2200],
+      F:[39500,42600,45800,38500,39200,40000,40700,41400,42100,38700,35200,31600,27800,14500,10600,7800,5700,4100] },
+    { id:'brasil', name:'Brasil', year:2024, group:'estancada',
+      M:[31600,32800,34000,37100,36400,35700,34900,34200,33500,29600,25900,22300,18900,14700,10300,7200,5100,3600],
+      F:[30100,32500,35000,39700,40400,41100,41900,42600,43300,39900,36300,32500,28600,23200,16900,12400,9000,6600] },
+    { id:'mexico', name:'México', year:2024, group:'estancada',
+      M:[37500,39000,40400,36600,35900,35200,34500,33700,33000,29200,25600,22000,18600,11000,7800,5400,3800,2700],
+      F:[35800,38600,41500,39100,39900,40600,41300,42000,42700,39300,35800,32100,28200,17400,12700,9300,6800,5000] },
+    { id:'italia', name:'Italia', year:2024, group:'regresiva',
+      M:[20500,21600,22600,27400,27700,28000,28200,28400,29100,28500,27900,27200,26600,35500,22900,14700,9500,6100],
+      F:[19600,21400,23200,29300,30800,32300,33800,35400,37700,38400,39000,39600,40300,56000,37500,25100,16800,11300] },
+    { id:'japon', name:'Japón', year:2024, group:'regresiva',
+      M:[17400,18300,19100,26600,26900,27200,27400,27600,26500,25900,25400,24800,24200,51300,29000,16400,9300,5200],
+      F:[16500,18100,19700,28400,29900,31400,32900,34400,34300,34900,35500,36100,36700,80900,47600,28000,16500,9700] },
+    { id:'espana', name:'España', year:2025, group:'regresiva',
+      M:[20200,21300,22300,28200,28500,28800,29100,29300,30800,30100,29500,28800,28100,33900,20500,12400,7500,4500],
+      F:[19300,21100,22900,30200,31700,33300,34900,36500,39900,40600,41200,41900,42600,53500,33700,21200,13400,8400] },
+    { id:'alemania', name:'Alemania', year:2024, group:'regresiva',
+      M:[22100, 23300, 24400, 26900, 27200, 27500, 27700, 27900, 28600, 28000, 27300, 26700, 26100, 38500, 23300, 14100, 8500, 5100],
+      F:[21100, 23100, 25100, 28800, 30200, 31700, 33200, 34800, 37000, 37700, 38300, 38900, 39500, 60700, 38200, 24000, 15100, 9500] },
+    { id:'francia', name:'Francia', year:2024, group:'regresiva',
+      M:[27000, 28400, 29700, 26200, 26500, 26800, 27000, 27200, 27900, 27300, 26700, 26100, 25500, 36000, 21800, 13200, 7900, 4800],
+      F:[25700, 28100, 30600, 28000, 29500, 30900, 32400, 33900, 36100, 36700, 37300, 37900, 38600, 56700, 35700, 22500, 14200, 8900] },
+    { id:'reinounido', name:'Reino Unido', year:2024, group:'regresiva',
+      M:[27400, 28800, 30100, 27600, 27900, 28200, 28400, 28600, 29300, 28700, 28000, 27400, 26800, 30500, 18500, 11200, 6700, 4100],
+      F:[26100, 28500, 31000, 29500, 31000, 32500, 34100, 35700, 38000, 38600, 39300, 39900, 40500, 48100, 30300, 19100, 12000, 7600] },
+    { id:'polonia', name:'Polonia', year:2024, group:'regresiva',
+      M:[23300, 24500, 25600, 27900, 28200, 28500, 28800, 29000, 29700, 29000, 28400, 27700, 27100, 33500, 20200, 12200, 7400, 4500],
+      F:[22200, 24200, 26300, 29800, 31400, 32900, 34500, 36100, 38400, 39100, 39700, 40400, 41000, 52800, 33200, 20900, 13200, 8300] },
+    { id:'suecia', name:'Suecia', year:2024, group:'regresiva',
+      M:[28200, 29700, 31000, 26800, 27100, 27400, 27600, 27800, 28500, 27900, 27200, 26600, 26000, 32700, 19800, 11900, 7200, 4400],
+      F:[26900, 29400, 31900, 28700, 30100, 31600, 33100, 34700, 36900, 37500, 38100, 38800, 39400, 51500, 32400, 20400, 12800, 8100] },
+    { id:'portugal', name:'Portugal', year:2024, group:'regresiva',
+      M:[20200, 21300, 22300, 27200, 27500, 27700, 28000, 28200, 28900, 28200, 27600, 27000, 26300, 39500, 23900, 14400, 8700, 5300],
+      F:[19300, 21100, 22900, 29000, 30500, 32000, 33500, 35100, 37400, 38000, 38600, 39300, 39900, 62200, 39200, 24700, 15500, 9800] },
+    { id:'nigeria', name:'Nigeria', year:2022, group:'progresiva',
+      M:[101800, 85900, 72500, 39100, 33000, 27800, 23400, 19700, 16600, 14000, 11700, 9900, 8300, 3400, 2800, 2400, 2000, 1700],
+      F:[97100, 85100, 74600, 41800, 36600, 32100, 28100, 24500, 21500, 18800, 16400, 14400, 12500, 5300, 4700, 4100, 3600, 3100] },
+    { id:'etiopia', name:'Etiopía', year:2021, group:'progresiva',
+      M:[78800, 66500, 56100, 49100, 41400, 34900, 29400, 24700, 20800, 17500, 14700, 12400, 10400, 3600, 3000, 2500, 2100, 1800],
+      F:[75100, 65800, 57700, 52500, 46000, 40200, 35200, 30800, 27000, 23600, 20600, 18000, 15700, 5700, 4900, 4300, 3800, 3300] },
+    { id:'egipto', name:'Egipto', year:2024, group:'progresiva',
+      M:[61200, 51700, 43600, 56100, 47300, 39800, 33500, 28200, 23800, 20000, 16800, 14100, 11900, 4500, 3800, 3200, 2700, 2200],
+      F:[58400, 51200, 44900, 59900, 52500, 45900, 40200, 35200, 30800, 26900, 23500, 20600, 18000, 7100, 6200, 5400, 4700, 4100] },
+    { id:'rdcongo', name:'R.D. Congo', year:2021, group:'progresiva',
+      M:[91300, 77100, 65000, 44500, 37500, 31600, 26600, 22400, 18900, 15900, 13300, 11200, 9400, 2500, 2100, 1800, 1500, 1300],
+      F:[87100, 76300, 66900, 47500, 41600, 36400, 31900, 27900, 24400, 21300, 18700, 16300, 14300, 4000, 3500, 3000, 2700, 2300] },
+    { id:'kenia', name:'Kenia', year:2022, group:'progresiva',
+      M:[72900, 61500, 51900, 51300, 43200, 36400, 30700, 25800, 21700, 18300, 15400, 12900, 10900, 4100, 3400, 2900, 2400, 2000],
+      F:[69500, 60900, 53400, 54800, 48000, 42000, 36800, 32200, 28200, 24600, 21500, 18800, 16400, 6500, 5700, 4900, 4300, 3800] },
+    { id:'sudafrica', name:'Sudáfrica', year:2024, group:'estancada',
+      M:[46400, 48200, 50000, 34800, 34100, 33500, 32800, 32100, 31400, 27800, 24300, 21000, 17700, 8100, 5700, 4000, 2800, 2000],
+      F:[44200, 47800, 51400, 37200, 37900, 38600, 39300, 40000, 40700, 37400, 34000, 30500, 26900, 12700, 9300, 6800, 5000, 3600] },
+    { id:'argentina', name:'Argentina', year:2023, group:'estancada',
+      M:[32400, 33700, 34900, 36200, 35500, 34700, 34000, 33300, 32600, 28900, 25200, 21800, 18400, 16400, 11500, 8100, 5700, 4000],
+      F:[30900, 33300, 35900, 38700, 39400, 40100, 40800, 41500, 42200, 38800, 35300, 31700, 27900, 25900, 19000, 13900, 10100, 7400] },
+    { id:'eeuu', name:'Estados Unidos', year:2023, group:'regresiva',
+      M:[28800, 30300, 31700, 27300, 27600, 27900, 28200, 28400, 29100, 28400, 27800, 27100, 26500, 30000, 18200, 11000, 6600, 4000],
+      F:[27500, 30000, 32600, 29200, 30700, 32200, 33800, 35300, 37600, 38300, 38900, 39500, 40200, 47400, 29800, 18800, 11800, 7400] },
+    { id:'canada', name:'Canadá', year:2022, group:'regresiva',
+      M:[25500, 26800, 28000, 28000, 28400, 28600, 28900, 29100, 29800, 29100, 28500, 27800, 27200, 30800, 18600, 11300, 6800, 4100],
+      F:[24300, 26500, 28800, 30000, 31500, 33000, 34600, 36200, 38600, 39200, 39900, 40500, 41200, 48600, 30600, 19300, 12100, 7600] },
+    { id:'colombia', name:'Colombia', year:2024, group:'estancada',
+      M:[39500, 41000, 42500, 34200, 33600, 32900, 32200, 31500, 30900, 27300, 23900, 20600, 17400, 15400, 10800, 7600, 5300, 3700],
+      F:[37600, 40600, 43700, 36600, 37300, 37900, 38600, 39300, 40000, 36800, 33500, 30000, 26400, 24200, 17700, 12900, 9500, 6900] },
+    { id:'peru', name:'Perú', year:2023, group:'estancada',
+      M:[39600, 41100, 42600, 35400, 34700, 34000, 33300, 32600, 31900, 28200, 24700, 21300, 18000, 12400, 8700, 6100, 4300, 3000],
+      F:[37700, 40700, 43800, 37800, 38500, 39200, 39900, 40600, 41300, 38000, 34600, 31000, 27300, 19600, 14300, 10500, 7600, 5600] },
+    { id:'chile', name:'Chile', year:2024, group:'estancada',
+      M:[30900, 32100, 33300, 35900, 35200, 34500, 33800, 33100, 32400, 28700, 25100, 21600, 18300, 18300, 12900, 9000, 6300, 4400],
+      F:[29500, 31800, 34200, 38400, 39100, 39800, 40500, 41200, 41900, 38600, 35100, 31500, 27700, 28900, 21100, 15400, 11300, 8200] },
+    { id:'china', name:'China', year:2023, group:'estancada',
+      M:[26600, 27600, 28600, 37100, 36400, 35600, 34900, 34200, 33400, 29600, 25900, 22300, 18900, 19000, 13400, 9400, 6600, 4600],
+      F:[25300, 27300, 29400, 39600, 40400, 41100, 41800, 42600, 43300, 39800, 36200, 32500, 28600, 30000, 21900, 16000, 11700, 8600] },
+    { id:'indonesia', name:'Indonesia', year:2022, group:'estancada',
+      M:[37600, 39100, 40500, 37800, 37000, 36300, 35600, 34800, 34100, 30100, 26400, 22700, 19200, 8000, 5600, 4000, 2800, 1900],
+      F:[35800, 38700, 41600, 40400, 41100, 41900, 42600, 43400, 44100, 40600, 36900, 33100, 29100, 12600, 9200, 6800, 4900, 3600] },
+    { id:'pakistan', name:'Pakistán', year:2023, group:'progresiva',
+      M:[73300, 61800, 52200, 50900, 42900, 36200, 30500, 25700, 21600, 18200, 15300, 12800, 10800, 4300, 3600, 3000, 2500, 2100],
+      F:[69800, 61200, 53700, 54400, 47700, 41700, 36500, 32000, 28000, 24500, 21400, 18700, 16300, 6800, 5900, 5200, 4500, 3900] },
+    { id:'filipinas', name:'Filipinas', year:2021, group:'estancada',
+      M:[48300, 50200, 52000, 34300, 33600, 33000, 32300, 31600, 30900, 27400, 23900, 20600, 17500, 7800, 5500, 3900, 2700, 1900],
+      F:[46100, 49700, 53500, 36700, 37300, 38000, 38700, 39400, 40000, 36800, 33500, 30100, 26500, 12300, 9000, 6600, 4800, 3500] },
+    { id:'coreasur', name:'Corea del Sur', year:2024, group:'regresiva',
+      M:[18000, 18900, 19800, 29900, 30300, 30600, 30800, 31000, 31800, 31100, 30400, 29700, 29000, 31300, 19000, 11500, 6900, 4200],
+      F:[17200, 18700, 20400, 32000, 33600, 35300, 36900, 38700, 41200, 41900, 42600, 43300, 44000, 49400, 31100, 19600, 12300, 7800] },
+    { id:'australia', name:'Australia', year:2023, group:'regresiva',
+      M:[28700, 30100, 31500, 27600, 27900, 28200, 28400, 28600, 29300, 28700, 28000, 27400, 26800, 29200, 17700, 10700, 6500, 3900],
+      F:[27300, 29900, 32500, 29500, 31000, 32500, 34100, 35700, 38000, 38600, 39300, 39900, 40500, 46100, 29000, 18300, 11500, 7200] },
+  ];
+  var PYR_GROUP_META = {
+    progresiva:{ title:'Progresiva (expansiva)', color:'var(--young)' },
+    estancada:{ title:'Estancada (transición)', color:'var(--ink-soft)' },
+    regresiva:{ title:'Regresiva (envejecida)', color:'var(--old)' }
+  };
+
+  var pyrTdM = [], pyrTdF = [];
+  var pyrChart = null;
+  var pyrDebounce = null;
+  var pyrSaved = [];
+  var PYR_STORAGE_KEY = 'demografia_piramides_v1';
+
+  (function buildPyrTable(){
+    var tbody = document.getElementById('pyrTableBody');
+    for(var i=0;i<NB;i++){
+      var tr = document.createElement('tr');
+      var tdLabel = document.createElement('td');
+      tdLabel.className = 'rowlabel';
+      tdLabel.textContent = AGE_BANDS[i];
+      tr.appendChild(tdLabel);
+
+      var tdM = document.createElement('td');
+      tdM.className = 'col-m';
+      var inM = document.createElement('input');
+      inM.type = 'number'; inM.min = '0'; inM.inputMode = 'numeric'; inM.id = 'pm-'+i;
+      inM.setAttribute('aria-label', 'Hombres de ' + AGE_BANDS[i] + ' años');
+      tdM.appendChild(inM); tr.appendChild(tdM); pyrTdM.push(tdM);
+
+      var tdF = document.createElement('td');
+      tdF.className = 'col-f';
+      var inF = document.createElement('input');
+      inF.type = 'number'; inF.min = '0'; inF.inputMode = 'numeric'; inF.id = 'pf-'+i;
+      inF.setAttribute('aria-label', 'Mujeres de ' + AGE_BANDS[i] + ' años');
+      tdF.appendChild(inF); tr.appendChild(tdF); pyrTdF.push(tdF);
+
+      tbody.appendChild(tr);
+    }
+  })();
+
+  function pyrReadRow(prefix){
+    var arr = [];
+    for(var i=0;i<NB;i++){
+      var raw = document.getElementById(prefix+'-'+i).value;
+      var v = parseFloat(raw);
+      arr.push(isNaN(v) ? null : v);
+    }
+    return arr;
+  }
+  function pyrFillRow(prefix, values){
+    for(var i=0;i<NB;i++){ document.getElementById(prefix+'-'+i).value = values[i]; }
+  }
+
+  function pyrOnInput(){
+    if(pyrDebounce) clearTimeout(pyrDebounce);
+    pyrDebounce = setTimeout(pyrUpdate, 250);
+  }
+  for(var i=0;i<NB;i++){
+    document.getElementById('pm-'+i).addEventListener('input', pyrOnInput);
+    document.getElementById('pf-'+i).addEventListener('input', pyrOnInput);
+  }
+  document.getElementById('pyrPlace').addEventListener('input', pyrOnInput);
+
+  (function buildPyrExamplesGallery(){
+    var wrap = document.getElementById('pyrExamplesWrap');
+    var intro = document.createElement('p');
+    intro.className = 'saved-empty';
+    intro.style.marginBottom = '10px';
+    intro.textContent = 'Ejemplos de referencia, con datos reales aproximados de cada tipo de pirámide (fuente: perfiles demográficos nacionales, ver disclaimer al pie).';
+    wrap.appendChild(intro);
+    ['progresiva','estancada','regresiva'].forEach(function(g, gi){
+      var meta = PYR_GROUP_META[g];
+      var examplesInGroup = PYR_EXAMPLES.filter(function(ex){ return ex.group === g; });
+      if(!examplesInGroup.length) return;
+      var details = document.createElement('details');
+      details.className = 'examples-details';
+      if(gi === 0) details.open = true;
+      var summary = document.createElement('summary');
+      var dotLead = document.createElement('span'); dotLead.className='dot-lead'; dotLead.style.background = meta.color;
+      var summaryText = document.createElement('span'); summaryText.textContent = meta.title;
+      var count = document.createElement('span'); count.className='count-badge'; count.textContent = examplesInGroup.length;
+      var chevron = document.createElement('span'); chevron.className='chevron';
+      chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      summary.appendChild(dotLead); summary.appendChild(summaryText); summary.appendChild(count); summary.appendChild(chevron);
+      details.appendChild(summary);
+      var chips = document.createElement('div');
+      chips.className = 'examples-chips';
+      examplesInGroup.forEach(function(ex){
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'example-chip';
+        var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background = meta.color;
+        var text = document.createElement('span'); text.className='chip-text';
+        text.innerHTML = '<strong>' + escapeHtml(ex.name) + ' (' + ex.year + ')</strong><span>' + escapeHtml(meta.title) + '</span>';
+        btn.appendChild(dot); btn.appendChild(text);
+        btn.addEventListener('click', function(){ loadPyrExample(ex); });
+        chips.appendChild(btn);
+      });
+      details.appendChild(chips);
+      wrap.appendChild(details);
+    });
+  })();
+
+  function loadPyrExample(ex){
+    pyrFillRow('pm', ex.M);
+    pyrFillRow('pf', ex.F);
+    document.getElementById('pyrPlace').value = ex.name + ', ' + ex.year;
+    pyrUpdate();
+  }
+
+  document.getElementById('btnPyrClear').addEventListener('click', function(){
+    pyrFillRow('pm', Array(NB).fill(''));
+    pyrFillRow('pf', Array(NB).fill(''));
+    document.getElementById('pyrPlace').value = '';
+    pyrUpdate();
+  });
+  document.getElementById('btnPyrPrint').addEventListener('click', function(){ printSection('a'); });
+
+
+  function pyrAnalyze(M, F){
+    var total = M.reduce(function(a,b){return a+b;},0) + F.reduce(function(a,b){return a+b;},0);
+    function sumRange(arr,a,b){ var s=0; for(var i=a;i<=b;i++) s+=arr[i]; return s; }
+    var pob014 = sumRange(M,0,2)+sumRange(F,0,2);
+    var pob1564 = sumRange(M,3,12)+sumRange(F,3,12);
+    var pob65 = sumRange(M,13,17)+sumRange(F,13,17);
+    var pct014 = total? pob014/total*100 : 0;
+    var pct1564 = total? pob1564/total*100 : 0;
+    var pct65 = total? pob65/total*100 : 0;
+    var ienv = pob014>0 ? pob65/pob014*100 : null;
+    var tdep = pob1564>0 ? (pob014+pob65)/pob1564*100 : null;
+    var totalM = M.reduce(function(a,b){return a+b;},0);
+    var totalF = F.reduce(function(a,b){return a+b;},0);
+    var razon = totalF>0 ? totalM/totalF*100 : null;
+
+    var tipo, tipoLabel, descripcion, vegetacionPais;
+    var ienvSafe = (ienv===null) ? 0 : ienv;
+    if(ienvSafe < 35 && pct014 > 30){
+      tipo = 'progresiva';
+      tipoLabel = 'progresiva (expansiva)';
+      descripcion = 'tiene forma de pagoda: base ancha y cúspide muy estrecha. La proporción de población joven (0-14 años) es muy alta porque la natalidad es elevada, lo que hace que la población siga creciendo.';
+      vegetacionPais = 'Es típica de países poco desarrollados, con una población joven que seguirá creciendo en las próximas décadas.';
+    } else if(ienvSafe > 90){
+      tipo = 'regresiva';
+      tipoLabel = 'regresiva (envejecida)';
+      descripcion = 'tiene forma de urna o bulbo: base estrecha (pocos nacimientos recientes) y un ensanchamiento en las edades adultas y maduras, herencia de generaciones más numerosas nacidas décadas atrás. La baja natalidad y la elevada esperanza de vida producen un crecimiento vegetativo próximo a cero o negativo.';
+      vegetacionPais = 'Es característica de países desarrollados y muy envejecidos, cuya población tiende a estancarse o a reducirse.';
+    } else {
+      tipo = 'estancada';
+      tipoLabel = 'estancada (en transición)';
+      descripcion = 'tiene forma de tonel: una base algo más estrecha que el cuerpo central de la pirámide. La proporción de población adulta (15-64 años) es alta, y la natalidad ya se ha moderado, por lo que el crecimiento de la población es reducido.';
+      vegetacionPais = 'Es propia de países en transición demográfica, a medio camino entre el crecimiento acelerado y el estancamiento.';
+    }
+
+    return { total:total, pob014:pob014, pob1564:pob1564, pob65:pob65, pct014:pct014, pct1564:pct1564, pct65:pct65,
+      ienv:ienv, tdep:tdep, razon:razon, totalM:totalM, totalF:totalF, tipo:tipo, tipoLabel:tipoLabel,
+      descripcion:descripcion, vegetacionPais:vegetacionPais };
+  }
+
+  function pyrRenderChart(M, F){
+    var bandsRev = AGE_BANDS.slice().reverse();
+    var Mrev = M.slice().reverse();
+    var Frev = F.slice().reverse();
+    var total = M.reduce(function(a,b){return a+b;},0) + F.reduce(function(a,b){return a+b;},0);
+    var Mpct = Mrev.map(function(v){ return total? v/total*100 : 0; });
+    var Fpct = Frev.map(function(v){ return total? v/total*100 : 0; });
+    var maxAbs = Math.max.apply(null, Mrev.concat(Frev)) * 1.08;
+    if(maxAbs <= 0) maxAbs = 1;
+
+    if(!pyrChart){
+      var ctx = document.getElementById('pyrChart').getContext('2d');
+      pyrChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: bandsRev,
+          datasets: [
+            { label:'Hombres', data: Mrev.map(function(v){ return -v; }), backgroundColor: '#2C5F8A', barPercentage:0.85, categoryPercentage:0.85 },
+            { label:'Mujeres', data: Frev, backgroundColor: '#B0416B', barPercentage:0.85, categoryPercentage:0.85 }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked:true, min:-maxAbs, max:maxAbs, ticks:{ callback:function(v){ return fmtInt(Math.abs(v)); }, font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{color:'#E3E1D4'} },
+            y: { stacked:true, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11.5} }, grid:{display:false} }
+          },
+          plugins: {
+            legend: { display:false },
+            tooltip: {
+              backgroundColor:'#182338',
+              titleFont:{ family:"'Fraunces', serif", weight:'600', size:13.5 },
+              bodyFont:{ family:"'IBM Plex Mono', monospace", size:12.5 },
+              padding:11, cornerRadius:8,
+              callbacks: {
+                label: function(item){
+                  var idx = item.dataIndex;
+                  var pct = item.datasetIndex===0 ? Mpct[idx] : Fpct[idx];
+                  var raw = Math.abs(item.raw);
+                  return item.dataset.label + ': ' + fmtInt(raw) + ' (' + pct.toFixed(1) + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    } else {
+      pyrChart.data.labels = bandsRev;
+      pyrChart.data.datasets[0].data = Mrev.map(function(v){ return -v; });
+      pyrChart.data.datasets[1].data = Frev;
+      pyrChart.options.scales.x.min = -maxAbs;
+      pyrChart.options.scales.x.max = maxAbs;
+      pyrChart.update();
+    }
+  }
+
+  function pyrRenderAnalysis(r, place){
+    var html = '<div class="analysis-grid">';
+
+    html += '<div class="analysis-block"><span class="k">1 · Localización</span><p>';
+    html += place ? ('Datos de <strong>' + escapeHtml(place) + '</strong>, con una población total analizada de ' + fmtInt(r.total) + ' personas.') : ('Población total analizada: ' + fmtInt(r.total) + ' personas.');
+    html += '</p></div>';
+
+    html += '<div class="analysis-block"><span class="k">2 · Estructura por sexos</span><p>';
+    if(r.razon !== null){
+      html += 'Hay ' + fmtInt(r.totalM) + ' hombres y ' + fmtInt(r.totalF) + ' mujeres: una razón de masculinidad de ' + r.razon.toFixed(1) + ' hombres por cada 100 mujeres. ';
+      html += r.razon >= 100 ? 'Predominan los hombres en el conjunto de la población.' : 'Predominan las mujeres en el conjunto de la población, algo habitual en pirámides envejecidas por su mayor esperanza de vida.';
+    } else {
+      html += 'No hay datos suficientes para calcular la razón de masculinidad.';
+    }
+    html += '</p></div>';
+
+    html += '<div class="analysis-block"><span class="k">3 · Estructura por edades</span><p>';
+    html += 'La población de 0 a 14 años supone el ' + r.pct014.toFixed(1) + '%, la de 15 a 64 años el ' + r.pct1564.toFixed(1) + '%, y la de 65 años o más el ' + r.pct65.toFixed(1) + '%.';
+    if(r.ienv !== null) html += ' El índice de envejecimiento (mayores de 65 por cada 100 menores de 15) es de ' + r.ienv.toFixed(1) + '.';
+    if(r.tdep !== null) html += ' La tasa de dependencia es del ' + r.tdep.toFixed(1) + '% (personas dependientes por cada 100 en edad activa).';
+    html += '</p></div>';
+
+    html += '<div class="analysis-block"><span class="k">4 · Forma de la pirámide</span><p>';
+    html += 'Por su forma, esta pirámide ' + r.descripcion;
+    html += '</p></div>';
+
+    html += '</div>';
+
+    html += '<div class="conclusion"><span class="k">5 · Conclusión</span><p>Se trata de una pirámide de tipo <strong>' + r.tipoLabel + '</strong>. ' + r.vegetacionPais + '</p></div>';
+
+    html += '<p class="disclaimer">Esta clasificación es una aproximación con fines didácticos a partir del índice de envejecimiento y el peso de cada gran grupo de edad. No sustituye un análisis demográfico riguroso.</p>';
+
+    document.getElementById('pyrAnalysisBody').innerHTML = html;
+  }
+
+  function pyrUpdate(){
+    var M = pyrReadRow('pm');
+    var F = pyrReadRow('pf');
+    var filledM = M.filter(function(v){ return v!==null; }).length;
+    var filledF = F.filter(function(v){ return v!==null; }).length;
+    var hasData = filledM>0 || filledF>0;
+
+    var chartEmpty = document.getElementById('pyrChartEmpty');
+    var analysisEmpty = document.getElementById('pyrAnalysisEmpty');
+    var fillNote = document.getElementById('pyrFillNote');
+
+    document.getElementById('pyrPrintTitle').textContent = 'Pirámide de población' + (document.getElementById('pyrPlace').value ? ' — ' + document.getElementById('pyrPlace').value : '');
+
+    if(!hasData){
+      chartEmpty.style.display = 'flex';
+      document.getElementById('pyrChart').style.visibility = 'hidden';
+      analysisEmpty.style.display = 'flex';
+      document.getElementById('pyrAnalysisBody').innerHTML = '';
+      document.getElementById('pyrAnalysisBody').appendChild(analysisEmpty);
+      fillNote.style.display = 'none';
+      return;
+    }
+    chartEmpty.style.display = 'none';
+    document.getElementById('pyrChart').style.visibility = 'visible';
+
+    if(filledM < NB || filledF < NB){
+      fillNote.style.display = 'block';
+      fillNote.textContent = 'Has completado ' + filledM + '/' + NB + ' grupos de hombres y ' + filledF + '/' + NB + ' de mujeres. Los huecos se calculan como 0.';
+    } else {
+      fillNote.style.display = 'none';
+    }
+
+    var Mf = M.map(function(v){ return v===null?0:v; });
+    var Ff = F.map(function(v){ return v===null?0:v; });
+
+    pyrRenderChart(Mf, Ff);
+    var r = pyrAnalyze(Mf, Ff);
+    pyrRenderAnalysis(r, document.getElementById('pyrPlace').value.trim());
+  }
+
+  /* ---- Pyramid save / load / export / import ---- */
+  function pyrLoadFromStorage(){
+    try{
+      var raw = localStorage.getItem(PYR_STORAGE_KEY);
+      pyrSaved = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(pyrSaved)) pyrSaved = [];
+    } catch(e){ pyrSaved = []; }
+  }
+  function pyrPersist(){
+    try{ localStorage.setItem(PYR_STORAGE_KEY, JSON.stringify(pyrSaved)); return true; }
+    catch(e){ pyrSetSaveStatus('No se ha podido guardar en este navegador (memoria llena o modo privado).', true); return false; }
+  }
+  function pyrSetSaveStatus(text, warn){
+    var el = document.getElementById('pyrSaveStatus');
+    el.textContent = text; el.className = 'save-status' + (warn?' warn':'');
+  }
+  function pyrRenderSaved(){
+    var wrap = document.getElementById('pyrSavedWrap');
+    wrap.innerHTML = '';
+    if(!pyrSaved.length){
+      var p = document.createElement('p'); p.className='saved-empty';
+      p.textContent = 'Todavía no has guardado ninguna pirámide en este dispositivo.';
+      wrap.appendChild(p); return;
+    }
+    var chips = document.createElement('div'); chips.className='examples-chips';
+    pyrSaved.forEach(function(entry){
+      var chip = document.createElement('div'); chip.className='saved-chip';
+      var mainBtn = document.createElement('button'); mainBtn.type='button'; mainBtn.className='saved-chip-main';
+      var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background='var(--gold)';
+      var text = document.createElement('span'); text.className='chip-text';
+      text.innerHTML = '<strong>'+escapeHtml(entry.name)+'</strong><span title="'+escapeHtml(entry.place||'')+'">'+escapeHtml(entry.place||'Sin etiqueta')+'</span>';
+      mainBtn.appendChild(dot); mainBtn.appendChild(text);
+      mainBtn.addEventListener('click', function(){
+        pyrFillRow('pm', entry.M); pyrFillRow('pf', entry.F);
+        document.getElementById('pyrPlace').value = entry.place || '';
+        pyrUpdate();
+        pyrSetSaveStatus('Cargada "'+entry.name+'".');
+      });
+      var delBtn = document.createElement('button'); delBtn.type='button'; delBtn.className='saved-chip-delete';
+      delBtn.setAttribute('aria-label','Eliminar '+entry.name); delBtn.textContent='×';
+      delBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(window.confirm('¿Eliminar "'+entry.name+'"?')){
+          pyrSaved = pyrSaved.filter(function(c){ return c.id!==entry.id; });
+          pyrPersist(); pyrRenderSaved();
+        }
+      });
+      chip.appendChild(mainBtn); chip.appendChild(delBtn); chips.appendChild(chip);
+    });
+    wrap.appendChild(chips);
+  }
+  document.getElementById('btnPyrSave').addEventListener('click', function(){
+    var M = pyrReadRow('pm'), F = pyrReadRow('pf');
+    if(M.filter(function(v){return v!==null;}).length===0 && F.filter(function(v){return v!==null;}).length===0){
+      pyrSetSaveStatus('Introduce antes los datos de la pirámide.', true); return;
+    }
+    var Mf = M.map(function(v){return v===null?0:v;}), Ff = F.map(function(v){return v===null?0:v;});
+    var nameInput = document.getElementById('pyrSaveName');
+    var place = document.getElementById('pyrPlace').value.trim();
+    var name = nameInput.value.trim() || place || 'Pirámide sin título';
+    var existing = pyrSaved.find(function(c){ return c.name===name; });
+    if(existing && !window.confirm('Ya existe una pirámide guardada como "'+name+'". ¿Sobrescribirla?')){
+      pyrSetSaveStatus('Guardado cancelado.', true); return;
+    }
+    var entry = { id: existing?existing.id:genId(), name:name, place:place, createdAt:new Date().toISOString(), M:Mf, F:Ff };
+    if(existing) pyrSaved = pyrSaved.map(function(c){ return c.id===entry.id?entry:c; });
+    else pyrSaved.push(entry);
+    if(pyrPersist()){ pyrSetSaveStatus('Guardada como "'+name+'".'); nameInput.value=''; pyrRenderSaved(); }
+  });
+  document.getElementById('btnPyrExport').addEventListener('click', function(){
+    if(!pyrSaved.length){ pyrSetSaveStatus('No tienes pirámides guardadas para exportar.', true); return; }
+    downloadJSON({ app:'Taller de Demografía · Pirámides', version:1, exportedAt:new Date().toISOString(), piramides:pyrSaved },
+      'piramides-' + new Date().toISOString().slice(0,10) + '.json');
+    pyrSetSaveStatus('Exportadas ' + pyrSaved.length + ' pirámide(s).');
+  });
+  document.getElementById('btnPyrImport').addEventListener('click', function(){ document.getElementById('pyrImportFile').click(); });
+  document.getElementById('pyrImportFile').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = JSON.parse(evt.target.result);
+        var incoming = Array.isArray(data) ? data : (data.piramides || []);
+        incoming = incoming.filter(function(c){ return c && Array.isArray(c.M) && Array.isArray(c.F) && c.M.length===NB && c.F.length===NB; });
+        if(!incoming.length){ pyrSetSaveStatus('El archivo no contiene pirámides válidas.', true); return; }
+        var existingIds = pyrSaved.map(function(c){return c.id;});
+        incoming.forEach(function(c){
+          if(!c.id || existingIds.indexOf(c.id)!==-1) c.id = genId();
+          if(!c.name) c.name = c.place || 'Pirámide importada';
+          pyrSaved.push(c); existingIds.push(c.id);
+        });
+        pyrPersist(); pyrRenderSaved();
+        pyrSetSaveStatus('Importadas ' + incoming.length + ' pirámide(s).');
+      } catch(err){ pyrSetSaveStatus('El archivo no tiene un formato JSON válido.', true); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  pyrLoadFromStorage();
+  pyrRenderSaved();
+  pyrUpdate();
+
+
+  /* ============================================================
+     PART B — DEMOGRAPHIC RATES & EVOLUTION
+  =============================================================*/
+  var RATE_FIELDS = ['anio','poblacion','nacimientos','defunciones','inmigrantes','emigrantes','defInfantiles','mujeres1549','pob014','pob1564','pob65'];
+  var yearRows = [];
+  var ratesLineChart = null, ratesStackChart = null;
+  var ratesDebounce = null;
+  var ratesSaved = [];
+  var RATES_STORAGE_KEY = 'demografia_tasas_v1';
+
+  var RATES_EXAMPLES = [
+    { id:'espana-serie', name:'España 1900-2023', place:'Transición demográfica española', group:'serie',
+      rows: [
+        { anio:1900, poblacion:18618000, nacimientos:614394, defunciones:539922, inmigrantes:5000, emigrantes:45000, defInfantiles:119807, mujeres1549:4375230, pob014:6330120, pob1564:11729340, pob65:558540 },
+        { anio:1940, poblacion:25757000, nacimientos:625895, defunciones:424990, inmigrantes:2000, emigrantes:55000, defInfantiles:68223, mujeres1549:6310465, pob014:8242240, pob1564:15969340, pob65:1545420 },
+        { anio:1970, poblacion:33956000, nacimientos:665538, defunciones:281835, inmigrantes:60000, emigrantes:130000, defInfantiles:18635, mujeres1549:8658780, pob014:9337900, pob1564:22241180, pob65:2376920 },
+        { anio:2000, poblacion:40500000, nacimientos:400950, defunciones:364500, inmigrantes:330000, emigrantes:60000, defInfantiles:1764, mujeres1549:9922500, pob014:5872500, pob1564:27823500, pob65:6804000 },
+        { anio:2023, poblacion:48085361, nacimientos:331789, defunciones:430845, inmigrantes:700000, emigrantes:350000, defInfantiles:863, mujeres1549:10097926, pob014:6251097, pob1564:31495911, pob65:10338353 }
+      ]
+    },
+    { id:'niger-2022', name:'Níger 2000-2022', place:'Níger', group:'progresiva', rows:[
+      { anio:2000, poblacion:10075511, nacimientos:518385, defunciones:233450, inmigrantes:12091, emigrantes:19648, defInfantiles:64746, mujeres1549:'', pob014:4836245, pob1564:5037756, pob65:201510 },
+      { anio:2022, poblacion:24484587, nacimientos:1152734, defunciones:241663, inmigrantes:36727, emigrantes:52397, defInfantiles:77014, mujeres1549:'', pob014:12384304, pob1564:11444096, pob65:656187 }
+    ]},
+    { id:'uganda-2022', name:'Uganda 2000-2022', place:'Uganda', group:'progresiva', rows:[
+      { anio:2000, poblacion:23758000, nacimientos:1116626, defunciones:415765, inmigrantes:28510, emigrantes:52268, defInfantiles:98263, mujeres1549:'', pob014:11570146, pob1564:11546388, pob65:641466 },
+      { anio:2022, poblacion:45700000, nacimientos:1870958, defunciones:229414, inmigrantes:68550, emigrantes:217532, defInfantiles:56971, mujeres1549:'', pob014:22031970, pob1564:22580370, pob65:1087660 }
+    ]},
+    { id:'india-2023', name:'India 2000-2023', place:'India', group:'estancada', rows:[
+      { anio:2000, poblacion:1056575549, nacimientos:27259649, defunciones:9192207, inmigrantes:1267891, emigrantes:1690521, defInfantiles:1853656, mujeres1549:'', pob014:368744867, pob1564:643454509, pob65:44376173 },
+      { anio:2023, poblacion:1411316000, nacimientos:22792753, defunciones:12842976, inmigrantes:2116974, emigrantes:3076669, defInfantiles:515116, mujeres1549:'', pob014:362425949, pob1564:952497168, pob65:96392883 }
+    ]},
+    { id:'brasil-2024', name:'Brasil 2001-2024', place:'Brasil', group:'estancada', rows:[
+      { anio:2001, poblacion:174468575, nacimientos:3218945, defunciones:1629536, inmigrantes:209362, emigrantes:214596, defInfantiles:118972, mujeres1549:'', pob014:49845672, pob1564:115114366, pob65:9508537 },
+      { anio:2024, poblacion:210000000, nacimientos:2394000, defunciones:1484700, inmigrantes:315000, emigrantes:354900, defInfantiles:30404, mujeres1549:'', pob014:41160000, pob1564:145950000, pob65:22890000 }
+    ]},
+    { id:'mexico-2024', name:'México 2000-2024', place:'México', group:'estancada', rows:[
+      { anio:2000, poblacion:97483412, nacimientos:2144635, defunciones:477669, inmigrantes:116980, emigrantes:555655, defInfantiles:45037, mujeres1549:'', pob014:33241843, pob1564:59367398, pob65:4874171 },
+      { anio:2024, poblacion:130000000, nacimientos:1573000, defunciones:806000, inmigrantes:195000, emigrantes:286000, defInfantiles:19033, mujeres1549:'', pob014:30290000, pob1564:89180000, pob65:10530000 }
+    ]},
+    { id:'italia-2024', name:'Italia 2000-2024', place:'Italia', group:'regresiva', rows:[
+      { anio:2000, poblacion:56942108, nacimientos:535256, defunciones:552338, inmigrantes:210686, emigrantes:68331, defInfantiles:2409, mujeres1549:'', pob014:8142721, pob1564:38208154, pob65:10591233 },
+      { anio:2024, poblacion:58934177, nacimientos:371285, defunciones:612915, inmigrantes:165015, emigrantes:88401, defInfantiles:1337, mujeres1549:'', pob014:7596615, pob1564:37464456, pob65:13873106 }
+    ]},
+    { id:'japon-2023', name:'Japón 2000-2023', place:'Japón', group:'regresiva', rows:[
+      { anio:2000, poblacion:126843000, nacimientos:1205008, defunciones:976691, inmigrantes:152212, emigrantes:152212, defInfantiles:3856, mujeres1549:'', pob014:18519078, pob1564:86380083, pob65:21943839 },
+      { anio:2023, poblacion:124400000, nacimientos:721520, defunciones:1579880, inmigrantes:278656, emigrantes:186600, defInfantiles:1371, mujeres1549:'', pob014:13559600, pob1564:74266800, pob65:36573600 }
+    ]},
+    { id:'alemania-2024', name:'Alemania 2024', place:'Alemania', group:'regresiva', rows:[
+      { anio:2024, poblacion:83577141, nacimientos:685333, defunciones:1019641, inmigrantes:250732, emigrantes:100293, defInfantiles:2159, mujeres1549:'', pob014:11617223, pob1564:52152136, pob65:19807782 }
+    ]},
+    { id:'francia-2024', name:'Francia 2024', place:'Francia', group:'regresiva', rows:[
+      { anio:2024, poblacion:68170000, nacimientos:661249, defunciones:647615, inmigrantes:156791, emigrantes:81804, defInfantiles:2380, mujeres1549:'', pob014:11561632, pob1564:41495079, pob65:15113289 }
+    ]},
+    { id:'reinounido-2024', name:'Reino Unido 2024', place:'Reino Unido', group:'regresiva', rows:[
+      { anio:2024, poblacion:69281437, nacimientos:713599, defunciones:692814, inmigrantes:284054, emigrantes:83138, defInfantiles:2854, mujeres1549:'', pob014:11916407, pob1564:44340120, pob65:13024910 }
+    ]},
+    { id:'polonia-2024', name:'Polonia 2024', place:'Polonia', group:'regresiva', rows:[
+      { anio:2024, poblacion:37489000, nacimientos:251176, defunciones:408630, inmigrantes:52485, emigrantes:44987, defInfantiles:904, mujeres1549:'', pob014:5473394, pob1564:24255383, pob65:7760223 }
+    ]},
+    { id:'suecia-2024', name:'Suecia 2024', place:'Suecia', group:'regresiva', rows:[
+      { anio:2024, poblacion:10605500, nacimientos:114858, defunciones:100328, inmigrantes:24393, emigrantes:12727, defInfantiles:264, mujeres1549:'', pob014:1878234, pob1564:6594500, pob65:2132766 }
+    ]},
+    { id:'portugal-2024', name:'Portugal 2024', place:'Portugal', group:'regresiva', rows:[
+      { anio:2024, poblacion:10749635, nacimientos:84922, defunciones:119321, inmigrantes:156945, emigrantes:12900, defInfantiles:238, mujeres1549:'', pob014:1365204, pob1564:6772270, pob65:2612161 }
+    ]},
+    { id:'nigeria-2022', name:'Nigeria 2022', place:'Nigeria', group:'progresiva', rows:[
+      { anio:2022, poblacion:218500000, nacimientos:7470515, defunciones:1900950, inmigrantes:262200, emigrantes:308085, defInfantiles:423429, mujeres1549:'', pob014:112964500, pob1564:98325000, pob65:7210500 }
+    ]},
+    { id:'etiopia-2021', name:'Etiopía 2021', place:'Etiopía', group:'progresiva', rows:[
+      { anio:2021, poblacion:110000000, nacimientos:3564000, defunciones:748000, inmigrantes:132000, emigrantes:154000, defInfantiles:122602, mujeres1549:'', pob014:44000000, pob1564:62150000, pob65:3850000 }
+    ]},
+    { id:'egipto-2024', name:'Egipto 2024', place:'Egipto', group:'progresiva', rows:[
+      { anio:2024, poblacion:116538258, nacimientos:2155958, defunciones:664268, inmigrantes:139846, emigrantes:175973, defInfantiles:32339, mujeres1549:'', pob014:36231744, pob1564:75167176, pob65:5139338 }
+    ]},
+    { id:'rdcongo-2021', name:'R.D. Congo 2021', place:'R.D. Congo', group:'progresiva', rows:[
+      { anio:2021, poblacion:95894118, nacimientos:3843436, defunciones:761399, inmigrantes:115073, emigrantes:183158, defInfantiles:233873, mujeres1549:'', pob014:44475692, pob1564:49049841, pob65:2368585 }
+    ]},
+    { id:'kenia-2022', name:'Kenia 2022', place:'Kenia', group:'progresiva', rows:[
+      { anio:2022, poblacion:51044355, nacimientos:1347061, defunciones:255732, inmigrantes:61253, emigrantes:70951, defInfantiles:37529, mujeres1549:'', pob014:18886411, pob1564:30116169, pob65:2041775 }
+    ]},
+    { id:'sudafrica-2024', name:'Sudáfrica 2024', place:'Sudáfrica', group:'estancada', rows:[
+      { anio:2024, poblacion:63000000, nacimientos:1234800, defunciones:548100, inmigrantes:119700, emigrantes:75600, defInfantiles:28277, mujeres1549:'', pob014:18144000, pob1564:41076000, pob65:3780000 }
+    ]},
+    { id:'argentina-2023', name:'Argentina 2023', place:'Argentina', group:'estancada', rows:[
+      { anio:2023, poblacion:46735004, nacimientos:462677, defunciones:355186, inmigrantes:56082, emigrantes:59821, defInfantiles:3701, mujeres1549:'', pob014:9393736, pob1564:31639598, pob65:5701670 }
+    ]},
+    { id:'eeuu-2023', name:'Estados Unidos 2023', place:'Estados Unidos', group:'regresiva', rows:[
+      { anio:2023, poblacion:339665118, nacimientos:3600450, defunciones:3090953, inmigrantes:1664359, emigrantes:407598, defInfantiles:18362, mujeres1549:'', pob014:61479386, pob1564:215347685, pob65:62838047 }
+    ]},
+    { id:'canada-2022', name:'Canadá 2022', place:'Canadá', group:'regresiva', rows:[
+      { anio:2022, poblacion:40000000, nacimientos:397600, defunciones:324800, inmigrantes:266400, emigrantes:48000, defInfantiles:1741, mujeres1549:'', pob014:6396000, pob1564:26012000, pob65:7592000 }
+    ]},
+    { id:'colombia-2024', name:'Colombia 2024', place:'Colombia', group:'estancada', rows:[
+      { anio:2024, poblacion:52695952, nacimientos:432107, defunciones:279289, inmigrantes:63235, emigrantes:416298, defInfantiles:5056, mujeres1549:'', pob014:12910508, pob1564:33778105, pob65:6007339 }
+    ]},
+    { id:'peru-2023', name:'Perú 2023', place:'Perú', group:'estancada', rows:[
+      { anio:2023, poblacion:33726000, nacimientos:414830, defunciones:161885, inmigrantes:40471, emigrantes:65765, defInfantiles:4480, mujeres1549:'', pob014:8276360, pob1564:22343475, pob65:3106165 }
+    ]},
+    { id:'chile-2024', name:'Chile 2024', place:'Chile', group:'estancada', rows:[
+      { anio:2024, poblacion:19493184, nacimientos:241715, defunciones:128655, inmigrantes:29240, emigrantes:23392, defInfantiles:1523, mujeres1549:'', pob014:3742691, pob1564:13118913, pob65:2631580 }
+    ]},
+    { id:'china-2023', name:'China 2023', place:'China', group:'estancada', rows:[
+      { anio:2023, poblacion:1404890000, nacimientos:7909531, defunciones:11295316, inmigrantes:1685868, emigrantes:1826357, defInfantiles:53468, mujeres1549:'', pob014:231525872, pob1564:974993660, pob65:198370468 }
+    ]},
+    { id:'indonesia-2022', name:'Indonesia 2022', place:'Indonesia', group:'estancada', rows:[
+      { anio:2022, poblacion:275000000, nacimientos:4213000, defunciones:1856250, inmigrantes:330000, emigrantes:525250, defInfantiles:69936, mujeres1549:'', pob014:64157500, pob1564:194480000, pob65:16362500 }
+    ]},
+    { id:'pakistan-2023', name:'Pakistán 2023', place:'Pakistán', group:'progresiva', rows:[
+      { anio:2023, poblacion:241499431, nacimientos:5433737, defunciones:1738796, inmigrantes:289799, emigrantes:772798, defInfantiles:298856, mujeres1549:'', pob014:89837788, pob1564:141518667, pob65:10142976 }
+    ]},
+    { id:'filipinas-2021', name:'Filipinas 2021', place:'Filipinas', group:'estancada', rows:[
+      { anio:2021, poblacion:112729484, nacimientos:1397846, defunciones:901836, inmigrantes:135275, emigrantes:280696, defInfantiles:33548, mujeres1549:'', pob014:33796299, pob1564:72394875, pob65:6538310 }
+    ]},
+    { id:'coreasur-2024', name:'Corea del Sur 2024', place:'Corea del Sur', group:'regresiva', rows:[
+      { anio:2024, poblacion:52081799, nacimientos:364573, defunciones:385405, inmigrantes:197911, emigrantes:62498, defInfantiles:1021, mujeres1549:'', pob014:5885243, pob1564:36144769, pob65:10051787 }
+    ]},
+    { id:'australia-2023', name:'Australia 2023', place:'Australia', group:'regresiva', rows:[
+      { anio:2023, poblacion:26000000, nacimientos:319800, defunciones:176020, inmigrantes:211380, emigrantes:31200, defInfantiles:963, mujeres1549:'', pob014:4680000, pob1564:16640000, pob65:4680000 }
+    ]}
+  ];
+  var RATES_GROUP_META = {
+    serie:{ title:'Serie histórica completa', color:'var(--gold)' },
+    progresiva:{ title:'Crecimiento elevado', color:'var(--young)' },
+    estancada:{ title:'En transición', color:'var(--ink-soft)' },
+    regresiva:{ title:'Envejecidas', color:'var(--old)' }
+  };
+
+  function blankYearRow(){
+    var r = { id: genId() };
+    RATE_FIELDS.forEach(function(f){ r[f] = ''; });
+    return r;
+  }
+
+  function renderYearsTable(){
+    var tbody = document.getElementById('yearsTableBody');
+    tbody.innerHTML = '';
+    yearRows.forEach(function(row){
+      var tr = document.createElement('tr');
+      tr.setAttribute('data-row-id', row.id);
+      RATE_FIELDS.forEach(function(field){
+        var td = document.createElement('td');
+        var input = document.createElement('input');
+        input.type = (field==='anio') ? 'number' : 'number';
+        input.step = (field==='anio') ? '1' : 'any';
+        input.min = '0';
+        input.value = row[field];
+        input.setAttribute('data-field', field);
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
+      var tdDel = document.createElement('td');
+      tdDel.className = 'rowdel';
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button'; delBtn.className = 'rowdel-btn'; delBtn.textContent = '×';
+      delBtn.setAttribute('aria-label', 'Eliminar este año');
+      delBtn.addEventListener('click', function(){
+        yearRows = yearRows.filter(function(r){ return r.id !== row.id; });
+        renderYearsTable();
+        ratesUpdate();
+      });
+      tdDel.appendChild(delBtn);
+      tr.appendChild(tdDel);
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Event delegation for the dynamic years table
+  document.getElementById('yearsTableBody').addEventListener('input', function(e){
+    var input = e.target;
+    if(input.tagName !== 'INPUT') return;
+    var tr = input.closest('tr');
+    var rowId = tr.getAttribute('data-row-id');
+    var field = input.getAttribute('data-field');
+    var row = yearRows.find(function(r){ return r.id === rowId; });
+    if(!row) return;
+    var v = input.value;
+    row[field] = (v === '') ? '' : parseFloat(v);
+    if(ratesDebounce) clearTimeout(ratesDebounce);
+    ratesDebounce = setTimeout(ratesUpdate, 250);
+  });
+
+  document.getElementById('btnAddYear').addEventListener('click', function(){
+    yearRows.push(blankYearRow());
+    renderYearsTable();
+  });
+  document.getElementById('btnRatesClear').addEventListener('click', function(){
+    yearRows = [blankYearRow()];
+    renderYearsTable();
+    ratesUpdate();
+  });
+  document.getElementById('btnRatesPrint').addEventListener('click', function(){ printSection('b'); });
+
+  (function buildRatesExamplesGallery(){
+    var wrap = document.getElementById('ratesExamplesWrap');
+    ['serie','progresiva','estancada','regresiva'].forEach(function(g, gi){
+      var examplesInGroup = RATES_EXAMPLES.filter(function(ex){ return ex.group === g; });
+      if(!examplesInGroup.length) return;
+      var meta = RATES_GROUP_META[g];
+      var details = document.createElement('details');
+      details.className = 'examples-details';
+      if(gi === 0) details.open = true;
+      var summary = document.createElement('summary');
+      var dotLead = document.createElement('span'); dotLead.className='dot-lead'; dotLead.style.background = meta.color;
+      var summaryText = document.createElement('span'); summaryText.textContent = meta.title;
+      var count = document.createElement('span'); count.className='count-badge'; count.textContent = examplesInGroup.length;
+      var chevron = document.createElement('span'); chevron.className='chevron';
+      chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      summary.appendChild(dotLead); summary.appendChild(summaryText); summary.appendChild(count); summary.appendChild(chevron);
+      details.appendChild(summary);
+      var chips = document.createElement('div'); chips.className = 'examples-chips';
+      examplesInGroup.forEach(function(ex){
+        var btn = document.createElement('button'); btn.type='button'; btn.className='example-chip';
+        var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background=meta.color;
+        var text = document.createElement('span'); text.className='chip-text';
+        text.innerHTML = '<strong>'+escapeHtml(ex.name)+'</strong><span>'+escapeHtml(ex.place)+'</span>';
+        btn.appendChild(dot); btn.appendChild(text);
+        btn.addEventListener('click', function(){ loadRatesExample(ex); });
+        chips.appendChild(btn);
+      });
+      details.appendChild(chips);
+      wrap.appendChild(details);
+    });
+  })();
+
+  function loadRatesExample(ex){
+    yearRows = ex.rows.map(function(r){ var copy = Object.assign({id:genId()}, r); return copy; });
+    renderYearsTable();
+    ratesUpdate();
+  }
+
+  function computeRatesForRow(row){
+    var pop = row.poblacion, nac = row.nacimientos, def = row.defunciones;
+    if(!pop || pop<=0 || nac==='' || def===''){ return null; }
+    var tbn = nac/pop*1000;
+    var tbm = def/pop*1000;
+    var cv = tbn - tbm;
+    var inm = (row.inmigrantes==='')?0:row.inmigrantes;
+    var emi = (row.emigrantes==='')?0:row.emigrantes;
+    var saldo = inm - emi;
+    var tasaMig = saldo/pop*1000;
+    var tcr = (nac - def + saldo)/pop*1000;
+    var imr = (row.defInfantiles!=='' && nac>0) ? (row.defInfantiles/nac*1000) : null;
+    var fec = (row.mujeres1549!=='' && row.mujeres1549>0) ? (nac/row.mujeres1549*1000) : null;
+    var ienv = (row.pob014!=='' && row.pob65!=='' && row.pob014>0) ? (row.pob65/row.pob014*100) : null;
+    var tdep = (row.pob014!=='' && row.pob65!=='' && row.pob1564!=='' && row.pob1564>0) ? ((row.pob014+row.pob65)/row.pob1564*100) : null;
+    var hasAgeGroups = (row.pob014!=='' && row.pob1564!=='' && row.pob65!=='');
+    var pct014=null, pct1564=null, pct65=null;
+    if(hasAgeGroups){
+      var totalAge = row.pob014+row.pob1564+row.pob65;
+      if(totalAge>0){ pct014=row.pob014/totalAge*100; pct1564=row.pob1564/totalAge*100; pct65=row.pob65/totalAge*100; }
+    }
+    return { anio:row.anio, tbn:tbn, tbm:tbm, cv:cv, saldo:saldo, tasaMig:tasaMig, tcr:tcr, imr:imr, fec:fec,
+      ienv:ienv, tdep:tdep, hasAgeGroups:hasAgeGroups, pct014:pct014, pct1564:pct1564, pct65:pct65 };
+  }
+
+  function renderResultsTable(results){
+    var thead = document.querySelector('#resultsTable thead');
+    var tbody = document.querySelector('#resultsTable tbody');
+    thead.innerHTML = ''; tbody.innerHTML = '';
+    var emptyMsg = document.getElementById('resultsEmpty');
+    if(!results.length){ emptyMsg.style.display='block'; return; }
+    emptyMsg.style.display = 'none';
+
+    var headRow = document.createElement('tr');
+    var thLabel = document.createElement('th'); thLabel.textContent = 'Año'; headRow.appendChild(thLabel);
+    results.forEach(function(r){ var th=document.createElement('th'); th.textContent=r.anio; headRow.appendChild(th); });
+    thead.appendChild(headRow);
+
+    var metrics = [
+      { key:'tbn', label:'Natalidad (‰)' },
+      { key:'tbm', label:'Mortalidad (‰)' },
+      { key:'cv', label:'Crec. vegetativo (‰)' },
+      { key:'tasaMig', label:'Tasa migratoria (‰)' },
+      { key:'tcr', label:'Crec. real (‰)' },
+      { key:'imr', label:'Mortalidad infantil (‰)' },
+      { key:'fec', label:'Fecundidad general (‰)' },
+      { key:'ienv', label:'Índice envejecimiento' },
+      { key:'tdep', label:'Tasa dependencia (%)' }
+    ];
+    metrics.forEach(function(m){
+      var tr = document.createElement('tr');
+      var tdL = document.createElement('td'); tdL.className='rlabel'; tdL.textContent=m.label; tr.appendChild(tdL);
+      results.forEach(function(r){
+        var td = document.createElement('td');
+        var v = r[m.key];
+        if(v===null || v===undefined){ td.textContent='—'; }
+        else{
+          td.textContent = fmt(v);
+          if(v<0) td.className='neg';
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  var ratesFillPlugin = {
+    id: 'ratesFillBetween',
+    beforeDatasetsDraw: function(chart){
+      var opts = chart.options.plugins && chart.options.plugins.ratesFillBetween;
+      if(!opts || !opts.tbn || opts.tbn.length<2) return;
+      var ctx = chart.ctx;
+      var xScale = chart.scales.x, yScale = chart.scales.y;
+      var tbn = opts.tbn, tbm = opts.tbm;
+      ctx.save();
+      for(var i=0;i<tbn.length-1;i++){
+        var x0 = xScale.getPixelForValue(i), x1 = xScale.getPixelForValue(i+1);
+        var yN0 = yScale.getPixelForValue(tbn[i]), yN1 = yScale.getPixelForValue(tbn[i+1]);
+        var yM0 = yScale.getPixelForValue(tbm[i]), yM1 = yScale.getPixelForValue(tbm[i+1]);
+        var positive = (tbn[i] + tbn[i+1]) >= (tbm[i] + tbm[i+1]);
+        ctx.fillStyle = positive ? 'rgba(62,142,126,0.28)' : 'rgba(193,68,14,0.22)';
+        ctx.beginPath();
+        ctx.moveTo(x0, yN0); ctx.lineTo(x1, yN1); ctx.lineTo(x1, yM1); ctx.lineTo(x0, yM0);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+  };
+  Chart.register(ratesFillPlugin);
+
+  function renderLineChart(results){
+    var wrapEmpty = document.getElementById('ratesLineEmpty');
+    var canvas = document.getElementById('ratesLineChart');
+    if(results.length < 2){
+      wrapEmpty.style.display = 'flex'; canvas.style.visibility = 'hidden'; return;
+    }
+    wrapEmpty.style.display = 'none'; canvas.style.visibility = 'visible';
+    var labels = results.map(function(r){ return String(r.anio); });
+    var tbn = results.map(function(r){ return r.tbn; });
+    var tbm = results.map(function(r){ return r.tbm; });
+
+    if(!ratesLineChart){
+      var ctx = canvas.getContext('2d');
+      ratesLineChart = new Chart(ctx, {
+        type:'line',
+        data:{ labels:labels, datasets:[
+          { label:'Natalidad (‰)', data:tbn, borderColor:'#C1440E', backgroundColor:'#C1440E', pointRadius:4, borderWidth:2.5, tension:0.25 },
+          { label:'Mortalidad (‰)', data:tbm, borderColor:'#1F6E8C', backgroundColor:'#1F6E8C', pointRadius:4, borderWidth:2.5, tension:0.25 }
+        ]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          interaction:{ mode:'index', intersect:false },
+          plugins:{
+            legend:{ display:false },
+            ratesFillBetween:{ tbn:tbn, tbm:tbm },
+            tooltip:{
+              backgroundColor:'#182338', titleFont:{family:"'Fraunces', serif", weight:'600', size:13.5},
+              bodyFont:{family:"'IBM Plex Mono', monospace", size:12.5}, padding:11, cornerRadius:8,
+              callbacks:{ label:function(item){ return item.dataset.label + ': ' + item.formattedValue + '\u2009‰'; } }
+            }
+          },
+          scales:{
+            x:{ grid:{display:false}, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:12} } },
+            y:{ beginAtZero:true, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{color:'#E3E1D4'},
+                title:{ display:true, text:'‰ (por mil habitantes)', font:{family:"'Inter', sans-serif", size:12, weight:'600'} } }
+          }
+        }
+      });
+    } else {
+      ratesLineChart.data.labels = labels;
+      ratesLineChart.data.datasets[0].data = tbn;
+      ratesLineChart.data.datasets[1].data = tbm;
+      ratesLineChart.options.plugins.ratesFillBetween = { tbn:tbn, tbm:tbm };
+      ratesLineChart.update();
+    }
+  }
+
+  function renderStackChart(results){
+    var wrapEmpty = document.getElementById('ratesStackEmpty');
+    var canvas = document.getElementById('ratesStackChart');
+    var withAge = results.filter(function(r){ return r.hasAgeGroups; });
+    if(!withAge.length){
+      wrapEmpty.style.display='flex'; canvas.style.visibility='hidden'; return;
+    }
+    wrapEmpty.style.display='none'; canvas.style.visibility='visible';
+    var labels = withAge.map(function(r){ return String(r.anio); });
+    var d014 = withAge.map(function(r){ return r.pct014; });
+    var d1564 = withAge.map(function(r){ return r.pct1564; });
+    var d65 = withAge.map(function(r){ return r.pct65; });
+
+    if(!ratesStackChart){
+      var ctx = canvas.getContext('2d');
+      ratesStackChart = new Chart(ctx, {
+        type:'bar',
+        data:{ labels:labels, datasets:[
+          { label:'0-14 años', data:d014, backgroundColor:'#3E8E7E', stack:'s' },
+          { label:'15-64 años', data:d1564, backgroundColor:'#3C4A66', stack:'s' },
+          { label:'65+ años', data:d65, backgroundColor:'#B4790F', stack:'s' }
+        ]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{ display:false },
+            tooltip:{
+              backgroundColor:'#182338', titleFont:{family:"'Fraunces', serif", weight:'600', size:13.5},
+              bodyFont:{family:"'IBM Plex Mono', monospace", size:12.5}, padding:11, cornerRadius:8,
+              callbacks:{ label:function(item){ return item.dataset.label + ': ' + item.formattedValue + '%'; } }
+            }
+          },
+          scales:{
+            x:{ stacked:true, grid:{display:false}, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:12} } },
+            y:{ stacked:true, min:0, max:100, ticks:{ callback:function(v){return v+'%';}, font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{color:'#E3E1D4'} }
+          }
+        }
+      });
+    } else {
+      ratesStackChart.data.labels = labels;
+      ratesStackChart.data.datasets[0].data = d014;
+      ratesStackChart.data.datasets[1].data = d1564;
+      ratesStackChart.data.datasets[2].data = d65;
+      ratesStackChart.update();
+    }
+  }
+
+  function renderRatesAnalysis(results){
+    var body = document.getElementById('ratesAnalysisBody');
+    var empty = document.getElementById('ratesAnalysisEmpty');
+    if(results.length < 2){
+      body.innerHTML = ''; body.appendChild(empty); return;
+    }
+    var first = results[0], last = results[results.length-1];
+    var html = '<div class="analysis-grid">';
+
+    html += '<div class="analysis-block"><span class="k">Natalidad y mortalidad</span><p>';
+    html += 'Entre ' + first.anio + ' y ' + last.anio + ', la natalidad pasa de ' + fmt(first.tbn) + '\u2009‰ a ' + fmt(last.tbn) + '\u2009‰, y la mortalidad de ' + fmt(first.tbm) + '\u2009‰ a ' + fmt(last.tbm) + '\u2009‰. ';
+    html += (last.tbn < first.tbn) ? 'La natalidad ha descendido' : 'La natalidad ha aumentado';
+    html += (last.tbm < first.tbm) ? ', y la mortalidad también ha descendido.' : ', mientras que la mortalidad ha aumentado.';
+    html += '</p></div>';
+
+    html += '<div class="analysis-block"><span class="k">Crecimiento vegetativo</span><p>';
+    html += 'El crecimiento vegetativo pasa de ' + fmt(first.cv) + '\u2009‰ en ' + first.anio + ' a ' + fmt(last.cv) + '\u2009‰ en ' + last.anio + '. ';
+    if(last.cv < 0) html += 'En el último año la población pierde efectivos por dinámica natural (más defunciones que nacimientos).';
+    else if(last.cv < first.cv) html += 'El crecimiento natural se ha moderado con el paso del tiempo.';
+    else html += 'El crecimiento natural se ha reforzado con el paso del tiempo.';
+    if(last.tcr !== null && last.cv < 0 && last.tcr > 0){
+      html += ' Aun así, la tasa de crecimiento real (' + fmt(last.tcr) + '\u2009‰) sigue siendo positiva gracias al saldo migratorio.';
+    }
+    html += '</p></div>';
+
+    if(first.ienv !== null && last.ienv !== null){
+      html += '<div class="analysis-block"><span class="k">Envejecimiento</span><p>';
+      html += 'El índice de envejecimiento pasa de ' + fmt(first.ienv) + ' en ' + first.anio + ' a ' + fmt(last.ienv) + ' en ' + last.anio + '. ';
+      if(first.ienv < 100 && last.ienv >= 100) html += 'La población ha pasado de tener más jóvenes que mayores a tener más mayores que jóvenes.';
+      else if(last.ienv > first.ienv) html += 'La población envejece progresivamente.';
+      else html += 'El envejecimiento se mantiene relativamente estable.';
+      html += '</p></div>';
+    }
+
+    if(first.imr !== null && last.imr !== null){
+      html += '<div class="analysis-block"><span class="k">Mortalidad infantil</span><p>';
+      html += 'La mortalidad infantil desciende de ' + fmt(first.imr) + '\u2009‰ a ' + fmt(last.imr) + '\u2009‰, reflejo de mejoras sanitarias, alimentarias y de nivel de vida.';
+      html += '</p></div>';
+    }
+
+    html += '</div>';
+
+    var faseInicial = first.cv > 10 ? 'un crecimiento natural elevado' : (first.cv > 0 ? 'un crecimiento natural moderado' : 'un crecimiento natural débil o negativo');
+    var faseFinal = last.cv > 10 ? 'un crecimiento natural elevado' : (last.cv > 0 ? 'un crecimiento natural moderado' : 'un crecimiento natural débil o negativo');
+    html += '<div class="conclusion"><span class="k">Conclusión</span><p>La serie introducida refleja el paso de ' + faseInicial + ' en ' + first.anio + ' a ' + faseFinal + ' en ' + last.anio + ', un recorrido característico de la transición demográfica.</p></div>';
+    html += '<p class="disclaimer">Comentario generado automáticamente comparando el primer y el último año de la serie; no sustituye un análisis detallado de cada tramo.</p>';
+
+    body.innerHTML = html;
+  }
+
+  function ratesUpdate(){
+    document.getElementById('ratesPrintTitle').textContent = 'Tasas demográficas y su evolución';
+    var results = [];
+    yearRows.forEach(function(row){
+      if(row.anio === '' || row.anio === null) return;
+      var r = computeRatesForRow(row);
+      if(r) results.push(r);
+    });
+    results.sort(function(a,b){ return a.anio - b.anio; });
+
+    renderResultsTable(results);
+    renderLineChart(results);
+    renderStackChart(results);
+    renderRatesAnalysis(results);
+  }
+
+  /* ---- Rates save / load / export / import ---- */
+  function ratesLoadFromStorage(){
+    try{
+      var raw = localStorage.getItem(RATES_STORAGE_KEY);
+      ratesSaved = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(ratesSaved)) ratesSaved = [];
+    } catch(e){ ratesSaved = []; }
+  }
+  function ratesPersist(){
+    try{ localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(ratesSaved)); return true; }
+    catch(e){ ratesSetSaveStatus('No se ha podido guardar en este navegador (memoria llena o modo privado).', true); return false; }
+  }
+  function ratesSetSaveStatus(text, warn){
+    var el = document.getElementById('ratesSaveStatus');
+    el.textContent = text; el.className = 'save-status' + (warn?' warn':'');
+  }
+  function ratesRenderSaved(){
+    var wrap = document.getElementById('ratesSavedWrap');
+    wrap.innerHTML = '';
+    if(!ratesSaved.length){
+      var p = document.createElement('p'); p.className='saved-empty';
+      p.textContent = 'Todavía no has guardado ninguna serie en este dispositivo.';
+      wrap.appendChild(p);
+      if(typeof populateCompareSelects === 'function') populateCompareSelects();
+      return;
+    }
+    var chips = document.createElement('div'); chips.className='examples-chips';
+    ratesSaved.forEach(function(entry){
+      var chip = document.createElement('div'); chip.className='saved-chip';
+      var mainBtn = document.createElement('button'); mainBtn.type='button'; mainBtn.className='saved-chip-main';
+      var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background='var(--gold)';
+      var text = document.createElement('span'); text.className='chip-text';
+      var yearsSpan = entry.rows && entry.rows.length ? (entry.rows[0].anio + '–' + entry.rows[entry.rows.length-1].anio) : '';
+      text.innerHTML = '<strong>'+escapeHtml(entry.name)+'</strong><span>'+escapeHtml(yearsSpan)+'</span>';
+      mainBtn.appendChild(dot); mainBtn.appendChild(text);
+      mainBtn.addEventListener('click', function(){
+        yearRows = entry.rows.map(function(r){ var copy=Object.assign({id:genId()}, r); return copy; });
+        renderYearsTable(); ratesUpdate();
+        ratesSetSaveStatus('Cargada "'+entry.name+'".');
+      });
+      var delBtn = document.createElement('button'); delBtn.type='button'; delBtn.className='saved-chip-delete';
+      delBtn.setAttribute('aria-label','Eliminar '+entry.name); delBtn.textContent='×';
+      delBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(window.confirm('¿Eliminar "'+entry.name+'"?')){
+          ratesSaved = ratesSaved.filter(function(c){ return c.id!==entry.id; });
+          ratesPersist(); ratesRenderSaved();
+        }
+      });
+      chip.appendChild(mainBtn); chip.appendChild(delBtn); chips.appendChild(chip);
+    });
+    wrap.appendChild(chips);
+    if(typeof populateCompareSelects === 'function') populateCompareSelects();
+  }
+  document.getElementById('btnRatesSave').addEventListener('click', function(){
+    var validRows = yearRows.filter(function(r){ return r.anio!==''; });
+    if(!validRows.length){ ratesSetSaveStatus('Introduce antes al menos un año de datos.', true); return; }
+    var nameInput = document.getElementById('ratesSaveName');
+    var name = nameInput.value.trim() || ('Serie ' + validRows[0].anio + '-' + validRows[validRows.length-1].anio);
+    var existing = ratesSaved.find(function(c){ return c.name===name; });
+    if(existing && !window.confirm('Ya existe una serie guardada como "'+name+'". ¿Sobrescribirla?')){
+      ratesSetSaveStatus('Guardado cancelado.', true); return;
+    }
+    var cleanRows = validRows.map(function(r){
+      var copy = {}; RATE_FIELDS.forEach(function(f){ copy[f] = r[f]; }); return copy;
+    });
+    var entry = { id: existing?existing.id:genId(), name:name, createdAt:new Date().toISOString(), rows:cleanRows };
+    if(existing) ratesSaved = ratesSaved.map(function(c){ return c.id===entry.id?entry:c; });
+    else ratesSaved.push(entry);
+    if(ratesPersist()){ ratesSetSaveStatus('Guardada como "'+name+'".'); nameInput.value=''; ratesRenderSaved(); }
+  });
+  document.getElementById('btnRatesExport').addEventListener('click', function(){
+    if(!ratesSaved.length){ ratesSetSaveStatus('No tienes series guardadas para exportar.', true); return; }
+    downloadJSON({ app:'Taller de Demografía · Tasas', version:1, exportedAt:new Date().toISOString(), series:ratesSaved },
+      'tasas-demograficas-' + new Date().toISOString().slice(0,10) + '.json');
+    ratesSetSaveStatus('Exportadas ' + ratesSaved.length + ' serie(s).');
+  });
+  document.getElementById('btnRatesImport').addEventListener('click', function(){ document.getElementById('ratesImportFile').click(); });
+  document.getElementById('ratesImportFile').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = JSON.parse(evt.target.result);
+        var incoming = Array.isArray(data) ? data : (data.series || []);
+        incoming = incoming.filter(function(c){ return c && Array.isArray(c.rows) && c.rows.length; });
+        if(!incoming.length){ ratesSetSaveStatus('El archivo no contiene series válidas.', true); return; }
+        var existingIds = ratesSaved.map(function(c){return c.id;});
+        incoming.forEach(function(c){
+          if(!c.id || existingIds.indexOf(c.id)!==-1) c.id = genId();
+          if(!c.name) c.name = 'Serie importada';
+          ratesSaved.push(c); existingIds.push(c.id);
+        });
+        ratesPersist(); ratesRenderSaved();
+        ratesSetSaveStatus('Importadas ' + incoming.length + ' serie(s).');
+      } catch(err){ ratesSetSaveStatus('El archivo no tiene un formato JSON válido.', true); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  ratesLoadFromStorage();
+  ratesRenderSaved();
+  yearRows = [blankYearRow(), blankYearRow()];
+  renderYearsTable();
+  ratesUpdate();
+
+
+  /* ============================================================
+     TABS (top-level + sub-tabs): switching, keyboard nav, chart resize
+  =============================================================*/
+  function resizeVisibleCharts(){
+    [pyrChart, ratesLineChart, ratesStackChart, cmpLineChart, cmpStackChartA, cmpStackChartB, cmpSnapChart1, cmpSnapChart2].forEach(function(c){
+      if(c && typeof c.resize === 'function') c.resize();
+    });
+  }
+
+  function handleTabKeydown(e, btn, buttons, activateFn){
+    var list = Array.prototype.slice.call(buttons);
+    var i = list.indexOf(btn);
+    if(i === -1) return;
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){
+      e.preventDefault(); var next = list[(i+1) % list.length]; next.focus(); activateFn(next);
+    } else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+      e.preventDefault(); var prev = list[(i-1+list.length) % list.length]; prev.focus(); activateFn(prev);
+    }
+  }
+
+  (function initTopTabs(){
+    var buttons = document.querySelectorAll('.top-tabs .tab-btn');
+    function activate(btn){
+      var target = btn.getAttribute('data-tab');
+      buttons.forEach(function(b){
+        var on = (b === btn);
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.querySelectorAll('.tab-panel').forEach(function(p){
+        p.classList.toggle('active', p.getAttribute('data-tabpanel') === target);
+      });
+      resizeVisibleCharts();
+    }
+    buttons.forEach(function(btn){
+      btn.addEventListener('click', function(){ activate(btn); });
+      btn.addEventListener('keydown', function(e){ handleTabKeydown(e, btn, buttons, activate); });
+    });
+  })();
+
+  (function initSubTabs(){
+    document.querySelectorAll('.sub-tabs').forEach(function(group){
+      var buttons = group.querySelectorAll('.tab-btn');
+      function activate(btn){
+        var target = btn.getAttribute('data-subtab');
+        var prefix = target.split('-')[0];
+        buttons.forEach(function(b){
+          var on = (b === btn);
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('[data-subtabpanel]').forEach(function(p){
+          var val = p.getAttribute('data-subtabpanel');
+          if(val.split('-')[0] === prefix){ p.classList.toggle('active', val === target); }
+        });
+        resizeVisibleCharts();
+      }
+      buttons.forEach(function(btn){
+        btn.addEventListener('click', function(){ activate(btn); });
+        btn.addEventListener('keydown', function(e){ handleTabKeydown(e, btn, buttons, activate); });
+      });
+    });
+  })();
+
+
+  /* ============================================================
+     COMPARE TWO COUNTRIES / SERIES (Part 2 sub-tab)
+  =============================================================*/
+  var cmpLineChart = null, cmpStackChartA = null, cmpStackChartB = null;
+  var cmpSnapChart1 = null, cmpSnapChart2 = null;
+
+  function getAllRateSources(){
+    var list = [];
+    RATES_EXAMPLES.forEach(function(ex){ list.push({ key:'example:'+ex.id, kind:'example', name:ex.name, rows:ex.rows }); });
+    ratesSaved.forEach(function(s){ list.push({ key:'saved:'+s.id, kind:'saved', name:s.name, rows:s.rows }); });
+    return list;
+  }
+  function labelForSource(src){ return src.name; }
+
+  function populateCompareSelects(){
+    var sources = getAllRateSources();
+    ['A','B'].forEach(function(side){
+      var sel = document.getElementById('cmp'+side+'Select');
+      var prevValue = sel.value;
+      sel.innerHTML = '';
+      var exGroup = document.createElement('optgroup'); exGroup.label = 'Ejemplos';
+      var savedGroup = document.createElement('optgroup'); savedGroup.label = 'Tus series guardadas';
+      sources.forEach(function(src){
+        var opt = document.createElement('option');
+        opt.value = src.key; opt.textContent = src.name;
+        (src.kind === 'example' ? exGroup : savedGroup).appendChild(opt);
+      });
+      if(exGroup.children.length) sel.appendChild(exGroup);
+      if(savedGroup.children.length) sel.appendChild(savedGroup);
+      if(prevValue && sources.some(function(s){ return s.key === prevValue; })){ sel.value = prevValue; }
+    });
+    updateYearDropdown('A'); updateYearDropdown('B');
+  }
+
+  function updateYearDropdown(side){
+    var sel = document.getElementById('cmp'+side+'Select');
+    var yearSel = document.getElementById('cmp'+side+'Year');
+    var sources = getAllRateSources();
+    var src = sources.find(function(s){ return s.key === sel.value; });
+    var prevValue = yearSel.value;
+    yearSel.innerHTML = '';
+    if(src){
+      src.rows.forEach(function(r){
+        if(r.anio === '' || r.anio === null || r.anio === undefined) return;
+        var opt = document.createElement('option'); opt.value = r.anio; opt.textContent = r.anio;
+        yearSel.appendChild(opt);
+      });
+      if(prevValue && Array.prototype.some.call(yearSel.options, function(o){ return o.value === prevValue; })){
+        yearSel.value = prevValue;
+      } else if(yearSel.options.length){
+        yearSel.value = yearSel.options[yearSel.options.length-1].value;
+      }
+    }
+  }
+
+  function wireModeRadios(side){
+    document.querySelectorAll('input[name="cmp'+side+'Mode"]').forEach(function(r){
+      r.addEventListener('change', function(){
+        var single = document.querySelector('input[name="cmp'+side+'Mode"]:checked').value === 'single';
+        document.getElementById('cmp'+side+'Year').disabled = !single;
+        renderComparison();
+      });
+    });
+  }
+  wireModeRadios('A'); wireModeRadios('B');
+
+  document.getElementById('cmpASelect').addEventListener('change', function(){ updateYearDropdown('A'); renderComparison(); });
+  document.getElementById('cmpBSelect').addEventListener('change', function(){ updateYearDropdown('B'); renderComparison(); });
+  document.getElementById('cmpAYear').addEventListener('change', renderComparison);
+  document.getElementById('cmpBYear').addEventListener('change', renderComparison);
+
+  document.getElementById('btnCompareSwap').addEventListener('click', function(){
+    var aSel = document.getElementById('cmpASelect'), bSel = document.getElementById('cmpBSelect');
+    var tmpSrc = aSel.value; aSel.value = bSel.value; bSel.value = tmpSrc;
+    var aMode = document.querySelector('input[name="cmpAMode"]:checked').value;
+    var bMode = document.querySelector('input[name="cmpBMode"]:checked').value;
+    document.querySelector('input[name="cmpAMode"][value="'+bMode+'"]').checked = true;
+    document.querySelector('input[name="cmpBMode"][value="'+aMode+'"]').checked = true;
+    document.getElementById('cmpAYear').disabled = (bMode !== 'single');
+    document.getElementById('cmpBYear').disabled = (aMode !== 'single');
+    var aYear = document.getElementById('cmpAYear').value, bYear = document.getElementById('cmpBYear').value;
+    updateYearDropdown('A'); updateYearDropdown('B');
+    if(bYear) document.getElementById('cmpAYear').value = bYear;
+    if(aYear) document.getElementById('cmpBYear').value = aYear;
+    renderComparison();
+  });
+
+  function destroyCompareCharts(){
+    [cmpLineChart, cmpStackChartA, cmpStackChartB, cmpSnapChart1, cmpSnapChart2].forEach(function(c){ if(c) c.destroy(); });
+    cmpLineChart = null; cmpStackChartA = null; cmpStackChartB = null; cmpSnapChart1 = null; cmpSnapChart2 = null;
+  }
+
+  function buildAgeStackChart(ctx, withAge){
+    var labels = withAge.map(function(r){ return String(r.anio); });
+    return new Chart(ctx, {
+      type:'bar',
+      data:{ labels:labels, datasets:[
+        { label:'0-14 años', data:withAge.map(function(r){ return r.pct014; }), backgroundColor:'#3E8E7E', stack:'s' },
+        { label:'15-64 años', data:withAge.map(function(r){ return r.pct1564; }), backgroundColor:'#3C4A66', stack:'s' },
+        { label:'65+ años', data:withAge.map(function(r){ return r.pct65; }), backgroundColor:'#B4790F', stack:'s' }
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false },
+          tooltip:{ backgroundColor:'#182338', bodyFont:{family:"'IBM Plex Mono', monospace", size:12},
+            callbacks:{ label:function(item){ return item.dataset.label + ': ' + item.formattedValue + '%'; } } } },
+        scales:{
+          x:{ stacked:true, grid:{display:false}, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11} } },
+          y:{ stacked:true, min:0, max:100, ticks:{ callback:function(v){ return v+'%'; }, font:{family:"'IBM Plex Mono', monospace", size:10} }, grid:{color:'#E3E1D4'} }
+        }
+      }
+    });
+  }
+
+  function renderComparisonEvolution(srcA, srcB, ratesA, ratesB){
+    var results = document.getElementById('compareResults');
+    results.innerHTML =
+      '<div class="chart-wrap short"><canvas id="cmpLineChart"></canvas></div>' +
+      '<div class="legend-row no-print">' +
+        '<span class="legend-item"><span class="swatch" style="background:var(--warm)"></span>Natalidad</span>' +
+        '<span class="legend-item"><span class="swatch" style="background:var(--cool)"></span>Mortalidad</span>' +
+        '<span class="legend-item">— línea continua: ' + escapeHtml(labelForSource(srcA)) + '</span>' +
+        '<span class="legend-item">┄ línea discontinua: ' + escapeHtml(labelForSource(srcB)) + '</span>' +
+      '</div>' +
+      '<div class="compare-side-charts" id="cmpSideCharts" style="margin-top:22px;">' +
+        '<div><p class="compare-side-title">' + escapeHtml(labelForSource(srcA)) + '</p><div class="chart-wrap"><canvas id="cmpStackA"></canvas></div></div>' +
+        '<div><p class="compare-side-title">' + escapeHtml(labelForSource(srcB)) + '</p><div class="chart-wrap"><canvas id="cmpStackB"></canvas></div></div>' +
+      '</div>';
+
+    var yearsSet = {};
+    ratesA.forEach(function(r){ yearsSet[r.anio] = true; });
+    ratesB.forEach(function(r){ yearsSet[r.anio] = true; });
+    var years = Object.keys(yearsSet).map(Number).sort(function(a,b){ return a-b; });
+    function seriesFor(rates, key){
+      var map = {}; rates.forEach(function(r){ map[r.anio] = r[key]; });
+      return years.map(function(y){ return (map[y] !== undefined) ? map[y] : null; });
+    }
+
+    var ctx = document.getElementById('cmpLineChart').getContext('2d');
+    cmpLineChart = new Chart(ctx, {
+      type:'line',
+      data:{ labels: years.map(String), datasets:[
+        { label:'Natalidad · '+labelForSource(srcA), data:seriesFor(ratesA,'tbn'), borderColor:'#C1440E', backgroundColor:'#C1440E', borderWidth:2.5, pointRadius:3, spanGaps:true },
+        { label:'Mortalidad · '+labelForSource(srcA), data:seriesFor(ratesA,'tbm'), borderColor:'#1F6E8C', backgroundColor:'#1F6E8C', borderWidth:2.5, pointRadius:3, spanGaps:true },
+        { label:'Natalidad · '+labelForSource(srcB), data:seriesFor(ratesB,'tbn'), borderColor:'#C1440E', backgroundColor:'#C1440E', borderWidth:2.5, borderDash:[6,4], pointRadius:3, spanGaps:true },
+        { label:'Mortalidad · '+labelForSource(srcB), data:seriesFor(ratesB,'tbm'), borderColor:'#1F6E8C', backgroundColor:'#1F6E8C', borderWidth:2.5, borderDash:[6,4], pointRadius:3, spanGaps:true }
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
+        plugins:{ legend:{ display:false },
+          tooltip:{ backgroundColor:'#182338', titleFont:{family:"'Fraunces', serif", weight:'600', size:13.5},
+            bodyFont:{family:"'IBM Plex Mono', monospace", size:12.5}, padding:11, cornerRadius:8,
+            callbacks:{ label:function(item){ return item.dataset.label + ': ' + (item.raw===null ? 'sin dato' : item.formattedValue + '\u2009‰'); } } } },
+        scales:{
+          x:{ grid:{display:false}, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:12} } },
+          y:{ beginAtZero:true, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{color:'#E3E1D4'},
+              title:{ display:true, text:'‰ (por mil habitantes)', font:{family:"'Inter', sans-serif", size:12, weight:'600'} } }
+        }
+      }
+    });
+
+    var withAgeA = ratesA.filter(function(r){ return r.hasAgeGroups; });
+    var withAgeB = ratesB.filter(function(r){ return r.hasAgeGroups; });
+    if(withAgeA.length){ cmpStackChartA = buildAgeStackChart(document.getElementById('cmpStackA').getContext('2d'), withAgeA); }
+    if(withAgeB.length){ cmpStackChartB = buildAgeStackChart(document.getElementById('cmpStackB').getContext('2d'), withAgeB); }
+    if(!withAgeA.length && !withAgeB.length){ document.getElementById('cmpSideCharts').style.display = 'none'; }
+  }
+
+  function buildSnapshotBarChart(ctx, labels, dataA, dataB, nameA, nameB){
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: nameA, data: dataA, backgroundColor: '#2C5F8A', borderRadius: 3 },
+          { label: nameB, data: dataB, backgroundColor: '#B0416B', borderRadius: 3 }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { font: { family:"'Inter', sans-serif", size: 12.5 }, boxWidth: 14, boxHeight: 14, color: '#3C4A66' } },
+          tooltip: {
+            backgroundColor: '#182338', titleFont: { family:"'Fraunces', serif", weight:'600', size:13.5 },
+            bodyFont: { family:"'IBM Plex Mono', monospace", size:12.5 }, padding:11, cornerRadius:8,
+            callbacks: { label: function(item){ return item.dataset.label + ': ' + (item.raw===null ? 'sin dato' : item.formattedValue); } }
+          }
+        },
+        scales: {
+          x: { beginAtZero:true, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{color:'#E3E1D4'} },
+          y: { ticks:{ font:{family:"'IBM Plex Mono', monospace", size:12} }, grid:{display:false} }
+        }
+      }
+    });
+  }
+
+  function renderComparisonSnapshot(srcA, srcB, rA, rB, aMode, bMode){
+    var results = document.getElementById('compareResults');
+    var metricsPerMil = [
+      { key:'tbn', label:'Natalidad' }, { key:'tbm', label:'Mortalidad' },
+      { key:'cv', label:'Crec. vegetativo' }, { key:'tasaMig', label:'Tasa migratoria' },
+      { key:'tcr', label:'Crec. real' }, { key:'imr', label:'Mortalidad infantil' },
+      { key:'fec', label:'Fecundidad general' }
+    ];
+    var metricsIndex = [
+      { key:'ienv', label:'Índice envejecimiento' }, { key:'tdep', label:'Tasa dependencia (%)' }
+    ];
+    var allMetrics = metricsPerMil.concat(metricsIndex);
+
+    var nameA = escapeHtml(labelForSource(srcA)) + ' (' + rA.anio + ')';
+    var nameB = escapeHtml(labelForSource(srcB)) + ' (' + rB.anio + ')';
+
+    var html = '<div class="table-scroll"><table class="compare-table"><thead><tr><th></th><th>' + nameA + '</th><th>' + nameB + '</th></tr></thead><tbody>';
+    allMetrics.forEach(function(m){
+      html += '<tr><td class="rlabel">'+m.label+ (m.key==='tdep' ? '' : ' (‰)') +'</td><td>'+fmt(rA[m.key])+'</td><td>'+fmt(rB[m.key])+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    var note = '';
+    if(aMode === 'all') note += 'De ' + nameA.replace(/ \([0-9]+\)$/,'') + ' se muestra su año más reciente (' + rA.anio + '). ';
+    if(bMode === 'all') note += 'De ' + nameB.replace(/ \([0-9]+\)$/,'') + ' se muestra su año más reciente (' + rB.anio + ').';
+    html += note ? ('<p class="compare-note">' + note + '</p>') : '';
+
+    var hasPerMil = metricsPerMil.some(function(m){ return rA[m.key]!==null || rB[m.key]!==null; });
+    var hasIndex = metricsIndex.some(function(m){ return rA[m.key]!==null || rB[m.key]!==null; });
+
+    if(hasPerMil){
+      html += '<p class="compare-side-title" style="margin-top:26px;">Tasas por mil habitantes (‰)</p>' +
+        '<div class="chart-wrap short"><canvas id="cmpSnapChart1"></canvas></div>';
+    }
+    if(hasIndex){
+      html += '<p class="compare-side-title" style="margin-top:22px;">Envejecimiento y dependencia</p>' +
+        '<div class="chart-wrap" style="height:200px;"><canvas id="cmpSnapChart2"></canvas></div>';
+    }
+
+    results.innerHTML = html;
+
+    if(hasPerMil){
+      cmpSnapChart1 = buildSnapshotBarChart(
+        document.getElementById('cmpSnapChart1').getContext('2d'),
+        metricsPerMil.map(function(m){ return m.label; }),
+        metricsPerMil.map(function(m){ return rA[m.key]; }),
+        metricsPerMil.map(function(m){ return rB[m.key]; }),
+        nameA, nameB
+      );
+    }
+    if(hasIndex){
+      cmpSnapChart2 = buildSnapshotBarChart(
+        document.getElementById('cmpSnapChart2').getContext('2d'),
+        metricsIndex.map(function(m){ return m.label; }),
+        metricsIndex.map(function(m){ return rA[m.key]; }),
+        metricsIndex.map(function(m){ return rB[m.key]; }),
+        nameA, nameB
+      );
+    }
+  }
+
+  function renderComparison(){
+    destroyCompareCharts();
+    var sources = getAllRateSources();
+    var aKey = document.getElementById('cmpASelect').value;
+    var bKey = document.getElementById('cmpBSelect').value;
+    var srcA = sources.find(function(s){ return s.key === aKey; });
+    var srcB = sources.find(function(s){ return s.key === bKey; });
+    var results = document.getElementById('compareResults');
+
+    if(!srcA || !srcB){
+      results.innerHTML = '<p class="compare-empty">Elige una serie para el país A y otra para el país B.</p>';
+      return;
+    }
+
+    var ratesA = srcA.rows.map(computeRatesForRow).filter(Boolean).sort(function(x,y){ return x.anio-y.anio; });
+    var ratesB = srcB.rows.map(computeRatesForRow).filter(Boolean).sort(function(x,y){ return x.anio-y.anio; });
+    if(!ratesA.length || !ratesB.length){
+      results.innerHTML = '<p class="compare-empty">Alguna de las series elegidas no tiene años válidos (población, nacimientos y defunciones).</p>';
+      return;
+    }
+
+    var aMode = document.querySelector('input[name="cmpAMode"]:checked').value;
+    var bMode = document.querySelector('input[name="cmpBMode"]:checked').value;
+
+    if(aMode === 'all' && bMode === 'all'){
+      renderComparisonEvolution(srcA, srcB, ratesA, ratesB);
+    } else {
+      var yearA = (aMode === 'single' && document.getElementById('cmpAYear').value) ? parseInt(document.getElementById('cmpAYear').value,10) : ratesA[ratesA.length-1].anio;
+      var yearB = (bMode === 'single' && document.getElementById('cmpBYear').value) ? parseInt(document.getElementById('cmpBYear').value,10) : ratesB[ratesB.length-1].anio;
+      var rA = ratesA.find(function(r){ return r.anio === yearA; }) || ratesA[ratesA.length-1];
+      var rB = ratesB.find(function(r){ return r.anio === yearB; }) || ratesB[ratesB.length-1];
+      renderComparisonSnapshot(srcA, srcB, rA, rB, aMode, bMode);
+    }
+  }
+
+  populateCompareSelects();
+  renderComparison();
+
+})();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

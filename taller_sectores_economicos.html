@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Taller de Sectores Económicos: dibuja el reparto de la población activa por sectores y descubre el grado de desarrollo económico de un país.">
+<title>Taller de Sectores Económicos</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sectores">
+<meta name="theme-color" content="#182338">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#182338;
+    --ink-soft:#3C4A66;
+    --muted:#5E6779;
+    --paper:#EDEFE8;
+    --card:#FFFFFF;
+    --line:#E2E0D2;
+    --primario:#3E8E7E;
+    --primario-soft:rgba(62,142,126,0.14);
+    --secundario:#B4790F;
+    --secundario-soft:rgba(180,121,15,0.14);
+    --terciario:#2C5F8A;
+    --terciario-soft:rgba(44,95,138,0.14);
+    --gold:#B4790F;
+    --gold-2:#E0A83D;
+    --gold-soft:rgba(180,121,15,0.14);
+    --warm:#C1440E;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-sm:0 1px 2px rgba(20,30,50,.05);
+    --shadow-md:0 10px 28px rgba(20,30,50,.08);
+    --shadow-lg:0 20px 46px rgba(20,30,50,.14);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:960px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
+
+  header.hero{
+    position:relative; padding:34px 36px 40px; margin-bottom:30px; border-radius:18px;
+    background:var(--ink); color:var(--paper); overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(224,168,61,0.30), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(44,95,138,0.30), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--gold-2); font-weight:500; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--gold-2); display:inline-block; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(30px, 4.2vw, 44px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
+  }
+  .lede{ max-width:64ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-md); padding:26px 28px 30px; margin-bottom:24px;
+    border-top:3px solid var(--accent, var(--ink)); animation:riseIn .5s ease both;
+  }
+  .panel.p1{ --accent:var(--terciario); } .panel.p2{ --accent:var(--gold); } .panel.p3{ --accent:var(--primario); }
+  .panel:nth-of-type(2){ animation-delay:.05s; } .panel:nth-of-type(3){ animation-delay:.1s; }
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+
+  .panel-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+  .badge{
+    flex:none; width:36px; height:36px; border-radius:50%; background:var(--accent, var(--ink)); color:#fff;
+    font-family:'Fraunces', serif; font-weight:600; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent, var(--ink)) 14%, transparent);
+  }
+  .panel-head-text h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:21px; margin:5px 0 4px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-head-text h2 svg{ width:19px; height:19px; color:var(--accent, var(--ink)); flex:none; }
+  .panel-head-text p{ margin:0; color:var(--muted); font-size:14.5px; }
+
+  .locate-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .locate-row input[type="text"]{
+    flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink);
+  }
+  input:focus-visible, button:focus-visible{ outline:2px solid var(--terciario); outline-offset:2px; }
+
+  button{
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; border-radius:var(--radius-sm);
+    padding:12px 18px; cursor:pointer; border:1px solid transparent;
+    transition:transform .08s ease, background .15s ease, box-shadow .15s ease;
+    display:inline-flex; align-items:center; gap:7px; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button svg{ width:15px; height:15px; flex:none; }
+  button:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--ink); color:var(--paper); }
+  .btn-primary:hover{ background:#2A3B5C; box-shadow:var(--shadow-sm); }
+  .btn-ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn-ghost:hover{ background:rgba(24,35,56,0.05); }
+  .btn-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+
+  /* ---- Input grid (3 sectors) ---- */
+  .inputs-grid{ display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:8px; }
+  @media (min-width:640px){ .inputs-grid{ grid-template-columns:1fr 1fr 1fr; } }
+  .input-card{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px; background:#fff; }
+  .input-card label{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--muted); margin-bottom:8px;
+  }
+  .input-card .unit{ font-weight:400; text-transform:none; letter-spacing:0; }
+  .input-card .field{ display:flex; align-items:baseline; gap:4px; }
+  .input-card input[type="number"]{
+    width:100%; border:none; border-bottom:2px solid var(--line); padding:6px 2px 8px;
+    font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; color:var(--ink); background:transparent;
+  }
+  .input-card .pct-sign{ font-family:'IBM Plex Mono', monospace; font-size:18px; color:var(--muted); }
+  .input-card.primario input{ border-color:var(--primario); } .input-card.primario label{ color:var(--primario); }
+  .input-card.secundario input{ border-color:var(--secundario); } .input-card.secundario label{ color:var(--secundario); }
+  .input-card.terciario input{ border-color:var(--terciario); } .input-card.terciario label{ color:var(--terciario); }
+  .total-note{ font-size:13px; font-family:'IBM Plex Mono', monospace; color:var(--muted); margin:0 0 18px; }
+  .total-note.warn{ color:var(--warm); }
+  .total-note.ok{ color:var(--primario); }
+
+  /* ---- Example galleries + saved archive ---- */
+  .examples-wrap{ margin-bottom:22px; }
+  .examples-group-title, .saved-section h3, .save-panel h3{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--muted); margin:0 0 8px;
+  }
+  .examples-chips{ display:flex; flex-wrap:wrap; gap:9px; }
+  .example-chip{
+    display:flex; align-items:center; gap:9px; background:#fff; border:1px solid var(--line); border-radius:11px;
+    padding:10px 14px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .example-chip:hover, .example-chip:active{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .chip-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .chip-text{ display:flex; flex-direction:column; line-height:1.25; min-width:0; }
+  .chip-text strong{ font-size:13.5px; color:var(--ink); }
+  .chip-text span{ font-size:11.5px; color:var(--muted); font-weight:400; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px; }
+  .saved-section{ margin-bottom:20px; }
+  .saved-empty{ font-size:13.5px; color:var(--muted); margin:0; font-style:italic; }
+  .saved-chip{ display:flex; align-items:stretch; border:1px solid var(--line); border-radius:11px; background:#fff; overflow:hidden; transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+  .saved-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .saved-chip-main{ display:flex; align-items:center; gap:9px; border:none; background:transparent; padding:10px 12px 10px 11px; text-align:left; font-weight:500; min-height:44px; -webkit-tap-highlight-color:transparent; }
+  .saved-chip-delete{ border:none; background:transparent; color:var(--muted); padding:0 13px; font-size:17px; line-height:1; border-left:1px solid var(--line); min-height:44px; min-width:40px; -webkit-tap-highlight-color:transparent; }
+  .saved-chip-delete:hover{ color:var(--warm); background:rgba(193,68,14,0.08); }
+
+  .examples-details{ border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:10px; overflow:hidden; background:#fff; }
+  .examples-details summary{
+    cursor:pointer; list-style:none; padding:13px 16px; display:flex; align-items:center; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--ink-soft); font-weight:600; min-height:44px; -webkit-tap-highlight-color:transparent;
+  }
+  .examples-details summary::-webkit-details-marker{ display:none; }
+  .examples-details summary .chevron{ margin-left:auto; color:var(--muted); transition:transform .2s ease; display:flex; }
+  .examples-details summary .chevron svg{ width:16px; height:16px; }
+  .examples-details[open] summary .chevron{ transform:rotate(180deg); }
+  .examples-details summary .count-badge{ background:var(--gold-soft); color:var(--gold); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; }
+  .examples-details .examples-chips{ padding:0 16px 16px; }
+  .examples-details summary .dot-lead{ width:9px; height:9px; border-radius:50%; flex:none; }
+
+  .save-panel{ margin-top:20px; padding-top:18px; border-top:1px dashed var(--line); }
+  .save-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .save-row input[type="text"]{ flex:1; min-width:220px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm); font-family:'Inter', sans-serif; font-size:16px; background:#fff; }
+  .save-status{ font-size:12.8px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; min-height:16px; margin-bottom:2px; }
+  .save-status.warn{ color:var(--warm); }
+
+  /* ---- Chart ---- */
+  .chart-wrap{ position:relative; height:340px; }
+  canvas{ width:100%; height:100%; }
+  .chart-empty, .analysis-empty{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; color:var(--muted); font-size:14.5px; padding:0 30px;
+  }
+  .legend-row{
+    display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px; padding-top:16px;
+    border-top:1px dashed var(--line); font-size:13.5px; color:var(--ink-soft);
+  }
+  .legend-item{ display:flex; align-items:center; gap:7px; }
+  .swatch{ width:14px; height:14px; border-radius:4px; display:inline-block; }
+  .swatch.primario{ background:var(--primario); } .swatch.secundario{ background:var(--secundario); } .swatch.terciario{ background:var(--terciario); }
+
+  /* ---- Analysis ---- */
+  .conclusion{ margin-top:6px; padding:16px 20px; background:var(--gold-soft); border-radius:var(--radius-sm); border:1px solid rgba(180,121,15,0.28); }
+  .conclusion p{ margin:0; color:var(--ink-soft); }
+  .conclusion strong{ color:var(--ink); }
+  .disclaimer{ margin-top:16px; font-size:12.5px; color:var(--muted); font-style:italic; }
+
+  /* ---- Compare tool ---- */
+  .compare-grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:8px; align-items:start; }
+  @media (min-width:760px){ .compare-grid{ grid-template-columns:1fr auto 1fr; } }
+  .compare-card{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px 18px; background:#fff; }
+  .compare-card h4{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:0 0 10px; }
+  .compare-card select{
+    width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink);
+  }
+  .compare-swap{
+    display:flex; align-items:center; justify-content:center; align-self:center;
+    background:transparent; border:1px solid var(--line); border-radius:50%;
+    width:44px; height:44px; min-height:44px; padding:0; color:var(--muted); margin:0 auto;
+  }
+  .compare-swap:hover{ color:var(--ink); border-color:var(--ink); }
+  .compare-results{ margin-top:22px; }
+  .compare-empty{ color:var(--muted); font-size:14px; font-style:italic; padding:20px 0; }
+  .compare-table{ border-collapse:collapse; width:100%; background:#fff; }
+  .compare-table th, .compare-table td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:10px 12px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+  }
+  .compare-table th:last-child, .compare-table td:last-child{ border-right:none; }
+  .compare-table thead th{ background:#F4F3EC; color:var(--ink-soft); font-weight:600; }
+  .compare-table td.rlabel{ text-align:left; font-family:'Inter',sans-serif; font-weight:600; background:#F4F3EC; }
+  .compare-side-charts{ display:grid; grid-template-columns:1fr; gap:18px; margin-top:22px; }
+  @media (min-width:640px){ .compare-side-charts{ grid-template-columns:1fr 1fr; } }
+  .compare-side-charts .chart-wrap{ height:260px; }
+  .compare-side-title{ font-family:'Fraunces', serif; font-weight:600; font-size:15px; margin:0 0 8px; text-align:center; }
+
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:18px 14px 70px; }
+    header.hero{ padding:26px 20px 30px; }
+    .panel{ padding:18px 16px; }
+  }
+  @media print{
+    body{ background:#fff; }
+    .no-print{ display:none !important; }
+    header.hero, footer{ display:none !important; }
+    .panel{ box-shadow:none; border:none; padding:0; margin-bottom:22px; break-inside:avoid; animation:none; }
+    .panel.p1 .panel-head, .panel.p1 .examples-wrap, .panel.p1 .saved-section, .panel.p1 .btn-row, .panel.p1 .save-panel{ display:none !important; }
+    .panel.p2 .panel-head, .panel.p2 .legend-row{ display:none !important; }
+  }
+  .print-only{ display:none; }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; } *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Geografía · Economía</div>
+      <h1>Taller de Sectores Económicos</h1>
+      <p class="lede">Introduce el reparto de la población activa entre los sectores primario, secundario y terciario de un país, y la aplicación dibuja el diagrama sectorial y estima su grado de desarrollo económico.</p>
+    </div>
+  </header>
+
+  <!-- STEP 1: DATA -->
+  <section class="panel p1">
+    <div class="panel-head">
+      <div class="badge">1</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><path d="M12 12L12 3"/><path d="M12 12l7.5 4.3"/></svg>Introduce los datos</h2>
+        <p>Escribe el país y el año, y el porcentaje de población activa en cada sector (deberían sumar cerca de 100%).</p>
+      </div>
+    </div>
+
+    <div class="locate-row">
+      <input type="text" id="secPlace" placeholder="País y año (ej.: España, 2024)">
+    </div>
+
+    <div class="inputs-grid">
+      <div class="input-card primario">
+        <label>Sector primario</label>
+        <div class="field"><input type="number" id="inPri" step="0.1" min="0" max="100" inputmode="decimal"><span class="pct-sign">%</span></div>
+      </div>
+      <div class="input-card secundario">
+        <label>Sector secundario</label>
+        <div class="field"><input type="number" id="inSec" step="0.1" min="0" max="100" inputmode="decimal"><span class="pct-sign">%</span></div>
+      </div>
+      <div class="input-card terciario">
+        <label>Sector terciario</label>
+        <div class="field"><input type="number" id="inTer" step="0.1" min="0" max="100" inputmode="decimal"><span class="pct-sign">%</span></div>
+      </div>
+    </div>
+    <p class="total-note" id="secTotalNote"></p>
+
+    <div class="saved-section">
+      <h3>Tus países guardados</h3>
+      <div id="secSavedWrap"></div>
+    </div>
+
+    <div class="examples-wrap" id="secExamplesWrap"></div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" id="btnSecClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>Vaciar</button>
+    </div>
+
+    <div class="save-panel">
+      <h3>Guardar y archivar</h3>
+      <div class="save-row">
+        <input type="text" id="secSaveName" placeholder="Nombre para guardar (ej. España 2024 · 3ºESO)">
+        <button class="btn-primary" id="btnSecSave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Guardar país actual</button>
+      </div>
+      <div class="save-status" id="secSaveStatus" aria-live="polite"></div>
+      <div class="btn-row" style="margin-bottom:0;">
+        <button class="btn-ghost" id="btnSecExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Exportar todos (.json)</button>
+        <button class="btn-ghost" id="btnSecImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Importar (.json)</button>
+        <input type="file" id="secImportFile" accept=".json,application/json" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: CHART -->
+  <section class="panel p2">
+    <div class="panel-head">
+      <div class="badge">2</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.5 5.2"/></svg>El diagrama sectorial</h2>
+        <p>Cada porción representa el peso de un sector en la población activa.</p>
+      </div>
+    </div>
+    <div class="print-only" id="secPrintTitle"></div>
+    <div class="chart-wrap">
+      <canvas id="secChart"></canvas>
+      <div class="chart-empty no-print" id="secChartEmpty">El gráfico aparecerá aquí en cuanto completes los tres datos.</div>
+    </div>
+    <div class="legend-row no-print">
+      <span class="legend-item"><span class="swatch primario"></span>Primario</span>
+      <span class="legend-item"><span class="swatch secundario"></span>Secundario</span>
+      <span class="legend-item"><span class="swatch terciario"></span>Terciario</span>
+    </div>
+    <div class="btn-row no-print" style="margin-top:16px; margin-bottom:0;">
+      <button class="btn-ghost" id="btnSecPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir gráfico y resultado</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: ANALYSIS -->
+  <section class="panel p3">
+    <div class="panel-head">
+      <div class="badge">3</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Grado de desarrollo (aproximado)</h2>
+        <p>Interpretación automática de la estructura económica.</p>
+      </div>
+    </div>
+    <div id="secAnalysisBody">
+      <div class="analysis-empty" id="secAnalysisEmpty" style="position:static; padding:10px 0;">El análisis aparecerá aquí en cuanto completes los tres datos.</div>
+    </div>
+  </section>
+
+  <!-- STEP 4: COMPARE -->
+  <section class="panel p1">
+    <div class="panel-head">
+      <div class="badge">4</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v18"/><path d="M16 3v18"/><path d="M3 8h5"/><path d="M3 16h5"/><path d="M16 8h5"/><path d="M16 16h5"/></svg>Comparar dos países</h2>
+        <p>Elige dos países (de los ejemplos o de los que hayas guardado) para comparar su estructura económica.</p>
+      </div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4>País A</h4>
+        <select id="cmpASelect"></select>
+      </div>
+      <button type="button" class="compare-swap" id="btnCompareSwap" aria-label="Intercambiar A y B">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/></svg>
+      </button>
+      <div class="compare-card">
+        <h4>País B</h4>
+        <select id="cmpBSelect"></select>
+      </div>
+    </div>
+
+    <div class="compare-results" id="compareResults">
+      <p class="compare-empty" id="compareEmpty">Elige un país para A y otro para B.</p>
+    </div>
+  </section>
+
+  <footer>
+    Herramienta creada para el aula de Geografía. Los datos se procesan en tu propio navegador: no se envían ni se guardan en ningún servidor. Los ejemplos son datos reales aproximados de población activa por sector (Banco Mundial / OIT / EPA, según el país). La clasificación del grado de desarrollo a partir de la estructura sectorial es una aproximación con fines didácticos: el criterio clásico dice que el peso del sector primario disminuye y el del terciario aumenta a medida que un país se desarrolla, pero hay excepciones y matices (por ejemplo, países muy industrializados con un sector secundario todavía importante). No sustituye un análisis económico riguroso.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function genId(){ return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function downloadJSON(payload, filename){
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /* ---------------------------------------------------------------
+     EXAMPLES — real, sourced employment-by-sector data
+  ----------------------------------------------------------------*/
+  var SEC_EXAMPLES = [
+    { id:'niger', name:'Níger', year:2023, group:'agraria', pri:71.0, sec:8.0, ter:21.0 },
+    { id:'laos', name:'Laos', year:2024, group:'agraria', pri:68.9, sec:10.0, ter:21.1 },
+    { id:'afganistan', name:'Afganistán', year:2024, group:'agraria', pri:51.5, sec:15.0, ter:33.5 },
+    { id:'burundi', name:'Burundi', year:2024, group:'agraria', pri:85.4, sec:3.1, ter:11.5 },
+    { id:'mozambique', name:'Mozambique', year:2024, group:'agraria', pri:73.1, sec:9.0, ter:17.9 },
+    { id:'chad', name:'Chad', year:2024, group:'agraria', pri:65.0, sec:15.4, ter:19.6 },
+    { id:'moldavia', name:'Moldavia', year:2024, group:'agraria', pri:50.5, sec:15.0, ter:34.5 },
+    { id:'india', name:'India', year:2023, group:'transicion', pri:42.0, sec:25.0, ter:33.0 },
+    { id:'china', name:'China', year:2023, group:'transicion', pri:22.0, sec:29.0, ter:49.0 },
+    { id:'iran', name:'Irán', year:2024, group:'transicion', pri:17.0, sec:35.0, ter:48.0 },
+    { id:'rumania', name:'Rumanía', year:2024, group:'transicion', pri:19.0, sec:32.7, ter:48.3 },
+    { id:'albania', name:'Albania', year:2024, group:'transicion', pri:31.4, sec:20.0, ter:48.6 },
+    { id:'tunez', name:'Túnez', year:2024, group:'transicion', pri:14.0, sec:33.3, ter:52.7 },
+    { id:'egipto', name:'Egipto', year:2024, group:'transicion', pri:20.0, sec:29.2, ter:50.8 },
+    { id:'ecuador', name:'Ecuador', year:2024, group:'transicion', pri:32.6, sec:18.0, ter:49.4 },
+    { id:'nicaragua', name:'Nicaragua', year:2024, group:'transicion', pri:30.5, sec:18.0, ter:51.5 },
+    { id:'guyana', name:'Guyana', year:2024, group:'transicion', pri:15.0, sec:30.5, ter:54.5 },
+    { id:'mexico', name:'México', year:2024, group:'terciarizada', pri:11.6, sec:24.7, ter:63.7 },
+    { id:'alemania', name:'Alemania', year:2023, group:'terciarizada', pri:1.0, sec:27.0, ter:72.0 },
+    { id:'espana', name:'España', year:2024, group:'terciarizada', pri:4.0, sec:19.0, ter:77.0 },
+    { id:'eeuu', name:'Estados Unidos', year:2023, group:'terciarizada', pri:2.0, sec:19.0, ter:79.0 },
+    { id:'reinounido', name:'Reino Unido', year:2024, group:'terciarizada', pri:0.9, sec:16.1, ter:83.0 },
+    { id:'canada', name:'Canadá', year:2024, group:'terciarizada', pri:1.1, sec:18.9, ter:79.9 },
+    { id:'paisesbajos', name:'Países Bajos', year:2024, group:'terciarizada', pri:2.0, sec:13.8, ter:84.2 },
+    { id:'luxemburgo', name:'Luxemburgo', year:2024, group:'terciarizada', pri:1.0, sec:7.7, ter:91.3 },
+    { id:'singapur', name:'Singapur', year:2024, group:'terciarizada', pri:0.1, sec:14.2, ter:85.7 },
+    { id:'hongkong', name:'Hong Kong', year:2024, group:'terciarizada', pri:0.2, sec:14.1, ter:85.7 },
+    { id:'macao', name:'Macao', year:2024, group:'terciarizada', pri:0.1, sec:11.4, ter:88.5 },
+    { id:'qatar', name:'Catar', year:2024, group:'terciarizada', pri:1.0, sec:38.2, ter:60.8 },
+    { id:'belgica', name:'Bélgica', year:2024, group:'terciarizada', pri:1.0, sec:21.0, ter:78.0 },
+    { id:'sudafrica', name:'Sudáfrica', year:2024, group:'terciarizada', pri:5.0, sec:21.3, ter:73.8 },
+    { id:'yibuti', name:'Yibuti', year:2024, group:'terciarizada', pri:1.0, sec:6.7, ter:92.3 },
+    { id:'mauricio', name:'Mauricio', year:2024, group:'terciarizada', pri:7.0, sec:18.9, ter:74.1 },
+    { id:'oman', name:'Omán', year:2024, group:'terciarizada', pri:5.0, sec:39.5, ter:55.5 },
+    { id:'serbia', name:'Serbia', year:2024, group:'terciarizada', pri:18.6, sec:25.0, ter:56.4 },
+    { id:'argelia', name:'Argelia', year:2024, group:'terciarizada', pri:10.0, sec:32.1, ter:57.9 },
+    { id:'bolivia', name:'Bolivia', year:2024, group:'terciarizada', pri:24.9, sec:20.0, ter:55.1 },
+    { id:'peru', name:'Perú', year:2024, group:'terciarizada', pri:23.4, sec:18.0, ter:58.6 },
+    { id:'turquia', name:'Turquía', year:2024, group:'terciarizada', pri:15.0, sec:26.0, ter:59.0 },
+    { id:'filipinas', name:'Filipinas', year:2024, group:'terciarizada', pri:22.0, sec:19.0, ter:59.0 },
+    { id:'coreasur', name:'Corea del Sur', year:2024, group:'terciarizada', pri:5.0, sec:24.0, ter:71.0 },
+    { id:'australia', name:'Australia', year:2024, group:'terciarizada', pri:2.5, sec:19.5, ter:78.0 }
+  ];
+  var GROUP_META = {
+    agraria:{ title:'Economías agrarias', color:'var(--primario)' },
+    transicion:{ title:'Economías en transición', color:'var(--secundario)' },
+    terciarizada:{ title:'Economías terciarizadas', color:'var(--terciario)' }
+  };
+  var GROUP_ORDER = ['agraria','transicion','terciarizada'];
+
+  var secChart = null;
+  var secDebounce = null;
+  var secSaved = [];
+  var SEC_STORAGE_KEY = 'sectores_guardados_v1';
+
+  var fields = ['inPri','inSec','inTer'];
+  fields.forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){
+      if(secDebounce) clearTimeout(secDebounce);
+      secDebounce = setTimeout(secUpdate, 250);
+    });
+  });
+  document.getElementById('secPlace').addEventListener('input', function(){
+    if(secDebounce) clearTimeout(secDebounce);
+    secDebounce = setTimeout(secUpdate, 250);
+  });
+
+  /* ---------------------------------------------------------------
+     EXAMPLE GALLERY
+  ----------------------------------------------------------------*/
+  (function buildExamplesGallery(){
+    var wrap = document.getElementById('secExamplesWrap');
+    var intro = document.createElement('p');
+    intro.className = 'saved-empty'; intro.style.marginBottom = '10px';
+    intro.textContent = 'Ejemplos de referencia con datos reales aproximados, agrupados por perfil económico.';
+    wrap.appendChild(intro);
+    GROUP_ORDER.forEach(function(g, gi){
+      var meta = GROUP_META[g];
+      var examplesInGroup = SEC_EXAMPLES.filter(function(ex){ return ex.group === g; });
+      if(!examplesInGroup.length) return;
+      var details = document.createElement('details'); details.className='examples-details';
+      if(gi===0) details.open = true;
+      var summary = document.createElement('summary');
+      var dotLead = document.createElement('span'); dotLead.className='dot-lead'; dotLead.style.background = meta.color;
+      var summaryText = document.createElement('span'); summaryText.textContent = meta.title;
+      var count = document.createElement('span'); count.className='count-badge'; count.textContent = examplesInGroup.length;
+      var chevron = document.createElement('span'); chevron.className='chevron';
+      chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      summary.appendChild(dotLead); summary.appendChild(summaryText); summary.appendChild(count); summary.appendChild(chevron);
+      details.appendChild(summary);
+      var chips = document.createElement('div'); chips.className='examples-chips';
+      examplesInGroup.forEach(function(ex){
+        var btn = document.createElement('button'); btn.type='button'; btn.className='example-chip';
+        var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background = meta.color;
+        var text = document.createElement('span'); text.className='chip-text';
+        text.innerHTML = '<strong>'+escapeHtml(ex.name)+' ('+ex.year+')</strong><span>'+escapeHtml(meta.title)+'</span>';
+        btn.appendChild(dot); btn.appendChild(text);
+        btn.addEventListener('click', function(){ loadExample(ex); });
+        chips.appendChild(btn);
+      });
+      details.appendChild(chips);
+      wrap.appendChild(details);
+    });
+  })();
+
+  function loadExample(ex){
+    document.getElementById('secPlace').value = ex.name + ', ' + ex.year;
+    document.getElementById('inPri').value = ex.pri;
+    document.getElementById('inSec').value = ex.sec;
+    document.getElementById('inTer').value = ex.ter;
+    secUpdate();
+  }
+
+  document.getElementById('btnSecClear').addEventListener('click', function(){
+    document.getElementById('secPlace').value = '';
+    fields.forEach(function(id){ document.getElementById(id).value = ''; });
+    secUpdate();
+  });
+  document.getElementById('btnSecPrint').addEventListener('click', function(){ window.print(); });
+
+  /* ---------------------------------------------------------------
+     CLASSIFICATION
+  ----------------------------------------------------------------*/
+  function classifySector(p, s, t){
+    var tipo, tipoLabel, descripcion;
+    if(p >= 45){
+      tipo='agraria'; tipoLabel='economía agraria';
+      descripcion = 'la mayoría de la población activa trabaja en el sector primario (agricultura, ganadería, pesca o explotación forestal). Es un perfil típico de países poco industrializados, donde buena parte de la producción se destina al autoconsumo o a mercados locales.';
+    } else if(t < 55){
+      tipo='transicion'; tipoLabel='economía en transición / industrializándose';
+      descripcion = 'el sector primario ya no es mayoritario, pero el secundario (industria y construcción) y el terciario (servicios) todavía se están desarrollando y repartiéndose el peso de la población activa. Es el perfil típico de países en pleno proceso de industrialización.';
+    } else if(s >= 25){
+      tipo='terciarizada'; tipoLabel='economía terciarizada con industria fuerte';
+      descripcion = 'el sector terciario ocupa a la mayoría de la población activa, pero el sector secundario conserva un peso importante. Es el perfil de países desarrollados con una base industrial (manufacturera o tecnológica) todavía muy relevante.';
+    } else {
+      tipo='terciarizada'; tipoLabel='economía terciarizada';
+      descripcion = 'el sector terciario (comercio, transporte, turismo, sanidad, educación, finanzas...) ocupa a la mayoría de la población activa, mientras que el primario es marginal. Es el perfil característico de las economías más desarrolladas.';
+    }
+    return { tipo:tipo, tipoLabel:tipoLabel, descripcion:descripcion };
+  }
+
+  /* ---------------------------------------------------------------
+     CHART
+  ----------------------------------------------------------------*/
+  function renderChart(p, s, t){
+    if(!secChart){
+      var ctx = document.getElementById('secChart').getContext('2d');
+      secChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Primario','Secundario','Terciario'],
+          datasets: [{
+            data: [p, s, t],
+            backgroundColor: ['#3E8E7E','#B4790F','#2C5F8A'],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '55%',
+          plugins: {
+            legend: { display:false },
+            tooltip: {
+              backgroundColor:'#182338',
+              titleFont:{family:"'Fraunces', serif", weight:'600', size:13.5},
+              bodyFont:{family:"'IBM Plex Mono', monospace", size:12.5}, padding:11, cornerRadius:8,
+              callbacks: { label: function(item){ return item.label + ': ' + item.formattedValue + '%'; } }
+            }
+          }
+        }
+      });
+    } else {
+      secChart.data.datasets[0].data = [p, s, t];
+      secChart.update();
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     ANALYSIS
+  ----------------------------------------------------------------*/
+  function renderAnalysis(r, place, p, s, t){
+    var html = '<div class="conclusion"><p>';
+    html += (place ? '<strong>' + escapeHtml(place) + '</strong>' : 'Este país') + ' tiene el ' + p.toFixed(1) + '% de su población activa en el sector primario, el ' + s.toFixed(1) + '% en el secundario y el ' + t.toFixed(1) + '% en el terciario. Este reparto corresponde a una <strong>' + r.tipoLabel + '</strong>: ' + r.descripcion;
+    html += '</p></div>';
+    html += '<p class="disclaimer">El criterio clásico (a mayor desarrollo, menor peso del sector primario y mayor peso del terciario) es una simplificación útil, pero no sustituye otros indicadores de desarrollo como el IDH o la renta per cápita.</p>';
+    document.getElementById('secAnalysisBody').innerHTML = html;
+  }
+
+  /* ---------------------------------------------------------------
+     MAIN UPDATE
+  ----------------------------------------------------------------*/
+  function secUpdate(){
+    var place = document.getElementById('secPlace').value.trim();
+    document.getElementById('secPrintTitle').textContent = 'Sectores económicos' + (place ? ' — ' + place : '');
+
+    var p = parseFloat(document.getElementById('inPri').value);
+    var s = parseFloat(document.getElementById('inSec').value);
+    var t = parseFloat(document.getElementById('inTer').value);
+
+    var totalNote = document.getElementById('secTotalNote');
+    var chartEmpty = document.getElementById('secChartEmpty');
+    var analysisEmpty = document.getElementById('secAnalysisEmpty');
+
+    var hasAny = !isNaN(p) || !isNaN(s) || !isNaN(t);
+    var hasAll = !isNaN(p) && !isNaN(s) && !isNaN(t);
+
+    if(!hasAny){
+      totalNote.textContent = '';
+      chartEmpty.style.display = 'flex';
+      document.getElementById('secChart').style.visibility = 'hidden';
+      document.getElementById('secAnalysisBody').innerHTML = '';
+      document.getElementById('secAnalysisBody').appendChild(analysisEmpty);
+      return;
+    }
+    if(!hasAll){
+      totalNote.textContent = 'Rellena los tres porcentajes para ver el gráfico y el análisis.';
+      totalNote.className = 'total-note warn';
+      chartEmpty.style.display = 'flex';
+      document.getElementById('secChart').style.visibility = 'hidden';
+      document.getElementById('secAnalysisBody').innerHTML = '';
+      document.getElementById('secAnalysisBody').appendChild(analysisEmpty);
+      return;
+    }
+
+    var total = p + s + t;
+    if(Math.abs(total - 100) > 1.5){
+      totalNote.textContent = 'La suma es ' + total.toFixed(1) + '% (debería rondar el 100%). El gráfico y el análisis usan los valores tal cual los has escrito.';
+      totalNote.className = 'total-note warn';
+    } else {
+      totalNote.textContent = 'Suma: ' + total.toFixed(1) + '%.';
+      totalNote.className = 'total-note ok';
+    }
+
+    chartEmpty.style.display = 'none';
+    document.getElementById('secChart').style.visibility = 'visible';
+
+    renderChart(p, s, t);
+    var r = classifySector(p, s, t);
+    renderAnalysis(r, place, p, s, t);
+  }
+
+  /* ---------------------------------------------------------------
+     SAVE / LOAD / EXPORT / IMPORT
+  ----------------------------------------------------------------*/
+  function secLoadFromStorage(){
+    try{
+      var raw = localStorage.getItem(SEC_STORAGE_KEY);
+      secSaved = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(secSaved)) secSaved = [];
+    } catch(e){ secSaved = []; }
+  }
+  function secPersist(){
+    try{ localStorage.setItem(SEC_STORAGE_KEY, JSON.stringify(secSaved)); return true; }
+    catch(e){ secSetSaveStatus('No se ha podido guardar en este navegador (memoria llena o modo privado).', true); return false; }
+  }
+  function secSetSaveStatus(text, warn){
+    var el = document.getElementById('secSaveStatus');
+    el.textContent = text; el.className = 'save-status' + (warn?' warn':'');
+  }
+  function secRenderSaved(){
+    var wrap = document.getElementById('secSavedWrap');
+    wrap.innerHTML = '';
+    if(!secSaved.length){
+      var p = document.createElement('p'); p.className='saved-empty';
+      p.textContent = 'Todavía no has guardado ningún país en este dispositivo.';
+      wrap.appendChild(p);
+      if(typeof populateCompareSelects === 'function') populateCompareSelects();
+      return;
+    }
+    var chips = document.createElement('div'); chips.className='examples-chips';
+    secSaved.forEach(function(entry){
+      var chip = document.createElement('div'); chip.className='saved-chip';
+      var mainBtn = document.createElement('button'); mainBtn.type='button'; mainBtn.className='saved-chip-main';
+      var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background='var(--gold)';
+      var text = document.createElement('span'); text.className='chip-text';
+      text.innerHTML = '<strong>'+escapeHtml(entry.name)+'</strong><span>'+escapeHtml(entry.place||'Sin etiqueta')+'</span>';
+      mainBtn.appendChild(dot); mainBtn.appendChild(text);
+      mainBtn.addEventListener('click', function(){
+        document.getElementById('secPlace').value = entry.place || '';
+        document.getElementById('inPri').value = entry.pri;
+        document.getElementById('inSec').value = entry.sec;
+        document.getElementById('inTer').value = entry.ter;
+        secUpdate();
+        secSetSaveStatus('Cargado "'+entry.name+'".');
+      });
+      var delBtn = document.createElement('button'); delBtn.type='button'; delBtn.className='saved-chip-delete';
+      delBtn.setAttribute('aria-label','Eliminar '+entry.name); delBtn.textContent='×';
+      delBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(window.confirm('¿Eliminar "'+entry.name+'"?')){
+          secSaved = secSaved.filter(function(c){ return c.id!==entry.id; });
+          secPersist(); secRenderSaved();
+        }
+      });
+      chip.appendChild(mainBtn); chip.appendChild(delBtn); chips.appendChild(chip);
+    });
+    wrap.appendChild(chips);
+    if(typeof populateCompareSelects === 'function') populateCompareSelects();
+  }
+  document.getElementById('btnSecSave').addEventListener('click', function(){
+    var p = parseFloat(document.getElementById('inPri').value);
+    var s = parseFloat(document.getElementById('inSec').value);
+    var t = parseFloat(document.getElementById('inTer').value);
+    if(isNaN(p) || isNaN(s) || isNaN(t)){
+      secSetSaveStatus('Rellena los tres datos antes de guardar.', true); return;
+    }
+    var nameInput = document.getElementById('secSaveName');
+    var place = document.getElementById('secPlace').value.trim();
+    var name = nameInput.value.trim() || place || 'País sin título';
+    var existing = secSaved.find(function(c){ return c.name===name; });
+    if(existing && !window.confirm('Ya existe un país guardado como "'+name+'". ¿Sobrescribirlo?')){
+      secSetSaveStatus('Guardado cancelado.', true); return;
+    }
+    var entry = { id: existing?existing.id:genId(), name:name, place:place, createdAt:new Date().toISOString(), pri:p, sec:s, ter:t };
+    if(existing) secSaved = secSaved.map(function(c){ return c.id===entry.id?entry:c; });
+    else secSaved.push(entry);
+    if(secPersist()){ secSetSaveStatus('Guardado como "'+name+'".'); nameInput.value=''; secRenderSaved(); }
+  });
+  document.getElementById('btnSecExport').addEventListener('click', function(){
+    if(!secSaved.length){ secSetSaveStatus('No tienes países guardados para exportar.', true); return; }
+    downloadJSON({ app:'Taller de Sectores Económicos', version:1, exportedAt:new Date().toISOString(), paises:secSaved },
+      'sectores-' + new Date().toISOString().slice(0,10) + '.json');
+    secSetSaveStatus('Exportados ' + secSaved.length + ' país(es).');
+  });
+  document.getElementById('btnSecImport').addEventListener('click', function(){ document.getElementById('secImportFile').click(); });
+  document.getElementById('secImportFile').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = JSON.parse(evt.target.result);
+        var incoming = Array.isArray(data) ? data : (data.paises || []);
+        incoming = incoming.filter(function(c){ return c && typeof c.pri==='number' && typeof c.sec==='number' && typeof c.ter==='number'; });
+        if(!incoming.length){ secSetSaveStatus('El archivo no contiene países válidos.', true); return; }
+        var existingIds = secSaved.map(function(c){return c.id;});
+        incoming.forEach(function(c){
+          if(!c.id || existingIds.indexOf(c.id)!==-1) c.id = genId();
+          if(!c.name) c.name = c.place || 'País importado';
+          secSaved.push(c); existingIds.push(c.id);
+        });
+        secPersist(); secRenderSaved();
+        secSetSaveStatus('Importados ' + incoming.length + ' país(es).');
+      } catch(err){ secSetSaveStatus('El archivo no tiene un formato JSON válido.', true); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  secLoadFromStorage();
+  secRenderSaved();
+  secUpdate();
+
+
+  /* ---------------------------------------------------------------
+     COMPARE TWO COUNTRIES
+  ----------------------------------------------------------------*/
+  var cmpChartA = null, cmpChartB = null;
+
+  function getAllSecSources(){
+    var list = [];
+    SEC_EXAMPLES.forEach(function(ex){
+      list.push({ key:'example:'+ex.id, kind:'example', name:ex.name+' ('+ex.year+')', pri:ex.pri, sec:ex.sec, ter:ex.ter });
+    });
+    secSaved.forEach(function(s){
+      list.push({ key:'saved:'+s.id, kind:'saved', name:s.name, pri:s.pri, sec:s.sec, ter:s.ter });
+    });
+    return list;
+  }
+
+  function populateCompareSelects(){
+    var sources = getAllSecSources();
+    ['A','B'].forEach(function(side){
+      var sel = document.getElementById('cmp'+side+'Select');
+      var prevValue = sel.value;
+      sel.innerHTML = '';
+      var exGroup = document.createElement('optgroup'); exGroup.label = 'Ejemplos';
+      var savedGroup = document.createElement('optgroup'); savedGroup.label = 'Tus países guardados';
+      sources.forEach(function(src){
+        var opt = document.createElement('option');
+        opt.value = src.key; opt.textContent = src.name;
+        (src.kind === 'example' ? exGroup : savedGroup).appendChild(opt);
+      });
+      if(exGroup.children.length) sel.appendChild(exGroup);
+      if(savedGroup.children.length) sel.appendChild(savedGroup);
+      if(prevValue && sources.some(function(s){ return s.key === prevValue; })){ sel.value = prevValue; }
+    });
+    renderComparison();
+  }
+
+  document.getElementById('cmpASelect').addEventListener('change', renderComparison);
+  document.getElementById('cmpBSelect').addEventListener('change', renderComparison);
+  document.getElementById('btnCompareSwap').addEventListener('click', function(){
+    var a = document.getElementById('cmpASelect'), b = document.getElementById('cmpBSelect');
+    var tmp = a.value; a.value = b.value; b.value = tmp;
+    renderComparison();
+  });
+
+  function destroyCompareCharts(){
+    if(cmpChartA){ cmpChartA.destroy(); cmpChartA = null; }
+    if(cmpChartB){ cmpChartB.destroy(); cmpChartB = null; }
+  }
+
+  function buildCompareDonut(ctx, p, s, t){
+    return new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Primario','Secundario','Terciario'],
+        datasets: [{ data:[p,s,t], backgroundColor:['#3E8E7E','#B4790F','#2C5F8A'], borderColor:'#fff', borderWidth:2 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, cutout:'55%',
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            backgroundColor:'#182338', bodyFont:{family:"'IBM Plex Mono', monospace", size:12.5}, padding:10, cornerRadius:8,
+            callbacks:{ label:function(item){ return item.label + ': ' + item.formattedValue + '%'; } }
+          }
+        }
+      }
+    });
+  }
+
+  function renderComparison(){
+    destroyCompareCharts();
+    var sources = getAllSecSources();
+    var srcA = sources.find(function(s){ return s.key === document.getElementById('cmpASelect').value; });
+    var srcB = sources.find(function(s){ return s.key === document.getElementById('cmpBSelect').value; });
+    var results = document.getElementById('compareResults');
+    if(!srcA || !srcB){
+      results.innerHTML = '<p class="compare-empty">Elige un país para A y otro para B.</p>';
+      return;
+    }
+
+    var rA = classifySector(srcA.pri, srcA.sec, srcA.ter);
+    var rB = classifySector(srcB.pri, srcB.sec, srcB.ter);
+
+    var html = '<div class="table-scroll"><table class="compare-table"><thead><tr><th></th><th>'+escapeHtml(srcA.name)+'</th><th>'+escapeHtml(srcB.name)+'</th></tr></thead><tbody>';
+    html += '<tr><td class="rlabel">Sector primario</td><td>'+srcA.pri.toFixed(1)+'%</td><td>'+srcB.pri.toFixed(1)+'%</td></tr>';
+    html += '<tr><td class="rlabel">Sector secundario</td><td>'+srcA.sec.toFixed(1)+'%</td><td>'+srcB.sec.toFixed(1)+'%</td></tr>';
+    html += '<tr><td class="rlabel">Sector terciario</td><td>'+srcA.ter.toFixed(1)+'%</td><td>'+srcB.ter.toFixed(1)+'%</td></tr>';
+    html += '<tr><td class="rlabel">Perfil</td><td>'+rA.tipoLabel+'</td><td>'+rB.tipoLabel+'</td></tr>';
+    html += '</tbody></table></div>';
+    html += '<div class="compare-side-charts">' +
+      '<div><p class="compare-side-title">'+escapeHtml(srcA.name)+'</p><div class="chart-wrap"><canvas id="cmpChartA"></canvas></div></div>' +
+      '<div><p class="compare-side-title">'+escapeHtml(srcB.name)+'</p><div class="chart-wrap"><canvas id="cmpChartB"></canvas></div></div>' +
+      '</div>';
+    results.innerHTML = html;
+
+    cmpChartA = buildCompareDonut(document.getElementById('cmpChartA').getContext('2d'), srcA.pri, srcA.sec, srcA.ter);
+    cmpChartB = buildCompareDonut(document.getElementById('cmpChartB').getContext('2d'), srcB.pri, srcB.sec, srcB.ter);
+  }
+
+  populateCompareSelects();
+
+})();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

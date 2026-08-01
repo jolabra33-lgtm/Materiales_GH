@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historia de España Contemporánea</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Academic Light Theme */
+            --primary: #1d4ed8;      /* Blue 700 */
+            --primary-dark: #1e3a8a; /* Blue 900 */
+            --bg-color: #f8fafc;     /* Slate 50 */
+            --text-main: #1e293b;    /* Slate 800 */
+            --text-muted: #64748b;   /* Slate 500 */
+            --card-bg: #ffffff;      
+            --border-color: #e2e8f0; /* Slate 200 */
+            --line-color: #cbd5e1;   /* Slate 300 */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden; 
+            margin: 0;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        #sidebar {
+            background: #0f172a; /* Dark sidebar for contrast */
+            color: #f8fafc;
+            border-right: 1px solid #1e293b;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+
+        .menu-item {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        .menu-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .menu-item.active {
+            background: rgba(255,255,255,0.1);
+            border-left-color: #3b82f6; /* Bright blue indicator */
+        }
+
+        .timeline-container {
+            width: 100%;
+            height: 100%;
+            overflow-x: auto;
+            overflow-y: auto; 
+            cursor: grab;
+            position: relative;
+            display: flex;
+            align-items: center; 
+            scroll-behavior: auto; /* Changed from smooth to avoid jumps during zoom */
+        }
+        .timeline-container:active { cursor: grabbing; }
+
+        .timeline-track-wrapper {
+            position: relative;
+            display: block;
+            height: 100%;
+            min-height: 800px; /* Ensure enough height for 3 levels of staggering */
+        }
+
+        .timeline-line {
+            height: 4px;
+            background: var(--line-color);
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 4px;
+        }
+
+        .event-wrapper {
+            position: absolute;
+            top: 50%;
+            width: 2px;
+            overflow: visible;
+            z-index: 10;
+        }
+
+        .event-dot {
+            position: absolute;
+            top: -7px;
+            left: -7px;
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            z-index: 20;
+            transition: transform 0.2s ease;
+        }
+        
+        .event-wrapper:hover .event-dot {
+            transform: scale(1.3);
+            background: var(--primary);
+        }
+
+        .connector {
+            position: absolute;
+            left: 0;
+            width: 2px;
+            background: var(--line-color);
+            z-index: 5;
+        }
+        .event-wrapper.top .connector { bottom: 0; }
+        .event-wrapper.bottom .connector { top: 0; }
+
+        .event-card {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            z-index: 30;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .event-wrapper:hover .event-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 40;
+        }
+
+        .year-badge {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .category-tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            background: #e0e7ff; 
+            color: #3730a3; 
+        }
+
+        .event-desc {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+        .event-desc ul { 
+            list-style-type: disc; 
+            padding-left: 1.2rem; 
+            margin: 0; 
+        }
+        .event-desc li { 
+            margin-bottom: 0.25rem; 
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #print-title { display: none; }
+
+        @media print {
+            @page { size: A3 landscape; margin: 10mm; }
+            body { background: white !important; overflow: visible !important; }
+            #sidebar, .print-hide, header { display: none !important; }
+            main { padding: 0 !important; overflow: visible !important; display: block !important; }
+            
+            #print-title {
+                display: block !important;
+                text-align: center !important;
+                font-size: 28pt !important;
+                font-weight: bold !important;
+                margin-top: 5mm !important;
+                margin-bottom: 15mm !important;
+                color: black !important;
+                width: 100% !important;
+            }
+            
+            .timeline-container { 
+                overflow: visible !important; width: 100% !important; height: auto !important;
+                display: block !important; 
+            }
+            .timeline-track-wrapper { 
+                height: 800px !important; 
+                page-break-inside: avoid;
+            }
+            .event-card {
+                box-shadow: none !important;
+                border: 1px solid #000 !important;
+                border-top: 4px solid #000 !important;
+                -webkit-print-color-adjust: exact;
+                page-break-inside: avoid;
+            }
+            .timeline-line, .connector {
+                background: #000 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            .event-dot {
+                border-color: #000 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            .category-tag {
+                background: #eee !important;
+                color: #000 !important;
+                border: 1px solid #ccc;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body class="flex h-screen w-full">
+
+<aside id="sidebar" class="w-72 flex-shrink-0 flex flex-col h-full absolute md:relative transform -translate-x-full md:translate-x-0">
+    <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold text-white tracking-tight">
+                Línea del Tiempo
+            </h1>
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Historia de España</p>
+        </div>
+        <button id="close-menu" class="md:hidden text-slate-400 hover:text-white">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto py-4 px-2 space-y-1" id="menu-container">
+        <!-- Menú generado por JS -->
+    </div>
+
+    <div class="p-4 border-t border-slate-700 space-y-2">
+        <button onclick="exportAllJSON()" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-lg transition border border-slate-600 flex items-center justify-center gap-2">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar App Completa
+        </button>
+    </div>
+</aside>
+
+<main class="flex-1 flex flex-col h-full relative min-w-0 bg-white">
+    <header class="h-16 px-6 border-b border-slate-200 bg-white flex items-center justify-between z-30 shrink-0 shadow-sm">
+        <div class="flex items-center gap-4">
+            <button id="toggle-sidebar" class="text-slate-500 hover:text-slate-800 hover:bg-slate-100 p-2 -ml-2 rounded-lg transition" title="Mostrar/Ocultar menú">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div class="flex items-center gap-3">
+                <span id="header-number" class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs border border-blue-200"></span>
+                <h2 id="header-title" class="text-lg md:text-xl font-bold text-slate-800 truncate"></h2>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2 print-hide">
+            <!-- Zoom Controls -->
+            <div class="hidden md:flex items-center gap-1 mr-2 bg-slate-100 rounded-lg p-1 border border-slate-200">
+                <button onclick="zoomOut()" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition" title="Alejar (Vista general)">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+                <span id="zoom-level" class="text-xs font-bold text-slate-700 w-10 text-center">100%</span>
+                <button onclick="zoomIn()" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition" title="Acercar (Ver detalles)">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+            </div>
+            <!-- Actions -->
+            <button onclick="window.print()" class="p-2 md:px-4 md:py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium transition flex items-center gap-2" title="Imprimir (A3 Recomendado)">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                <span class="hidden md:inline">Imprimir A3</span>
+            </button>
+            <button onclick="exportCurrentJSON()" class="p-2 md:px-4 md:py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium transition flex items-center gap-2" title="Exportar esta línea">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span class="hidden md:inline">Exportar JSON</span>
+            </button>
+            <button onclick="openModal()" class="p-2 md:px-4 md:py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium transition flex items-center gap-2 shadow-sm">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span class="hidden md:inline">Añadir Hecho</span>
+            </button>
+        </div>
+    </header>
+
+    <div id="print-title"></div>
+
+    <div id="timeline-scroll-area" class="timeline-container">
+        <div id="timeline-track" class="timeline-track-wrapper">
+            <div class="timeline-line"></div>
+            <!-- Eventos generados dinámicamente -->
+        </div>
+    </div>
+</main>
+
+<div id="modal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="bg-white rounded-xl w-full max-w-md relative z-10 border border-slate-200 shadow-2xl p-6">
+        <h3 class="text-xl font-bold text-slate-800 mb-4">Nuevo Hecho Histórico</h3>
+        <form id="add-form" onsubmit="saveEvent(event)" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Año/Fecha</label>
+                    <input type="text" id="i-year" required class="w-full bg-white border border-slate-300 text-slate-800 px-3 py-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Categoría</label>
+                    <input type="text" id="i-cat" placeholder="Opcional" class="w-full bg-white border border-slate-300 text-slate-800 px-3 py-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Descripción (Puntos para crear viñetas)</label>
+                <textarea id="i-desc" required rows="3" class="w-full bg-white border border-slate-300 text-slate-800 px-3 py-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" placeholder="Ejemplo: Primer suceso. Segundo suceso."></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Posición Visual</label>
+                <select id="i-pos" class="w-full bg-white border border-slate-300 text-slate-800 px-3 py-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                    <option value="top">Arriba</option>
+                    <option value="bottom">Abajo</option>
+                </select>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+                    <label>Ubicación Temporal (0% al 100%)</label>
+                    <span id="i-perc-val" class="text-blue-600 font-bold">50%</span>
+                </div>
+                <input type="range" id="i-perc" min="0" max="100" value="50" class="w-full accent-blue-600" oninput="document.getElementById('i-perc-val').textContent=this.value+'%'">
+            </div>
+            <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium transition">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition">Guardar Hecho</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Variables Globales
+    let currentId = 0;
+    let currentZoom = 1;
+
+    // Base de datos completa con los 14 grupos cronológicos
+    const db = [
+        {
+            id: 0, number: "0", title: "Visión General: Historia de España Contemporánea (1808-1982)",
+            events: [
+                { year: "1808-1833", pos: "top", perc: 5, cat: "Crisis A. Régimen", desc: "Guerra de Independencia (1808-14). Cortes de Cádiz y Constitución 1812. Reinado de Fernando VII (Sexenio Absolutista, Trienio Liberal, Década Ominosa). Independencia colonias." },
+                { year: "1833-1868", pos: "bottom", perc: 18, cat: "Estado Liberal", desc: "Reinado Isabel II. Minoría (Regencias Mª Cristina y Espartero). Mayoría: Década Moderada y Bienio Progresista. I Guerra Carlista. Desamortizaciones de Mendizábal y Madoz." },
+                { year: "1868-1874", pos: "top", perc: 32, cat: "Sexenio Revolucionario", desc: "La Gloriosa. Gobierno Provisional. Constitución 1869. Monarquía de Amadeo I. I República (1873-74). Guerra de Cuba y III Guerra Carlista." },
+                { year: "1875-1931", pos: "bottom", perc: 46, cat: "La Restauración", desc: "Constitución 1876. Turnismo (Cánovas/Sagasta). Caciquismo. Crisis del 98. Crisis 1917. Dictadura de Primo de Rivera (1923-1930)." },
+                { year: "1931-1936", pos: "bottom", perc: 70, cat: "II República", desc: "Constitución 1931. Bienio Reformista (Azaña). Bienio Conservador (Lerroux/CEDA). Frente Popular (1936). Amplias reformas y fuerte oposición social/militar." },
+                { year: "1936-1939", pos: "top", perc: 80, cat: "Guerra Civil", desc: "Golpe de Estado 18 julio 1936. Zona Republicana (apoyo URSS) vs Zona Sublevada (apoyo Alemania/Italia fascista). Triunfo bando sublevado." },
+                { year: "1939-1975", pos: "bottom", perc: 90, cat: "Franquismo", desc: "Dictadura. Posguerra y Autarquía (1939-59). Desarrollismo (1959-75): Plan de Estabilización, industrialización. Fuerte represión y falta de libertades." },
+                { year: "1975-1982", pos: "top", perc: 98, cat: "Transición", desc: "Muerte de Franco. Gobierno de Suárez. Legalización de partidos. Constitución de 1978. Pactos de la Moncloa. Triunfo PSOE (1982)." }
+            ]
+        },
+        {
+            id: 1, number: "1", title: "El siglo XVIII: reformismo borbónico e Ilustración",
+            events: [
+                { year: "1700", pos: "top", perc: 5, desc: "Felipe V asume el trono." },
+                { year: "1704-1714", pos: "bottom", perc: 15, desc: "Guerra de Sucesión en España." },
+                { year: "1707", pos: "top", perc: 25, desc: "Decretos de Nueva Planta." },
+                { year: "1735", pos: "bottom", perc: 35, desc: "Creación Academia de la Historia." },
+                { year: "1746-1759", pos: "top", perc: 45, desc: "Reinado de Fernando VI." },
+                { year: "1752", pos: "bottom", perc: 55, desc: "Creación Academia de Bellas Artes de San Fernando." },
+                { year: "1759-1788", pos: "top", perc: 65, desc: "Reinado de Carlos III." },
+                { year: "1766", pos: "bottom", perc: 72, desc: "Motín de Esquilache." },
+                { year: "1767", pos: "top", perc: 78, desc: "Expulsión de los jesuitas." },
+                { year: "1778", pos: "bottom", perc: 85, desc: "Libertad de comercio con América." },
+                { year: "1789-1808", pos: "top", perc: 90, desc: "Reinado de Carlos IV." },
+                { year: "1792", pos: "bottom", perc: 93, desc: "Manuel Godoy, valido del rey." },
+                { year: "1793-1795", pos: "top", perc: 95, desc: "Guerra contra Francia." },
+                { year: "1805", pos: "bottom", perc: 97, cat: "Hito añadido", desc: "Batalla de Trafalgar. Destrucción de gran parte de la armada española." },
+                { year: "1807", pos: "top", perc: 99, cat: "Hito añadido", desc: "Tratado de Fontainebleau. Permite el paso de tropas francesas hacia Portugal." }
+            ]
+        },
+        {
+            id: 2, number: "2", title: "El fin del Antiguo Régimen y la Revolución liberal",
+            events: [
+                { year: "1808 (marzo)", pos: "top", perc: 5, desc: "Motín de Aranjuez. Fernando VII, rey. Levantamiento de Madrid contra franceses. José I, rey de España." },
+                { year: "1808 (2 may)", pos: "bottom", perc: 10, cat: "Hito añadido", desc: "Levantamiento del pueblo de Madrid contra las tropas de ocupación francesas." },
+                { year: "1810", pos: "bottom", perc: 15, desc: "Cortes en Cádiz. Comienza la emancipación en América." },
+                { year: "1812", pos: "top", perc: 25, desc: "Constitución política de la monarquía española, la Pepa." },
+                { year: "1813", pos: "bottom", perc: 35, desc: "Abolición de la Inquisición. José I abandona España." },
+                { year: "1814", pos: "top", perc: 45, desc: "Las Cortes reanudan sesiones en Madrid. Fernando VII restaura el absolutismo." },
+                { year: "1820", pos: "bottom", perc: 55, desc: "Pronunciamiento de Riego. Fernando VII jura la Constitución de 1812." },
+                { year: "1823", pos: "top", perc: 70, desc: "Invasión de los Cien Mil Hijos de San Luis. Fernando VII restablece el poder absoluto. Ejecución de Riego en Madrid." },
+                { year: "1824", pos: "bottom", perc: 80, desc: "Fin de las guerras de Independencia en América." },
+                { year: "1830", pos: "top", perc: 86, cat: "Hito añadido", desc: "Publicación de la Pragmática Sanción que deroga la Ley Sálica, permitiendo reinar a las mujeres." },
+                { year: "1831", pos: "top", perc: 90, desc: "Mariana Pineda, ejecutada en Granada. Torrijos y sus compañeros, fusilados en Málaga." },
+                { year: "1833", pos: "bottom", perc: 98, desc: "Muere Fernando VII." }
+            ]
+        },
+        {
+            id: 3, number: "3", title: "El reinado de Isabel II",
+            events: [
+                { year: "1833", pos: "top", perc: 5, desc: "Muere Fernando VII. I guerra carlista." },
+                { year: "1834", pos: "bottom", perc: 10, desc: "Estatuto Real." },
+                { year: "1836", pos: "top", perc: 18, desc: "Desamortización de Mendizábal. Motín de La Granja." },
+                { year: "1837", pos: "bottom", perc: 25, desc: "Constitución progresista." },
+                { year: "1839", pos: "top", perc: 30, cat: "Hito añadido", desc: "Abrazo de Vergara. Pone fin a la Primera Guerra Carlista." },
+                { year: "1841", pos: "top", perc: 40, desc: "Espartero, regente." },
+                { year: "1844", pos: "bottom", perc: 50, desc: "Gobierno de Narváez. Creación de la Guardia Civil." },
+                { year: "1845", pos: "top", perc: 55, desc: "Constitución moderada." },
+                { year: "1846", pos: "bottom", perc: 60, desc: "II guerra carlista." },
+                { year: "1854", pos: "bottom", perc: 68, desc: "«Vicalvarada»." },
+                { year: "1855", pos: "top", perc: 75, desc: "Ley de desamortización de Madoz." },
+                { year: "1856", pos: "top", perc: 80, desc: "Fin del Bienio Progresista." },
+                { year: "1858-1863", pos: "bottom", perc: 85, desc: "Gobierno de O’Donnell." },
+                { year: "1864", pos: "top", perc: 90, desc: "Narváez, presidente." },
+                { year: "1866", pos: "bottom", perc: 94, cat: "Hito añadido", desc: "Pacto de Ostende. Alianza de progresistas y demócratas para derrocar a Isabel II." },
+                { year: "1868", pos: "bottom", perc: 98, desc: "Revolución en Cádiz (la Gloriosa)." }
+            ]
+        },
+        {
+            id: 4, number: "4", title: "Sexenio Revolucionario y monarquía de la Restauración",
+            events: [
+                { year: "1868", pos: "top", perc: 5, desc: "La Gloriosa en Cádiz. Exilio de Isabel II." },
+                { year: "1869", pos: "bottom", perc: 12, desc: "Nueva constitución." },
+                { year: "1871", pos: "top", perc: 18, desc: "Amadeo I entra en Madrid. Asesinato de Prim." },
+                { year: "1873", pos: "bottom", perc: 25, desc: "Abdicación de Amadeo I. Primera República." },
+                { year: "1873 (verano)", pos: "top", perc: 28, cat: "Hito añadido", desc: "Rebelión cantonal. Sublevaciones insurreccionales durante la I República." },
+                { year: "1874", pos: "top", perc: 35, desc: "Golpe de Estado de Pavía. Manifiesto de Sandhurst." },
+                { year: "1875", pos: "bottom", perc: 45, desc: "Alfonso XII entra en Madrid." },
+                { year: "1876", pos: "top", perc: 55, desc: "Promulgación de la Constitución." },
+                { year: "1879", pos: "bottom", perc: 65, cat: "Hito añadido", desc: "Fundación clandestina del Partido Socialista Obrero Español (PSOE) por Pablo Iglesias." },
+                { year: "1881", pos: "bottom", perc: 70, desc: "Gobierno de Sagasta: primera etapa liberal." },
+                { year: "1884", pos: "top", perc: 78, desc: "Gobierno de Cánovas." },
+                { year: "1885", pos: "bottom", perc: 82, desc: "Pacto de El Pardo. Muerte de Alfonso XII. María Cristina, regente." },
+                { year: "1890", pos: "top", perc: 88, desc: "Sufragio universal." },
+                { year: "1895", pos: "bottom", perc: 92, desc: "Guerra de Cuba." },
+                { year: "1898", pos: "top", perc: 96, desc: "Desastre del 98: independencia de Cuba, Puerto Rico y Filipinas." },
+                { year: "1902", pos: "bottom", perc: 99, desc: "Mayoría de edad de Alfonso XIII." }
+            ]
+        },
+        {
+            id: 5, number: "5", title: "Transformaciones económicas y sociales en el siglo XIX",
+            events: [
+                { year: "1831", pos: "top", perc: 5, cat: "Economía", desc: "Abre la Bolsa de Madrid." },
+                { year: "1840", pos: "bottom", perc: 12, cat: "Hito añadido", desc: "Fundación de la Sociedad de Tejedores en Barcelona, primer sindicato obrero de España." },
+                { year: "1842", pos: "bottom", perc: 18, cat: "Sociedad", desc: "Protestas y bombardeo de Barcelona." },
+                { year: "1844", pos: "top", perc: 22, cat: "Economía", desc: "Fundación del Banco de Isabel II." },
+                { year: "1845", pos: "top", perc: 28, cat: "Economía", desc: "Reforma fiscal." },
+                { year: "1848", pos: "top", perc: 35, cat: "Economía", desc: "Primer ferrocarril peninsular." },
+                { year: "1855", pos: "top", perc: 45, cat: "Economía", desc: "Ley General de Ferrocarriles." },
+                { year: "1855 (jul)", pos: "bottom", perc: 48, cat: "Hito añadido", desc: "Primera Huelga General de la historia de España en Barcelona." },
+                { year: "1856", pos: "top", perc: 55, cat: "Economía", desc: "Fundación del Banco de España." },
+                { year: "1857", pos: "bottom", perc: 60, cat: "Sociedad", desc: "Ley de Instrucción Pública." },
+                { year: "1861", pos: "bottom", perc: 65, cat: "Sociedad", desc: "Insurrección campesina en Loja (Granada)." },
+                { year: "1866", pos: "top", perc: 70, cat: "Economía", desc: "Crisis general de subsistencias y financiera." },
+                { year: "1866", pos: "bottom", perc: 73, cat: "Sociedad", desc: "Levantamiento popular en Madrid." },
+                { year: "1868", pos: "top", perc: 78, cat: "Economía", desc: "Creación de la peseta." },
+                { year: "1870", pos: "bottom", perc: 82, cat: "Sociedad", desc: "Primer congreso obrero de la AIT en Barcelona." },
+                { year: "1879", pos: "bottom", perc: 85, cat: "Sociedad", desc: "Fundación del PSOE." },
+                { year: "1883", pos: "bottom", perc: 88, cat: "Sociedad", desc: "Comisión de Reformas Sociales." },
+                { year: "1885", pos: "top", perc: 90, cat: "Economía", desc: "Epidemia de cólera." },
+                { year: "1887", pos: "bottom", perc: 92, cat: "Sociedad", desc: "Ley de Asociaciones." },
+                { year: "1888", pos: "bottom", perc: 94, cat: "Sociedad", desc: "Fundación de la Unión General de Trabajadores (UGT)." },
+                { year: "1891", pos: "top", perc: 96, cat: "Economía", desc: "Arancel proteccionista de Cánovas." },
+                { year: "1898", pos: "top", perc: 98, cat: "Economía", desc: "Pérdida de Cuba, Puerto Rico y Filipinas." },
+                { year: "1900", pos: "bottom", perc: 99, cat: "Sociedad", desc: "Creación del Ministerio de Instrucción Pública." }
+            ]
+        },
+        {
+            id: 6, number: "6", title: "El reinado de Alfonso XIII: la crisis de la Restauración",
+            events: [
+                { year: "1902", pos: "top", perc: 5, desc: "Mayoría de edad de Alfonso XIII." },
+                { year: "1906", pos: "bottom", perc: 12, cat: "Hito añadido", desc: "Ley de Jurisdicciones. Pone bajo fuero militar los delitos contra la Patria y el Ejército." },
+                { year: "1907", pos: "bottom", perc: 20, desc: "Reforma de la ley electoral." },
+                { year: "1909", pos: "top", perc: 30, desc: "Semana Trágica de Barcelona." },
+                { year: "1910", pos: "top", perc: 35, cat: "Hito añadido", desc: "Fundación de la CNT (Confederación Nacional del Trabajo), sindicato anarquista." },
+                { year: "1911", pos: "bottom", perc: 45, desc: "Huelga general." },
+                { year: "1914", pos: "top", perc: 55, desc: "Neutralidad española ante la Primera Guerra Mundial." },
+                { year: "1919-1920", pos: "bottom", perc: 65, desc: "Trienio Bolchevique andaluz." },
+                { year: "1921", pos: "top", perc: 75, desc: "Asesinato de Dato. Desastre de Annual." },
+                { year: "1923", pos: "bottom", perc: 82, desc: "Golpe de Estado. Dictadura de Primo de Rivera." },
+                { year: "1925", pos: "top", perc: 88, cat: "Hito añadido", desc: "Desembarco de Alhucemas. Éxito militar conjunto hispano-francés que pacifica Marruecos." },
+                { year: "1930", pos: "top", perc: 95, desc: "Dimisión de Primo de Rivera. Pacto de San Sebastián." },
+                { year: "1931", pos: "bottom", perc: 98, desc: "12 de abril: elecciones municipales." }
+            ]
+        },
+        {
+            id: 7, number: "7", title: "Cambios económicos y sociales en el primer tercio del siglo XX",
+            events: [
+                { year: "1896", pos: "top", perc: 5, desc: "Unión Española de Explosivos." },
+                { year: "1900", pos: "bottom", perc: 15, desc: "Banco Hispano Americano." },
+                { year: "1901", pos: "top", perc: 25, desc: "Altos Hornos de Vizcaya." },
+                { year: "1902", pos: "bottom", perc: 30, desc: "Banco Español de Crédito." },
+                { year: "1904", pos: "top", perc: 40, desc: "Hispano-Suiza de automóviles." },
+                { year: "1906", pos: "bottom", perc: 45, desc: "Ley de Bases Arancelarias." },
+                { year: "1907", pos: "top", perc: 50, desc: "Ley de Promoción de la Industria Nacional." },
+                { year: "1908", pos: "top", perc: 55, desc: "Creación del Instituto Nacional de Previsión." },
+                { year: "1909", pos: "bottom", perc: 60, desc: "Sociedad Española de Construcción Naval." },
+                { year: "1911", pos: "top", perc: 65, desc: "Barcelona Traction, Light and Power (La Canadiense)." },
+                { year: "1914-1918", pos: "top", perc: 68, cat: "Hito añadido", desc: "Boom exportador y acumulación de capital derivados de la neutralidad en la Gran Guerra." },
+                { year: "1917", pos: "bottom", perc: 70, desc: "Altos Hornos del Mediterráneo." },
+                { year: "1918", pos: "top", perc: 75, desc: "Banco Urquijo." },
+                { year: "1919", pos: "bottom", perc: 80, desc: "Banco Central." },
+                { year: "1922", pos: "top", perc: 85, desc: "Ley arancelaria." },
+                { year: "1923", pos: "bottom", perc: 88, desc: "Construcciones Aeronáuticas." },
+                { year: "1924", pos: "top", perc: 92, desc: "Compañía Telefónica Nacional." },
+                { year: "1926", pos: "bottom", perc: 95, desc: "Confederaciones Hidrográficas. Banco Popular." },
+                { year: "1927", pos: "top", perc: 98, desc: "Compañía Arrendataria del Monopolio de Petróleos (Campsa)." }
+            ]
+        },
+        {
+            id: 8, number: "8", title: "La Segunda República",
+            events: [
+                { year: "12 abr 1931", pos: "top", perc: 5, desc: "Elecciones municipales." },
+                { year: "14 abr 1931", pos: "bottom", perc: 10, desc: "Proclamación de la Segunda República." },
+                { year: "1 oct 1931", pos: "top", perc: 18, cat: "Hito añadido", desc: "Aprobación en Cortes del sufragio universal femenino, impulsado por Clara Campoamor." },
+                { year: "9 dic 1931", pos: "top", perc: 25, desc: "Aprobación de la Constitución republicana." },
+                { year: "10 ago 1932", pos: "bottom", perc: 32, desc: "Sublevación militar de Sanjurjo (Sanjurjada)." },
+                { year: "9 sep 1932", pos: "bottom", perc: 38, cat: "Hito añadido", desc: "Aprobación del Estatuto de Autonomía de Cataluña." },
+                { year: "10 ene 1933", pos: "top", perc: 45, desc: "Sucesos de Casas Viejas." },
+                { year: "4 mar 1933", pos: "bottom", perc: 50, desc: "Fundación de la CEDA." },
+                { year: "4 oct 1934", pos: "top", perc: 60, desc: "Gobierno de Lerroux." },
+                { year: "5 oct 1934", pos: "bottom", perc: 65, desc: "Huelga general revolucionaria y Revolución de Asturias." },
+                { year: "2 ene 1935", pos: "bottom", perc: 75, desc: "Suspensión de la autonomía catalana." },
+                { year: "1 ago 1935", pos: "top", perc: 80, desc: "Ley de reforma agraria." },
+                { year: "16 feb 1936", pos: "bottom", perc: 85, desc: "Triunfo electoral del Frente Popular." },
+                { year: "10 may 1936", pos: "top", perc: 92, desc: "Azaña, presidente de la República." },
+                { year: "17 jul 1936", pos: "bottom", perc: 98, desc: "Sublevación militar contra la República." }
+            ]
+        },
+        {
+            id: 9, number: "9", title: "Golpe de Estado, revolución y Guerra Civil",
+            events: [
+                { year: "18 jul 1936", pos: "top", perc: 5, desc: "Levantamiento contra la República." },
+                { year: "20 jul 1936", pos: "bottom", perc: 12, desc: "Fracasa la rebelión en varias ciudades." },
+                { year: "27 sep 1936", pos: "top", perc: 20, desc: "Los sublevados liberan el Alcázar de Toledo." },
+                { year: "1 oct 1936", pos: "bottom", perc: 28, desc: "Franco, jefe del gobierno sublevado." },
+                { year: "7-23 nov 1936", pos: "top", perc: 35, desc: "Batalla de Madrid. El gobierno se traslada a Valencia." },
+                { year: "abr 1937", pos: "bottom", perc: 40, cat: "Hito añadido", desc: "Decreto de Unificación. Creación del partido único falangista (FET y de las JONS)." },
+                { year: "26 abr 1937", pos: "bottom", perc: 45, desc: "Bombardeo de Guernica." },
+                { year: "may 1937", pos: "top", perc: 50, cat: "Hito añadido", desc: "Sucesos de mayo en Barcelona. Guerra civil interna en el bando republicano." },
+                { year: "21 oct 1937", pos: "top", perc: 58, desc: "La República pierde el norte de España." },
+                { year: "31 oct 1937", pos: "bottom", perc: 65, desc: "El gobierno se traslada a Barcelona." },
+                { year: "15 abr 1938", pos: "top", perc: 75, desc: "Las tropas franquistas llegan al Mediterráneo." },
+                { year: "25 jul-17 nov 1938", pos: "bottom", perc: 85, desc: "Batalla del Ebro. Derrota del ejército republicano." },
+                { year: "26 ene 1939", pos: "top", perc: 92, desc: "Las tropas de Franco entran en Barcelona." },
+                { year: "29-30 mar 1939", pos: "bottom", perc: 96, desc: "Los sublevados entran en Madrid y Valencia." },
+                { year: "1 abr 1939", pos: "top", perc: 99, desc: "Franco anuncia el fin de la guerra." }
+            ]
+        },
+        {
+            id: 10, number: "10", title: "La dictadura franquista y la posguerra (1939-1959)",
+            events: [
+                { year: "1939", pos: "top", perc: 5, cat: "Segunda Guerra Mundial", desc: "Fin de la guerra. Victoria bando nacional." },
+                { year: "1939 (feb)", pos: "bottom", perc: 10, cat: "Hito añadido", desc: "Ley de Responsabilidades Políticas. Instrumento de represión masiva contra republicanos." },
+                { year: "1941", pos: "bottom", perc: 18, desc: "Encuentro Franco-Mussolini. Reclutamiento de la División Azul." },
+                { year: "1942", pos: "top", perc: 25, desc: "Ley Constitutiva de las Cortes." },
+                { year: "1944", pos: "bottom", perc: 35, desc: "Aumenta la actividad guerrillera del maquis." },
+                { year: "1945", pos: "top", perc: 45, cat: "Aislamiento internacional", desc: "La ONU condena el régimen franquista." },
+                { year: "1947", pos: "top", perc: 50, cat: "Hito añadido", desc: "Ley de Sucesión en la Jefatura del Estado. España se define como reino." },
+                { year: "1948", pos: "bottom", perc: 55, desc: "Exclusión de España del Plan Marshall." },
+                { year: "1952", pos: "bottom", perc: 65, desc: "Fin del racionamiento. España ingresa en la Unesco." },
+                { year: "1953", pos: "top", perc: 75, cat: "Fin del aislamiento", desc: "Concordato con la Santa Sede. Pactos de defensa con EE. UU." },
+                { year: "1955", pos: "bottom", perc: 85, desc: "España es admitida en la ONU." },
+                { year: "1957", pos: "top", perc: 90, desc: "Gobierno de tecnócratas. Devaluación de la peseta." },
+                { year: "1959", pos: "bottom", perc: 98, desc: "Plan de Estabilización. Eisenhower visita España." }
+            ]
+        },
+        {
+            id: 11, number: "11", title: "De la consolidación al final del franquismo (1959-1975)",
+            events: [
+                { year: "1959", pos: "top", perc: 5, cat: "Crecimiento económico", desc: "Plan de Estabilización y liberalización económica." },
+                { year: "1962", pos: "bottom", perc: 15, desc: "Apertura de negociaciones con la CEE. Congreso en Múnich del Movimiento Europeo." },
+                { year: "1963", pos: "top", perc: 25, desc: "Ejecución de Julián Grimau. Creación del Tribunal de Orden Público (TOP)." },
+                { year: "1964", pos: "bottom", perc: 35, desc: "Se fundan las Comisiones Obreras (CC. OO.) de Madrid." },
+                { year: "1966", pos: "top", perc: 45, desc: "Ley de Prensa e Imprenta (Ley Fraga). Elecciones sindicales." },
+                { year: "1969", pos: "bottom", perc: 55, desc: "Juan Carlos de Borbón es nombrado sucesor de Franco a título de rey." },
+                { year: "1969", pos: "top", perc: 58, cat: "Hito añadido", desc: "Cierre de la Verja de Gibraltar por orden de Franco." },
+                { year: "1970", pos: "top", perc: 65, desc: "Firma del Acuerdo España-CEE. Proceso de Burgos contra miembros de ETA." },
+                { year: "1972", pos: "bottom", perc: 75, desc: "III Plan de Desarrollo. Detención de la cúpula de dirigentes de CC. OO. (Proceso 1001)." },
+                { year: "1973", pos: "top", perc: 85, cat: "Inestabilidad", desc: "Asesinato de Carrero Blanco por ETA. Arias Navarro, presidente." },
+                { year: "1974", pos: "bottom", perc: 90, cat: "Hito añadido", desc: "Ejecución de Salvador Puig Antich a garrote vil. Creación de la Junta Democrática." },
+                { year: "1975", pos: "bottom", perc: 98, desc: "Muerte de Francisco Franco (20 de noviembre)." }
+            ]
+        },
+        {
+            id: 12, number: "12", title: "Transición y democracia",
+            events: [
+                { year: "1975", pos: "top", perc: 5, desc: "Juan Carlos I es proclamado rey." },
+                { year: "1976", pos: "bottom", perc: 15, desc: "Adolfo Suárez sustituye a Arias Navarro como presidente." },
+                { year: "1977 feb", pos: "top", perc: 25, desc: "Se regulan los partidos políticos y se legaliza el PCE (Sábado Santo Rojo)." },
+                { year: "1977 jun", pos: "bottom", perc: 35, desc: "Primeras elecciones generales democráticas desde la República." },
+                { year: "1977 oct", pos: "top", perc: 40, cat: "Hito añadido", desc: "Firma de los Pactos de la Moncloa. Consenso político y económico para estabilizar el país." },
+                { year: "1977 oct", pos: "bottom", perc: 45, desc: "Ley de Amnistía general." },
+                { year: "1978", pos: "bottom", perc: 55, desc: "Se aprueba la Constitución Española en referéndum." },
+                { year: "1981", pos: "top", perc: 65, desc: "Golpe de Estado militar del 23-F. Leopoldo Calvo Sotelo, presidente." },
+                { year: "1982 may", pos: "top", perc: 70, cat: "Hito añadido", desc: "Ingreso oficial de España en la estructura de la OTAN." },
+                { year: "1982 oct", pos: "bottom", perc: 75, desc: "Victoria electoral histórica por mayoría absoluta del PSOE (Felipe González)." },
+                { year: "1986", pos: "top", perc: 82, desc: "Ingreso efectivo de España en la Comunidad Económica Europea (CEE)." },
+                { year: "1988", pos: "bottom", perc: 88, desc: "Huelga general sindical masiva (14-D)." },
+                { year: "1992", pos: "top", perc: 90, cat: "Hito añadido", desc: "Año de España: Juegos Olímpicos de Barcelona, Expo de Sevilla e inauguración del AVE." },
+                { year: "1996", pos: "top", perc: 92, desc: "El PP de José María Aznar gana las elecciones generales." },
+                { year: "2001", pos: "bottom", perc: 95, desc: "Fin definitivo del servicio militar obligatorio (Mili)." },
+                { year: "2002", pos: "top", perc: 97, desc: "El euro entra en circulación como moneda de la CEE." },
+                { year: "2004", pos: "bottom", perc: 99, desc: "Atentado terrorista del 11-M en Madrid. Victoria de J.L. Rodríguez Zapatero (PSOE)." }
+            ]
+        },
+        {
+            id: 13, number: "13", title: "La España del siglo XXI",
+            events: [
+                { year: "2004, mar", pos: "top", perc: 5, desc: "Atentado yihadista de Al-Qaeda (11-M). Victoria electoral de Rodríguez Zapatero (PSOE)." },
+                { year: "2005", pos: "top", perc: 10, cat: "Hito añadido", desc: "Aprobación de la ley del matrimonio igualitario en España." },
+                { year: "2008", pos: "bottom", perc: 20, desc: "Estallido de la crisis financiera mundial y de la burbuja inmobiliaria. Reelección de Zapatero." },
+                { year: "2011", pos: "top", perc: 30, desc: "Grave crisis económica y recortes en el estado del bienestar." },
+                { year: "2011, may", pos: "top", perc: 38, desc: "Movimiento social de los Indignados (15-M)." },
+                { year: "2011, oct", pos: "bottom", perc: 45, desc: "La banda terrorista ETA anuncia el fin definitivo de la lucha armada." },
+                { year: "2011, nov", pos: "top", perc: 52, desc: "Mariano Rajoy (PP) gana las elecciones generales con mayoría absoluta." },
+                { year: "2014, jun", pos: "bottom", perc: 60, desc: "Abdicación del rey Juan Carlos I. Proclamación de Felipe VI." },
+                { year: "2014, oct", pos: "bottom", perc: 65, cat: "Hito añadido", desc: "Auge de escándalos de corrupción (Gürtel, Tarjetas Black) que minan la confianza política." },
+                { year: "2015", pos: "top", perc: 70, desc: "Elecciones generales: ruptura del bipartidismo con la entrada de Podemos y Ciudadanos. Victoria del PP sin mayoría." },
+                { year: "2017, oct", pos: "top", perc: 75, cat: "Hito añadido", desc: "Referéndum ilegal de independencia en Cataluña (1-O). El Gobierno aplica el artículo 155." },
+                { year: "2018, may", pos: "bottom", perc: 80, desc: "ETA anuncia su disolución final." },
+                { year: "2018, jun", pos: "top", perc: 84, desc: "Triunfa la moción de censura contra Rajoy apoyada por partidos de izquierda e independentistas." },
+                { year: "2018, jun", pos: "bottom", perc: 88, desc: "Pedro Sánchez (PSOE) asume la presidencia del Gobierno." },
+                { year: "2020, ene", pos: "bottom", perc: 92, desc: "Formación del primer Gobierno de coalición de la democracia (PSOE - Unidas Podemos)." },
+                { year: "2020, mar", pos: "top", perc: 94, desc: "Declaración del Estado de Alarma y confinamiento por la pandemia mundial de COVID-19." },
+                { year: "2022, jun", pos: "bottom", perc: 96, desc: "Cumbre de la OTAN celebrada en Madrid." },
+                { year: "2023, may", pos: "bottom", perc: 98, desc: "Elecciones municipales y autonómicas con amplio triunfo del PP." },
+                { year: "2023, jul", pos: "top", perc: 99, desc: "Elecciones generales anticipadas." }
+            ]
+        }
+    ];
+
+    function init() {
+        renderMenu();
+        loadTimeline(0);
+        
+        // Mouse drag scrolling functionality
+        const slider = document.getElementById('timeline-scroll-area');
+        let isDown = false; let startX; let scrollLeft;
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true; startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('mouseleave', () => { isDown = false; });
+        slider.addEventListener('mouseup', () => { isDown = false; });
+        slider.addEventListener('mousemove', (e) => {
+            if(!isDown) return; 
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            slider.scrollLeft = scrollLeft - (x - startX) * 2;
+        });
+
+        // Mobile and Desktop menu functionality
+        const sidebar = document.getElementById('sidebar');
+        
+        document.getElementById('toggle-sidebar').onclick = () => {
+            if (window.innerWidth < 768) {
+                // Comportamiento en móviles: mostrar superpuesto
+                sidebar.classList.remove('-translate-x-full');
+            } else {
+                // Comportamiento en escritorio: colapsar a la izquierda
+                sidebar.classList.toggle('md:-ml-72');
+                
+                // Recalcular el tamaño y posición de los eventos al cambiar el ancho de la pantalla (tras la animación de 0.3s)
+                setTimeout(() => {
+                    loadTimeline(currentId, false);
+                }, 300);
+            }
+        };
+        
+        document.getElementById('close-menu').onclick = () => sidebar.classList.add('-translate-x-full');
+    }
+
+    function renderMenu() {
+        const cont = document.getElementById('menu-container');
+        cont.innerHTML = '';
+        db.forEach(tl => {
+            const btn = document.createElement('button');
+            btn.className = `menu-item w-full text-left px-3 py-2.5 rounded-lg flex items-start gap-3 ${tl.id === currentId ? 'active text-white' : 'text-slate-400'}`;
+            btn.innerHTML = `
+                <span class="shrink-0 w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${tl.id === currentId ? 'bg-blue-600 text-white' : 'bg-slate-800'}">${tl.number}</span>
+                <span class="text-sm font-medium leading-tight mt-0.5">${tl.title}</span>
+            `;
+            btn.onclick = () => {
+                currentZoom = 1; // Reset zoom on category change
+                document.getElementById('zoom-level').textContent = '100%';
+                loadTimeline(tl.id);
+                if(window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
+            };
+            cont.appendChild(btn);
+        });
+    }
+
+    // Convert dots into clean HTML lists
+    function formatText(text) {
+        const parts = text.split('.').filter(p => p.trim().length > 0);
+        if(parts.length === 1) return parts[0] + '.';
+        return `<ul>${parts.map(p => `<li>${p.trim()}.</li>`).join('')}</ul>`;
+    }
+
+    function loadTimeline(id, resetScroll = true) {
+        currentId = id;
+        renderMenu();
+        const tl = db.find(t => t.id === id);
+        
+        document.getElementById('header-number').textContent = tl.number;
+        document.getElementById('header-title').textContent = tl.title;
+        document.getElementById('print-title').textContent = tl.number + ". " + tl.title;
+        
+        const track = document.getElementById('timeline-track');
+        track.innerHTML = '<div class="timeline-line"></div>';
+        
+        const scrollArea = document.getElementById('timeline-scroll-area');
+        
+        // Dynamic width calculation guaranteeing readability, adapting to zoom level
+        const baseWidth = Math.max(scrollArea.clientWidth, tl.events.length * 280);
+        const actualWidth = baseWidth * currentZoom;
+        
+        track.style.width = `${actualWidth}px`;
+        
+        // PADDING: Prevents first and last cards from getting cut off on the sides
+        const padding = 160; 
+        const usableWidth = actualWidth - (padding * 2);
+        
+        const line = track.querySelector('.timeline-line');
+        line.style.left = `${padding}px`;
+        line.style.right = `${padding}px`;
+        
+        // Collision detection levels: 3 levels up, 3 levels down
+        const topLevels = [-1000, -1000, -1000];
+        const bottomLevels = [-1000, -1000, -1000];
+        const levelHeights = [40, 160, 280]; // Distance from center line
+        
+        const minDistancePx = 300; // Minimum horizontal distance between cards to avoid overlap
+
+        const sortedEvents = [...tl.events].sort((a, b) => a.perc - b.perc);
+
+        sortedEvents.forEach((ev, index) => {
+            const isTop = ev.pos === 'top';
+            const levels = isTop ? topLevels : bottomLevels;
+            let assignedLevel = 0;
+
+            // Convert % to actual pixels within the usable area
+            const pxPos = (ev.perc / 100) * usableWidth;
+
+            // Find closest free track (level) to avoid overlaps
+            for(let l = 0; l < 3; l++) {
+                if(pxPos >= levels[l] + minDistancePx) {
+                    assignedLevel = l;
+                    break;
+                }
+            }
+            
+            // Fallback: if all full, pick the minimum penalty
+            if (pxPos < levels[assignedLevel] + minDistancePx) {
+                assignedLevel = levels.indexOf(Math.min(...levels));
+            }
+
+            levels[assignedLevel] = pxPos;
+            
+            const dist = levelHeights[assignedLevel];
+            // Final position applying padding
+            const finalLeft = padding + pxPos;
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = `event-wrapper ${ev.pos} fade-in`;
+            wrapper.style.left = `${finalLeft}px`;
+            wrapper.style.animationDelay = `${index * 0.04}s`;
+
+            let catHtml = ev.cat ? `<span class="category-tag">${ev.cat}</span>` : '';
+            
+            wrapper.innerHTML = `
+                <div class="event-dot"></div>
+                <div class="connector" style="height: ${dist}px;"></div>
+                <div class="event-card" style="${isTop ? `bottom: ${dist}px;` : `top: ${dist}px;`}">
+                    ${catHtml}
+                    <div class="year-badge">${ev.year}</div>
+                    <div class="event-desc">${formatText(ev.desc)}</div>
+                </div>
+            `;
+            track.appendChild(wrapper);
+        });
+        
+        if (resetScroll) {
+            scrollArea.scrollLeft = 0;
+        }
+    }
+
+    function zoomIn() {
+        if(currentZoom < 3) {
+            const scrollArea = document.getElementById('timeline-scroll-area');
+            const centerRatio = (scrollArea.scrollLeft + scrollArea.clientWidth / 2) / scrollArea.scrollWidth;
+            
+            currentZoom += 0.2;
+            document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+            loadTimeline(currentId, false);
+            
+            scrollArea.scrollLeft = (centerRatio * scrollArea.scrollWidth) - (scrollArea.clientWidth / 2);
+        }
+    }
+
+    function zoomOut() {
+        if(currentZoom > 0.4) {
+            const scrollArea = document.getElementById('timeline-scroll-area');
+            const centerRatio = (scrollArea.scrollLeft + scrollArea.clientWidth / 2) / scrollArea.scrollWidth;
+            
+            currentZoom -= 0.2;
+            document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+            loadTimeline(currentId, false);
+            
+            scrollArea.scrollLeft = (centerRatio * scrollArea.scrollWidth) - (scrollArea.clientWidth / 2);
+        }
+    }
+
+    function openModal() {
+        document.getElementById('modal').classList.remove('hidden');
+        document.getElementById('modal').classList.add('flex');
+        document.getElementById('add-form').reset();
+        document.getElementById('i-perc-val').textContent = '50%';
+    }
+    
+    function closeModal() {
+        document.getElementById('modal').classList.add('hidden');
+        document.getElementById('modal').classList.remove('flex');
+    }
+
+    function saveEvent(e) {
+        e.preventDefault();
+        const tl = db.find(t => t.id === currentId);
+        const newEv = {
+            year: document.getElementById('i-year').value,
+            pos: document.getElementById('i-pos').value,
+            perc: parseInt(document.getElementById('i-perc').value),
+            desc: document.getElementById('i-desc').value
+        };
+        const cat = document.getElementById('i-cat').value;
+        if(cat.trim()) newEv.cat = cat;
+        
+        tl.events.push(newEv);
+        closeModal();
+        loadTimeline(currentId, false); // Reload without resetting scroll
+    }
+
+    function download(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        a.click(); URL.revokeObjectURL(url);
+    }
+
+    function exportCurrentJSON() {
+        const tl = db.find(t => t.id === currentId);
+        download(tl, `Linea_${tl.number}_HistoriaEspana.json`);
+    }
+
+    function exportAllJSON() {
+        download(db, `HistoriaEspana_Completa.json`);
+    }
+
+    window.onload = init;
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

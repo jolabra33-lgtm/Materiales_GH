@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Taller de Regímenes Fluviales: construye el hidrograma de un río, calcula su módulo y su coeficiente de irregularidad, y descubre su régimen fluvial.">
+<title>Taller de Regímenes Fluviales</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ríos">
+<meta name="theme-color" content="#182338">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#182338;
+    --ink-soft:#3C4A66;
+    --muted:#5E6779;
+    --paper:#EDEFE8;
+    --card:#FFFFFF;
+    --line:#E2E0D2;
+    --river:#1F6E8C;
+    --river-soft:rgba(31,110,140,0.12);
+    --high:#1F6E8C;
+    --high-soft:rgba(31,110,140,0.22);
+    --low:#B4790F;
+    --low-soft:rgba(180,121,15,0.24);
+    --gold:#B4790F;
+    --gold-2:#E0A83D;
+    --gold-soft:rgba(180,121,15,0.14);
+    --warm:#C1440E;
+    --young:#3E8E7E;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-sm:0 1px 2px rgba(20,30,50,.05);
+    --shadow-md:0 10px 28px rgba(20,30,50,.08);
+    --shadow-lg:0 20px 46px rgba(20,30,50,.14);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:960px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
+
+  header.hero{
+    position:relative; padding:34px 36px 40px; margin-bottom:30px; border-radius:18px;
+    background:var(--ink); color:var(--paper); overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(224,168,61,0.30), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(31,110,140,0.35), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--gold-2); font-weight:500; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--gold-2); display:inline-block; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(30px, 4.2vw, 44px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
+  }
+  .lede{ max-width:64ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-md); padding:26px 28px 30px; margin-bottom:24px;
+    border-top:3px solid var(--accent, var(--ink)); animation:riseIn .5s ease both;
+  }
+  .panel.p1{ --accent:var(--river); } .panel.p2{ --accent:var(--gold); } .panel.p3{ --accent:var(--young); }
+  .panel:nth-of-type(2){ animation-delay:.05s; } .panel:nth-of-type(3){ animation-delay:.1s; }
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+
+  .panel-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+  .badge{
+    flex:none; width:36px; height:36px; border-radius:50%; background:var(--accent, var(--ink)); color:#fff;
+    font-family:'Fraunces', serif; font-weight:600; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent, var(--ink)) 14%, transparent);
+  }
+  .panel-head-text h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:21px; margin:5px 0 4px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-head-text h2 svg{ width:19px; height:19px; color:var(--accent, var(--ink)); flex:none; }
+  .panel-head-text p{ margin:0; color:var(--muted); font-size:14.5px; }
+
+  .locate-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .locate-row input[type="text"]{
+    flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink);
+  }
+  input:focus-visible, button:focus-visible, select:focus-visible{ outline:2px solid var(--river); outline-offset:2px; }
+
+  button{
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; border-radius:var(--radius-sm);
+    padding:12px 18px; cursor:pointer; border:1px solid transparent;
+    transition:transform .08s ease, background .15s ease, box-shadow .15s ease;
+    display:inline-flex; align-items:center; gap:7px; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button svg{ width:15px; height:15px; flex:none; }
+  button:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--ink); color:var(--paper); }
+  .btn-primary:hover{ background:#2A3B5C; box-shadow:var(--shadow-sm); }
+  .btn-ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn-ghost:hover{ background:rgba(24,35,56,0.05); }
+  .btn-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+
+  /* ---- Example galleries + saved archive (shared look) ---- */
+  .examples-wrap{ margin-bottom:22px; }
+  .examples-group{ margin-bottom:14px; }
+  .examples-group:last-child{ margin-bottom:0; }
+  .examples-group-title, .saved-section h3, .save-panel h3{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--muted); margin:0 0 8px;
+  }
+  .examples-chips{ display:flex; flex-wrap:wrap; gap:9px; }
+  .example-chip{
+    display:flex; align-items:center; gap:9px; background:#fff; border:1px solid var(--line); border-radius:11px;
+    padding:10px 14px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .example-chip:hover, .example-chip:active{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .chip-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .chip-text{ display:flex; flex-direction:column; line-height:1.25; min-width:0; }
+  .chip-text strong{ font-size:13.5px; color:var(--ink); }
+  .chip-text span{
+    font-size:11.5px; color:var(--muted); font-weight:400;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px;
+  }
+  .saved-section{ margin-bottom:20px; }
+  .saved-empty{ font-size:13.5px; color:var(--muted); margin:0; font-style:italic; }
+  .saved-chip{
+    display:flex; align-items:stretch; border:1px solid var(--line); border-radius:11px; background:#fff; overflow:hidden;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .saved-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .saved-chip-main{
+    display:flex; align-items:center; gap:9px; border:none; background:transparent;
+    padding:10px 12px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .saved-chip-delete{
+    border:none; background:transparent; color:var(--muted); padding:0 13px; font-size:17px; line-height:1;
+    border-left:1px solid var(--line); min-height:44px; min-width:40px; -webkit-tap-highlight-color:transparent;
+  }
+  .saved-chip-delete:hover{ color:var(--warm); background:rgba(193,68,14,0.08); }
+
+  /* ---- Collapsible example groups ---- */
+  .examples-details{ border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:10px; overflow:hidden; background:#fff; }
+  .examples-details summary{
+    cursor:pointer; list-style:none; padding:13px 16px; display:flex; align-items:center; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--ink-soft); font-weight:600; min-height:44px; -webkit-tap-highlight-color:transparent;
+  }
+  .examples-details summary::-webkit-details-marker{ display:none; }
+  .examples-details summary .chevron{ margin-left:auto; color:var(--muted); transition:transform .2s ease; display:flex; }
+  .examples-details summary .chevron svg{ width:16px; height:16px; }
+  .examples-details[open] summary .chevron{ transform:rotate(180deg); }
+  .examples-details summary .count-badge{ background:var(--gold-soft); color:var(--gold); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; }
+  .examples-details .examples-chips{ padding:0 16px 16px; }
+  .examples-details summary .dot-lead{ width:9px; height:9px; border-radius:50%; flex:none; }
+
+  .save-panel{ margin-top:20px; padding-top:18px; border-top:1px dashed var(--line); }
+  .save-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .save-row input[type="text"]{
+    flex:1; min-width:220px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff;
+  }
+  .save-status{ font-size:12.8px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; min-height:16px; margin-bottom:2px; }
+  .save-status.warn{ color:var(--warm); }
+
+  /* ---- Data table (single row, 12 months) ---- */
+  .table-scroll{ overflow-x:auto; border-radius:var(--radius-sm); border:1px solid var(--line); }
+  table.rio-table{ border-collapse:collapse; width:100%; min-width:760px; background:#fff; }
+  table.rio-table th, table.rio-table td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:0; text-align:center;
+  }
+  table.rio-table th:last-child, table.rio-table td:last-child{ border-right:none; }
+  table.rio-table thead th{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:#F4F3EC; padding:10px 4px; font-weight:500;
+  }
+  table.rio-table td.rowlabel{
+    font-family:'Inter', sans-serif; font-size:13px; font-weight:600; text-align:left;
+    padding:11px 14px; white-space:nowrap; background:#F4F3EC; position:sticky; left:0; color:var(--river);
+  }
+  table.rio-table td.rowlabel span{ display:block; font-weight:400; color:var(--muted); font-size:11.5px; }
+  table.rio-table input[type="number"]{
+    width:100%; min-width:60px; border:none; text-align:center; padding:13px 4px;
+    font-family:'IBM Plex Mono', monospace; font-size:16px; background:transparent; color:inherit;
+    -moz-appearance:textfield;
+  }
+  table.rio-table input::-webkit-outer-spin-button, table.rio-table input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  table.rio-table input:focus-visible{ background:var(--river-soft); }
+  .fill-note{ margin-top:10px; font-size:13px; color:var(--gold); font-family:'IBM Plex Mono', monospace; }
+
+  /* ---- Chart ---- */
+  .chart-wrap{ position:relative; height:420px; }
+  canvas{ width:100%; height:100%; }
+  .chart-empty, .analysis-empty{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; color:var(--muted); font-size:14.5px; padding:0 30px;
+  }
+  .legend-row{
+    display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px; padding-top:16px;
+    border-top:1px dashed var(--line); font-size:13.5px; color:var(--ink-soft);
+  }
+  .legend-item{ display:flex; align-items:center; gap:7px; }
+  .swatch{ width:16px; height:10px; border-radius:2px; display:inline-block; }
+  .swatch.line{ height:3px; background:var(--river); border-radius:2px; }
+  .swatch.high{ background:var(--high); opacity:0.55; }
+  .swatch.low{ background:var(--low); opacity:0.55; }
+  .swatch.ref{ height:2px; background:var(--muted); border-radius:0; }
+
+  /* ---- Analysis ---- */
+  .analysis-grid{ display:grid; grid-template-columns:1fr; gap:2px 32px; }
+  @media (min-width:760px){ .analysis-grid{ grid-template-columns:1fr 1fr; } }
+  .analysis-block{ margin-bottom:15px; }
+  .analysis-block .k{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--gold); display:block; margin-bottom:4px;
+  }
+  .analysis-block p{ margin:0; color:var(--ink-soft); }
+  .conclusion{
+    margin-top:6px; padding:16px 20px; background:var(--gold-soft); border-radius:var(--radius-sm);
+    border:1px solid rgba(180,121,15,0.28);
+  }
+  .conclusion p{ margin:0; color:var(--ink-soft); }
+  .conclusion strong{ color:var(--ink); }
+  .disclaimer{ margin-top:16px; font-size:12.5px; color:var(--muted); font-style:italic; }
+
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:18px 14px 70px; }
+    header.hero{ padding:26px 20px 30px; }
+    .panel{ padding:18px 16px; }
+  }
+  @media print{
+    body{ background:#fff; }
+    .no-print{ display:none !important; }
+    header.hero, footer{ display:none !important; }
+    .panel{ box-shadow:none; border:none; padding:0; margin-bottom:22px; break-inside:avoid; animation:none; }
+    .table-scroll{ border:1px solid #999; }
+    table th, table td{ border-color:#999 !important; }
+    .print-only{ display:block; font-family:'Fraunces', serif; font-weight:600; font-size:19px; color:#000; margin:0 0 14px; }
+    .panel.p1 .panel-head, .panel.p1 .examples-wrap, .panel.p1 .saved-section, .panel.p1 .btn-row, .panel.p1 .fill-note, .panel.p1 .save-panel{ display:none !important; }
+    .panel.p2 .panel-head, .panel.p2 .legend-row{ display:none !important; }
+  }
+  .print-only{ display:none; }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; } *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Geografía · Hidrografía</div>
+      <h1>Taller de Regímenes Fluviales</h1>
+      <p class="lede">Introduce el caudal medio mensual de un río y la aplicación dibuja su hidrograma, calcula su módulo y su coeficiente de irregularidad, y propone a qué régimen fluvial pertenece.</p>
+    </div>
+  </header>
+
+  <!-- STEP 1: DATA -->
+  <section class="panel p1">
+    <div class="panel-head">
+      <div class="badge">1</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2-2 3 2 5 0s3 2 5 0 3 2 5 0 3 2 5 0"/><path d="M2 18c2-2 3 2 5 0s3 2 5 0 3 2 5 0 3 2 5 0"/></svg>Introduce los datos</h2>
+        <p>Escribe el nombre del río (y el lugar de aforo, si lo sabes) y rellena el caudal medio de cada mes en m³/s.</p>
+      </div>
+    </div>
+
+    <div class="locate-row">
+      <input type="text" id="rioPlace" placeholder="Río y lugar (ej.: Ebro en Logroño)">
+    </div>
+
+    <div class="saved-section">
+      <h3>Tus ríos guardados</h3>
+      <div id="rioSavedWrap"></div>
+    </div>
+
+    <div class="examples-wrap" id="rioExamplesWrap"></div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" id="btnRioClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>Vaciar tabla</button>
+    </div>
+
+    <div class="table-scroll">
+      <table class="rio-table" id="rioTable">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding-left:12px;"></th>
+            <th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun</th>
+            <th>Jul</th><th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rowlabel">Caudal<span>m³/s</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="fill-note" id="rioFillNote" style="display:none;"></div>
+
+    <div class="save-panel">
+      <h3>Guardar y archivar</h3>
+      <div class="save-row">
+        <input type="text" id="rioSaveName" placeholder="Nombre para guardar (ej. Ebro en Logroño · 3ºESO)">
+        <button class="btn-primary" id="btnRioSave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Guardar río actual</button>
+      </div>
+      <div class="save-status" id="rioSaveStatus" aria-live="polite"></div>
+      <div class="btn-row" style="margin-bottom:0;">
+        <button class="btn-ghost" id="btnRioExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Exportar todos (.json)</button>
+        <button class="btn-ghost" id="btnRioImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Importar (.json)</button>
+        <input type="file" id="rioImportFile" accept=".json,application/json" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: HIDROGRAMA -->
+  <section class="panel p2">
+    <div class="panel-head">
+      <div class="badge">2</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M6 15l3-6 3 4 3-8 3 6"/></svg>El hidrograma</h2>
+        <p>La línea representa el coeficiente de caudal mensual (k). El valor 1 es el caudal medio anual: por encima son aguas altas, por debajo, aguas bajas (estiaje).</p>
+      </div>
+    </div>
+    <div class="print-only" id="rioPrintTitle"></div>
+    <div class="chart-wrap">
+      <canvas id="rioChart"></canvas>
+      <div class="chart-empty no-print" id="rioChartEmpty">El hidrograma aparecerá aquí en cuanto completes la tabla de datos.</div>
+    </div>
+    <div class="legend-row no-print">
+      <span class="legend-item"><span class="swatch line"></span>Coeficiente de caudal (k)</span>
+      <span class="legend-item"><span class="swatch ref"></span>k = 1 (caudal medio anual)</span>
+      <span class="legend-item"><span class="swatch high"></span>Aguas altas</span>
+      <span class="legend-item"><span class="swatch low"></span>Aguas bajas (estiaje)</span>
+    </div>
+    <div class="btn-row no-print" style="margin-top:16px; margin-bottom:0;">
+      <button class="btn-ghost" id="btnRioPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir tabla e hidrograma</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: ANALYSIS -->
+  <section class="panel p3">
+    <div class="panel-head">
+      <div class="badge">3</div>
+      <div class="panel-head-text">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Análisis (aproximado)</h2>
+        <p>Interpretación automática del régimen fluvial.</p>
+      </div>
+    </div>
+    <div id="rioAnalysisBody">
+      <div class="analysis-empty" id="rioAnalysisEmpty">El análisis aparecerá aquí en cuanto completes la tabla de datos.</div>
+    </div>
+  </section>
+
+  <footer>
+    Herramienta creada para el aula de Geografía. Los datos se procesan en tu propio navegador: no se envían ni se guardan en ningún servidor. Los ejemplos son una reconstrucción aproximada e ilustrativa de cada tipo de régimen fluvial español, calibrada sobre el módulo y el coeficiente de irregularidad reales citados en fuentes de referencia (no son series de aforo oficiales mes a mes). La clasificación del régimen es una aproximación con fines didácticos y no sustituye un análisis hidrológico riguroso.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var MONTHS_ABBR = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+  var MONTHS_FULL = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var MONTHS_FULL_CAP = MONTHS_FULL.map(function(m){ return m.charAt(0).toUpperCase()+m.slice(1); });
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function genId(){ return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function downloadJSON(payload, filename){
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /* ---------------------------------------------------------------
+     EXAMPLES — real módulo & irregularidad, Spanish reference rivers
+  ----------------------------------------------------------------*/
+  var RIO_EXAMPLES = [
+    { id:'mino', name:'Miño en Orense', group:'oceanico',
+      caudal:[337.8,337.8,315.2,281.5,236.4,168.9,123.8,112.6,135.1,213.9,304.0,349.0] },
+    { id:'ebro', name:'Ebro en Logroño', group:'mixto',
+      caudal:[147.5,142.7,152.2,161.7,128.4,71.3,34.2,32.3,44.7,80.9,118.9,147.5] },
+    { id:'guadiana', name:'Guadiana', group:'continental',
+      caudal:[184.4,204.9,225.3,239.0,204.9,88.8,38.2,34.1,61.5,129.7,184.4,204.9] },
+    { id:'segura', name:'Segura', group:'levantino',
+      caudal:[23.1,18.8,15.9,21.7,14.5,5.1,2.2,1.4,7.2,27.5,24.6,18.1] },
+    { id:'guadalquivir', name:'Guadalquivir en Sevilla', group:'subtropical',
+      caudal:[261.7,285.5,261.7,230.0,174.5,71.4,22.2,22.2,39.7,111.0,214.1,277.6] },
+    { id:'pirineo', name:'Alto Ésera (Pirineo)', group:'nival',
+      caudal:[4.1,3.1,4.1,10.2,44.8,61.1,46.9,20.4,8.2,5.1,4.1,4.1] }
+  ];
+  var GROUP_META = {
+    oceanico:{ title:'Pluvial oceánico', color:'#1F6E8C' },
+    mixto:{ title:'Mixto (nivo-pluvial)', color:'#3E8E7E' },
+    continental:{ title:'Pluvial mediterráneo continental', color:'#C1440E' },
+    levantino:{ title:'Pluvial mediterráneo levantino', color:'#E0A83D' },
+    subtropical:{ title:'Pluvial mediterráneo subtropical', color:'#B4790F' },
+    nival:{ title:'Nival', color:'#3C4A66' }
+  };
+  var GROUP_ORDER = ['oceanico','mixto','continental','levantino','subtropical','nival'];
+
+  /* ---------------------------------------------------------------
+     STATE
+  ----------------------------------------------------------------*/
+  var rioChart = null;
+  var rioDebounce = null;
+  var rioSaved = [];
+  var RIO_STORAGE_KEY = 'rios_guardados_v1';
+
+  /* ---------------------------------------------------------------
+     BUILD TABLE
+  ----------------------------------------------------------------*/
+  (function buildRioTable(){
+    var tr = document.querySelector('table.rio-table tbody tr');
+    for(var i=0;i<12;i++){
+      var td = document.createElement('td');
+      var input = document.createElement('input');
+      input.type = 'number'; input.step = 'any'; input.min = '0'; input.inputMode = 'decimal';
+      input.id = 'q-'+i;
+      input.setAttribute('aria-label', 'Caudal medio de ' + MONTHS_FULL[i] + ' en metros cúbicos por segundo');
+      td.appendChild(input); tr.appendChild(td);
+    }
+  })();
+
+  function rioReadRow(){
+    var arr = [];
+    for(var i=0;i<12;i++){
+      var raw = document.getElementById('q-'+i).value;
+      var v = parseFloat(raw);
+      arr.push(isNaN(v) ? null : v);
+    }
+    return arr;
+  }
+  function rioFillRow(values){
+    for(var i=0;i<12;i++){ document.getElementById('q-'+i).value = values[i]; }
+  }
+  function rioOnInput(){
+    if(rioDebounce) clearTimeout(rioDebounce);
+    rioDebounce = setTimeout(rioUpdate, 250);
+  }
+  for(var i=0;i<12;i++){ document.getElementById('q-'+i).addEventListener('input', rioOnInput); }
+  document.getElementById('rioPlace').addEventListener('input', rioOnInput);
+
+  /* ---------------------------------------------------------------
+     EXAMPLE GALLERY (collapsible, grouped by regime type)
+  ----------------------------------------------------------------*/
+  (function buildRioExamplesGallery(){
+    var wrap = document.getElementById('rioExamplesWrap');
+    var intro = document.createElement('p');
+    intro.className = 'saved-empty';
+    intro.style.marginBottom = '10px';
+    intro.textContent = 'Ejemplos de referencia de ríos españoles, uno de cada tipo de régimen (ver disclaimer al pie).';
+    wrap.appendChild(intro);
+    GROUP_ORDER.forEach(function(g, gi){
+      var meta = GROUP_META[g];
+      var examplesInGroup = RIO_EXAMPLES.filter(function(ex){ return ex.group === g; });
+      if(!examplesInGroup.length) return;
+      var details = document.createElement('details');
+      details.className = 'examples-details';
+      if(gi === 0) details.open = true;
+      var summary = document.createElement('summary');
+      var dotLead = document.createElement('span'); dotLead.className='dot-lead'; dotLead.style.background = meta.color;
+      var summaryText = document.createElement('span'); summaryText.textContent = meta.title;
+      var count = document.createElement('span'); count.className='count-badge'; count.textContent = examplesInGroup.length;
+      var chevron = document.createElement('span'); chevron.className='chevron';
+      chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      summary.appendChild(dotLead); summary.appendChild(summaryText); summary.appendChild(count); summary.appendChild(chevron);
+      details.appendChild(summary);
+      var chips = document.createElement('div'); chips.className = 'examples-chips';
+      examplesInGroup.forEach(function(ex){
+        var btn = document.createElement('button'); btn.type='button'; btn.className='example-chip';
+        var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background = meta.color;
+        var text = document.createElement('span'); text.className='chip-text';
+        text.innerHTML = '<strong>' + escapeHtml(ex.name) + '</strong><span>' + escapeHtml(meta.title) + '</span>';
+        btn.appendChild(dot); btn.appendChild(text);
+        btn.addEventListener('click', function(){ loadRioExample(ex); });
+        chips.appendChild(btn);
+      });
+      details.appendChild(chips);
+      wrap.appendChild(details);
+    });
+  })();
+
+  function loadRioExample(ex){
+    rioFillRow(ex.caudal);
+    document.getElementById('rioPlace').value = ex.name;
+    rioUpdate();
+  }
+
+  document.getElementById('btnRioClear').addEventListener('click', function(){
+    rioFillRow(Array(12).fill(''));
+    document.getElementById('rioPlace').value = '';
+    rioUpdate();
+  });
+  document.getElementById('btnRioPrint').addEventListener('click', function(){ window.print(); });
+
+  /* ---------------------------------------------------------------
+     CLASSIFICATION LOGIC
+  ----------------------------------------------------------------*/
+  function seasonAvg(k, idxs){ return idxs.reduce(function(a,i){ return a+k[i]; }, 0) / idxs.length; }
+
+  function analyzeRegime(caudal){
+    var modulo = caudal.reduce(function(a,b){ return a+b; }, 0) / 12;
+    var k = caudal.map(function(v){ return modulo>0 ? v/modulo : 0; });
+
+    var maxV=-Infinity, minV=Infinity, maxI=0, minI=0;
+    k.forEach(function(v,i){ if(v>maxV){maxV=v;maxI=i;} if(v<minV){minV=v;minI=i;} });
+    var irregularity = minV>0 ? maxV/minV : null;
+
+    var winter=[11,0,1], spring=[2,3,4], summer=[5,6,7], autumn=[8,9,10];
+    var wAvg=seasonAvg(k,winter), spAvg=seasonAvg(k,spring), suAvg=seasonAvg(k,summer), auAvg=seasonAvg(k,autumn);
+    var inSummer = summer.indexOf(maxI)!==-1;
+    var inWinter = winter.indexOf(maxI)!==-1;
+    var inSpring = spring.indexOf(maxI)!==-1;
+    var irr = irregularity===null ? 999 : irregularity;
+
+    var tipo, tipoLabel, descripcion;
+    if(inSummer || (maxI===4 && irr>=15)){
+      tipo='nival'; tipoLabel='nival';
+      descripcion = 'el caudal depende del deshielo: es mínimo en invierno, cuando el agua queda retenida en forma de nieve, y máximo a finales de primavera y en verano, cuando se funde. Es propio de cabeceras de montaña por encima de los 2.500 m.';
+    } else if(inWinter && irr < 5){
+      tipo='oceanico'; tipoLabel='pluvial oceánico';
+      descripcion = 'tiene un módulo elevado y un reparto bastante regular a lo largo del año, con un máximo en invierno y solo un suave estiaje en verano. Es propio de los ríos de la vertiente cantábrica, alimentados por un clima oceánico con precipitaciones abundantes todo el año.';
+    } else if(inSpring && irr < 6){
+      tipo='mixto'; tipoLabel='mixto (nivo-pluvial)';
+      descripcion = 'combina la alimentación nival de sus cabeceras de montaña con los aportes de lluvia del resto de la cuenca. Esto amplía el periodo de aguas altas (desde el invierno hasta bien entrada la primavera) y suaviza el estiaje veraniego respecto a un régimen puramente mediterráneo.';
+    } else if(inSpring && irr < 10){
+      tipo='continental'; tipoLabel='pluvial mediterráneo continental';
+      descripcion = 'presenta un máximo de caudal en primavera (con frecuencia, un repunte en otoño) y un marcado estiaje en verano. Es propio de los ríos del interior peninsular, alimentados por un clima mediterráneo continentalizado.';
+    } else {
+      var seasons=[wAvg,spAvg,suAvg,auAvg];
+      var highCount = seasons.filter(function(s){ return s>0.8; }).length;
+      if(highCount>=3 && suAvg<0.5){
+        tipo='levantino'; tipoLabel='pluvial mediterráneo levantino';
+        descripcion = 'muestra varias puntas de caudal a lo largo del año (otoño, invierno y primavera) separadas por un estiaje veraniego muy acusado, reflejo de las lluvias torrenciales típicas del litoral mediterráneo. Suele tener, además, un caudal absoluto muy bajo.';
+      } else if(irr>=10){
+        tipo='subtropical'; tipoLabel='pluvial mediterráneo subtropical';
+        descripcion = 'tiene un máximo de caudal en invierno y un estiaje muy prolongado, que puede extenderse gran parte del año. Es propio del sur peninsular, con un clima mediterráneo de veranos muy secos y calurosos.';
+      } else {
+        tipo='continental'; tipoLabel='pluvial mediterráneo continental';
+        descripcion = 'presenta un máximo de caudal en primavera o en otoño y un marcado estiaje en verano, propio de los ríos del interior peninsular con clima mediterráneo continentalizado.';
+      }
+    }
+
+    var aguasAltas = [], aguasBajas = [];
+    k.forEach(function(v,i){ if(v>=1) aguasAltas.push(i); else aguasBajas.push(i); });
+
+    return { modulo:modulo, k:k, maxI:maxI, minI:minI, maxV:maxV, minV:minV, irregularity:irregularity,
+      tipo:tipo, tipoLabel:tipoLabel, descripcion:descripcion, aguasAltas:aguasAltas, aguasBajas:aguasBajas };
+  }
+
+  /* ---------------------------------------------------------------
+     CHART
+  ----------------------------------------------------------------*/
+  var refLinePlugin = {
+    id: 'refFillAroundOne',
+    beforeDatasetsDraw: function(chart){
+      var opts = chart.options.plugins && chart.options.plugins.refFillAroundOne;
+      if(!opts || !opts.k) return;
+      var ctx = chart.ctx;
+      var xScale = chart.scales.x, yScale = chart.scales.y;
+      var k = opts.k;
+      var yRef = yScale.getPixelForValue(1);
+      var highColor = 'rgba(31,110,140,0.20)';
+      var lowColor = 'rgba(180,121,15,0.24)';
+
+      function fillQuad(x0,y0,x1,y1,color){
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x0, yRef); ctx.lineTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x1, yRef);
+        ctx.closePath(); ctx.fill();
+      }
+      function fillTriangle(ax,ay,bx,by,cx,cy,color){
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.lineTo(cx,cy);
+        ctx.closePath(); ctx.fill();
+      }
+
+      ctx.save();
+      for(var i=0;i<k.length-1;i++){
+        var x0 = xScale.getPixelForValue(i), x1 = xScale.getPixelForValue(i+1);
+        var k0 = k[i], k1 = k[i+1];
+        var y0 = yScale.getPixelForValue(k0), y1 = yScale.getPixelForValue(k1);
+        var side0 = k0 >= 1, side1 = k1 >= 1;
+        if(side0 === side1){
+          // whole segment stays on the same side of k=1: one polygon
+          fillQuad(x0, y0, x1, y1, side0 ? highColor : lowColor);
+        } else {
+          // segment crosses k=1 partway through: split exactly at the crossing point
+          var t = (1 - k0) / (k1 - k0);
+          var xc = x0 + t * (x1 - x0);
+          fillTriangle(x0, yRef, x0, y0, xc, yRef, side0 ? highColor : lowColor);
+          fillTriangle(xc, yRef, x1, y1, x1, yRef, side1 ? highColor : lowColor);
+        }
+      }
+      // reference dashed line at k=1
+      ctx.setLineDash([5,4]);
+      ctx.strokeStyle = '#8A93A3';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(xScale.left, yRef);
+      ctx.lineTo(xScale.right, yRef);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  Chart.register(refLinePlugin);
+
+  function renderRioChart(caudal, k, modulo){
+    var maxK = Math.max.apply(null, k.concat([1]));
+    var axisMax = Math.ceil((maxK+0.15)*10)/10;
+
+    if(!rioChart){
+      var ctx = document.getElementById('rioChart').getContext('2d');
+      rioChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: MONTHS_ABBR,
+          datasets: [{
+            label: 'Coeficiente de caudal (k)',
+            data: k,
+            borderColor: '#1F6E8C',
+            backgroundColor: '#1F6E8C',
+            pointBackgroundColor: '#1F6E8C',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
+            pointRadius: 4,
+            borderWidth: 2.5,
+            tension: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode:'index', intersect:false },
+          plugins: {
+            legend: { display:false },
+            refFillAroundOne: { k: k },
+            tooltip: {
+              backgroundColor:'#182338',
+              titleFont:{family:"'Fraunces', serif", weight:'600', size:13.5},
+              bodyFont:{family:"'IBM Plex Mono', monospace", size:12.5}, padding:11, cornerRadius:8,
+              callbacks: {
+                title: function(items){ return MONTHS_FULL_CAP[items[0].dataIndex]; },
+                label: function(item){
+                  var idx = item.dataIndex;
+                  return 'k = ' + item.formattedValue + '  (' + caudal[idx].toLocaleString('es-ES') + ' m³/s)';
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid:{display:false}, ticks:{ color:'#182338', font:{family:"'IBM Plex Mono', monospace", size:12} } },
+            y: { min:0, max:axisMax, ticks:{ font:{family:"'IBM Plex Mono', monospace", size:11} }, grid:{color:'#E3E1D4'},
+                 title:{ display:true, text:'Coeficiente de caudal (k)', font:{family:"'Inter', sans-serif", size:12, weight:'600'} } }
+          }
+        }
+      });
+    } else {
+      rioChart.data.datasets[0].data = k;
+      rioChart.options.plugins.refFillAroundOne = { k: k };
+      rioChart.options.scales.y.max = axisMax;
+      rioChart.update();
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     ANALYSIS TEXT
+  ----------------------------------------------------------------*/
+  function fmt1(n){ return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('es-ES', {maximumFractionDigits:1}) : '—'; }
+
+  function renderRioAnalysis(r, place){
+    var html = '<div class="analysis-grid">';
+
+    html += '<div class="analysis-block"><span class="k">1 · Localización</span><p>';
+    html += place ? ('Datos de <strong>' + escapeHtml(place) + '</strong>.') : 'No se ha indicado el nombre del río.';
+    html += '</p></div>';
+
+    html += '<div class="analysis-block"><span class="k">2 · Módulo (caudal medio anual)</span><p>';
+    html += 'El módulo de este río es de ' + fmt1(r.modulo) + '\u00A0m³/s. El mes de mayor caudal es ' + MONTHS_FULL[r.maxI] + ' (k = ' + fmt1(r.maxV) + ', ' + fmt1(r.k[r.maxI]*r.modulo) + '\u00A0m³/s) y el de menor caudal ' + MONTHS_FULL[r.minI] + ' (k = ' + fmt1(r.minV) + ', ' + fmt1(r.k[r.minI]*r.modulo) + '\u00A0m³/s).';
+    html += '</p></div>';
+
+    html += '<div class="analysis-block"><span class="k">3 · Coeficiente de irregularidad</span><p>';
+    if(r.irregularity !== null){
+      html += 'La relación entre el mes más caudaloso y el más seco es de ' + fmt1(r.irregularity) + '. ';
+      html += r.irregularity < 5 ? 'Es un valor bajo: el caudal está bastante repartido a lo largo del año.'
+        : (r.irregularity < 10 ? 'Es un valor moderado-alto, propio de un régimen con estiaje marcado.'
+        : 'Es un valor muy alto, propio de un régimen muy irregular con un estiaje severo.');
+    } else {
+      html += 'No se puede calcular (algún mes tiene caudal 0).';
+    }
+    html += '</p></div>';
+
+    html += '<div class="analysis-block"><span class="k">4 · Aguas altas y aguas bajas</span><p>';
+    var altosNames = r.aguasAltas.map(function(i){ return MONTHS_FULL[i]; });
+    var bajosNames = r.aguasBajas.map(function(i){ return MONTHS_FULL[i]; });
+    html += 'Meses de aguas altas (k ≥ 1): ' + (altosNames.length ? altosNames.join(', ') : 'ninguno') + '. ';
+    html += 'Meses de aguas bajas o estiaje (k &lt; 1): ' + (bajosNames.length ? bajosNames.join(', ') : 'ninguno') + '.';
+    html += '</p></div>';
+
+    html += '</div>';
+
+    html += '<div class="conclusion"><span class="k">5 · Conclusión</span><p>A partir de este análisis, el hidrograma se aproxima a un régimen <strong>' + r.tipoLabel + '</strong>: ' + r.descripcion + '</p></div>';
+
+    html += '<p class="disclaimer">Esta clasificación es una aproximación con fines didácticos, a partir de cuándo se producen las aguas altas y las aguas bajas y de la magnitud del coeficiente de irregularidad. No sustituye un análisis hidrológico riguroso.</p>';
+
+    document.getElementById('rioAnalysisBody').innerHTML = html;
+  }
+
+  /* ---------------------------------------------------------------
+     MAIN UPDATE
+  ----------------------------------------------------------------*/
+  function rioUpdate(){
+    document.getElementById('rioPrintTitle').textContent = 'Hidrograma' + (document.getElementById('rioPlace').value ? ' — ' + document.getElementById('rioPlace').value : '');
+
+    var Q = rioReadRow();
+    var filled = Q.filter(function(v){ return v!==null; }).length;
+    var hasData = filled > 0;
+
+    var chartEmpty = document.getElementById('rioChartEmpty');
+    var analysisEmpty = document.getElementById('rioAnalysisEmpty');
+    var fillNote = document.getElementById('rioFillNote');
+
+    if(!hasData){
+      chartEmpty.style.display = 'flex';
+      document.getElementById('rioChart').style.visibility = 'hidden';
+      analysisEmpty.style.display = 'flex';
+      document.getElementById('rioAnalysisBody').innerHTML = '';
+      document.getElementById('rioAnalysisBody').appendChild(analysisEmpty);
+      fillNote.style.display = 'none';
+      return;
+    }
+    chartEmpty.style.display = 'none';
+    document.getElementById('rioChart').style.visibility = 'visible';
+
+    if(filled < 12){
+      fillNote.style.display = 'block';
+      fillNote.textContent = 'Has completado ' + filled + '/12 meses. Los meses vacíos se calculan como 0; rellena los 12 para un resultado exacto.';
+    } else {
+      fillNote.style.display = 'none';
+    }
+
+    var Qf = Q.map(function(v){ return v===null?0:v; });
+    var r = analyzeRegime(Qf);
+    renderRioChart(Qf, r.k, r.modulo);
+    renderRioAnalysis(r, document.getElementById('rioPlace').value.trim());
+  }
+
+  /* ---------------------------------------------------------------
+     SAVE / LOAD / EXPORT / IMPORT
+  ----------------------------------------------------------------*/
+  function rioLoadFromStorage(){
+    try{
+      var raw = localStorage.getItem(RIO_STORAGE_KEY);
+      rioSaved = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(rioSaved)) rioSaved = [];
+    } catch(e){ rioSaved = []; }
+  }
+  function rioPersist(){
+    try{ localStorage.setItem(RIO_STORAGE_KEY, JSON.stringify(rioSaved)); return true; }
+    catch(e){ rioSetSaveStatus('No se ha podido guardar en este navegador (memoria llena o modo privado).', true); return false; }
+  }
+  function rioSetSaveStatus(text, warn){
+    var el = document.getElementById('rioSaveStatus');
+    el.textContent = text; el.className = 'save-status' + (warn?' warn':'');
+  }
+  function rioRenderSaved(){
+    var wrap = document.getElementById('rioSavedWrap');
+    wrap.innerHTML = '';
+    if(!rioSaved.length){
+      var p = document.createElement('p'); p.className='saved-empty';
+      p.textContent = 'Todavía no has guardado ningún río en este dispositivo.';
+      wrap.appendChild(p); return;
+    }
+    var chips = document.createElement('div'); chips.className='examples-chips';
+    rioSaved.forEach(function(entry){
+      var chip = document.createElement('div'); chip.className='saved-chip';
+      var mainBtn = document.createElement('button'); mainBtn.type='button'; mainBtn.className='saved-chip-main';
+      var dot = document.createElement('span'); dot.className='chip-dot'; dot.style.background='var(--gold)';
+      var text = document.createElement('span'); text.className='chip-text';
+      text.innerHTML = '<strong>'+escapeHtml(entry.name)+'</strong><span>'+escapeHtml(entry.place||'Sin etiqueta')+'</span>';
+      mainBtn.appendChild(dot); mainBtn.appendChild(text);
+      mainBtn.addEventListener('click', function(){
+        rioFillRow(entry.caudal);
+        document.getElementById('rioPlace').value = entry.place || '';
+        rioUpdate();
+        rioSetSaveStatus('Cargado "'+entry.name+'".');
+      });
+      var delBtn = document.createElement('button'); delBtn.type='button'; delBtn.className='saved-chip-delete';
+      delBtn.setAttribute('aria-label','Eliminar '+entry.name); delBtn.textContent='×';
+      delBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(window.confirm('¿Eliminar "'+entry.name+'"?')){
+          rioSaved = rioSaved.filter(function(c){ return c.id!==entry.id; });
+          rioPersist(); rioRenderSaved();
+        }
+      });
+      chip.appendChild(mainBtn); chip.appendChild(delBtn); chips.appendChild(chip);
+    });
+    wrap.appendChild(chips);
+  }
+  document.getElementById('btnRioSave').addEventListener('click', function(){
+    var Q = rioReadRow();
+    if(Q.filter(function(v){return v!==null;}).length===0){
+      rioSetSaveStatus('Introduce antes los datos de caudal.', true); return;
+    }
+    var Qf = Q.map(function(v){return v===null?0:v;});
+    var nameInput = document.getElementById('rioSaveName');
+    var place = document.getElementById('rioPlace').value.trim();
+    var name = nameInput.value.trim() || place || 'Río sin título';
+    var existing = rioSaved.find(function(c){ return c.name===name; });
+    if(existing && !window.confirm('Ya existe un río guardado como "'+name+'". ¿Sobrescribirlo?')){
+      rioSetSaveStatus('Guardado cancelado.', true); return;
+    }
+    var entry = { id: existing?existing.id:genId(), name:name, place:place, createdAt:new Date().toISOString(), caudal:Qf };
+    if(existing) rioSaved = rioSaved.map(function(c){ return c.id===entry.id?entry:c; });
+    else rioSaved.push(entry);
+    if(rioPersist()){ rioSetSaveStatus('Guardado como "'+name+'".'); nameInput.value=''; rioRenderSaved(); }
+  });
+  document.getElementById('btnRioExport').addEventListener('click', function(){
+    if(!rioSaved.length){ rioSetSaveStatus('No tienes ríos guardados para exportar.', true); return; }
+    downloadJSON({ app:'Taller de Regímenes Fluviales', version:1, exportedAt:new Date().toISOString(), rios:rioSaved },
+      'rios-' + new Date().toISOString().slice(0,10) + '.json');
+    rioSetSaveStatus('Exportados ' + rioSaved.length + ' río(s).');
+  });
+  document.getElementById('btnRioImport').addEventListener('click', function(){ document.getElementById('rioImportFile').click(); });
+  document.getElementById('rioImportFile').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = JSON.parse(evt.target.result);
+        var incoming = Array.isArray(data) ? data : (data.rios || []);
+        incoming = incoming.filter(function(c){ return c && Array.isArray(c.caudal) && c.caudal.length===12; });
+        if(!incoming.length){ rioSetSaveStatus('El archivo no contiene ríos válidos.', true); return; }
+        var existingIds = rioSaved.map(function(c){return c.id;});
+        incoming.forEach(function(c){
+          if(!c.id || existingIds.indexOf(c.id)!==-1) c.id = genId();
+          if(!c.name) c.name = c.place || 'Río importado';
+          rioSaved.push(c); existingIds.push(c.id);
+        });
+        rioPersist(); rioRenderSaved();
+        rioSetSaveStatus('Importados ' + incoming.length + ' río(s).');
+      } catch(err){ rioSetSaveStatus('El archivo no tiene un formato JSON válido.', true); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  rioLoadFromStorage();
+  rioRenderSaved();
+  rioUpdate();
+
+})();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

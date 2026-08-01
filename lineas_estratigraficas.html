@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Líneas del tiempo — Historia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #2E2B26;
+    --bg-deep: #24221E;
+    --paper: #EFE8D8;
+    --paper-dim: #E4DBC7;
+    --ink: #2B2620;
+    --ink-soft: #6b6254;
+    --rail-text: #F2ECDC;
+    --line: rgba(239,232,216,.14);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(1200px 600px at 20% -10%, #3a3630 0%, var(--bg) 55%) fixed;
+    color: var(--rail-text);
+    font-family: 'Source Sans 3', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:980px;margin:0 auto;padding:0 0 48px;}
+
+  /* ---------- Header ---------- */
+  .topbar{padding:34px 20px 18px;text-align:center;}
+  .eyebrow{
+    font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.18em;
+    text-transform:uppercase;color:#C9A227;margin:0 0 8px;
+  }
+  h1{
+    font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:clamp(1.6rem,4.5vw,2.4rem);
+    margin:0 0 8px;letter-spacing:-.01em;
+  }
+  .subtitle{color:#c9c2b0;font-size:.98rem;max-width:560px;margin:0 auto 22px;line-height:1.5;}
+
+  .region-tabs{display:inline-flex;gap:6px;background:var(--bg-deep);padding:5px;border-radius:999px;}
+  .region-tab{
+    border:none;background:transparent;color:#b8b0a0;padding:9px 22px;border-radius:999px;
+    font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:.95rem;cursor:pointer;
+    transition:background .2s,color .2s;
+  }
+  .region-tab.active{background:var(--paper);color:var(--ink);}
+  .region-tab:not(.active):hover{color:var(--rail-text);}
+
+  /* ---------- Layout ---------- */
+  .layout{display:flex;gap:22px;padding:26px 20px 0;align-items:flex-start;}
+
+  /* ---------- Strata rail (signature element) ---------- */
+  .strata{
+    display:flex;flex-direction:column;width:196px;flex-shrink:0;
+    border-radius:var(--radius);overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.35);
+  }
+  .stratum{
+    position:relative;border:none;cursor:pointer;text-align:left;color:var(--rail-text);
+    padding:16px 16px;min-height:52px;display:flex;flex-direction:column;justify-content:center;
+    background-image:
+      repeating-linear-gradient(125deg, rgba(255,255,255,.05) 0 3px, transparent 3px 9px);
+    transition:flex-grow .25s ease, opacity .2s ease, padding .2s ease;
+    flex-grow:1; opacity:.72;
+  }
+  .stratum + .stratum{border-top:1px solid rgba(0,0,0,.25);}
+  .stratum .s-name{
+    font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:.98rem;line-height:1.15;
+  }
+  .stratum .s-range{
+    font-family:'Space Mono',monospace;font-size:.68rem;opacity:.85;margin-top:4px;letter-spacing:.01em;
+  }
+  .stratum.active{
+    flex-grow:2.4; opacity:1; padding:22px 18px;
+    box-shadow:inset 5px 0 0 0 var(--stratum-accent, #fff);
+  }
+  .stratum:not(.active):hover{opacity:.92;}
+  .strata-label{
+    font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+    text-align:center;color:#8f8778;margin:0 0 8px;
+  }
+
+  /* ---------- Main panel ---------- */
+  .panel{flex:1;min-width:0;}
+  .era-header{margin-bottom:18px;}
+  .era-header h2{
+    font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:clamp(1.3rem,3.2vw,1.7rem);
+    margin:0 0 4px;color:var(--rail-text);
+  }
+  .era-range{
+    font-family:'Space Mono',monospace;font-size:.78rem;color:var(--stratum-accent,#C9A227);
+  }
+  .era-blurb{color:#c9c2b0;font-size:.92rem;line-height:1.5;margin:8px 0 0;max-width:60ch;}
+
+  /* ---------- Timeline ---------- */
+  .timeline{list-style:none;margin:22px 0 0;padding:0 0 0 20px;border-left:2px solid var(--line);}
+  .event{position:relative;padding:0 0 22px 22px;}
+  .event::before{
+    content:"";position:absolute;left:-27px;top:4px;width:12px;height:12px;border-radius:50%;
+    background:var(--stratum-accent,#C9A227);box-shadow:0 0 0 4px var(--bg);
+  }
+  .event-card{
+    background:var(--paper);color:var(--ink);border-radius:var(--radius);padding:14px 16px;
+    box-shadow:0 6px 16px rgba(0,0,0,.22);
+  }
+  .event-year{
+    display:inline-block;font-family:'Space Mono',monospace;font-weight:700;font-size:.74rem;
+    letter-spacing:.03em;background:var(--stratum-accent,#C9A227);color:#20180c;
+    padding:2px 8px;border-radius:5px;margin-bottom:7px;
+  }
+  .event-title{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:1.05rem;margin:0 0 4px;}
+  .event-desc{font-size:.9rem;line-height:1.48;color:var(--ink-soft);margin:0;}
+  .custom-badge{
+    font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.03em;color:#7a6a3f;
+    display:inline-block;margin-left:8px;
+  }
+  .del-btn{
+    float:right;border:none;background:none;color:#a05a4a;cursor:pointer;font-size:1.05rem;
+    line-height:1;padding:2px 4px;border-radius:6px;
+  }
+  .del-btn:hover{background:rgba(160,90,74,.12);}
+
+  /* ---------- Layout toggle ---------- */
+  .layout-toggle{display:inline-flex;gap:4px;background:var(--bg-deep);padding:4px;border-radius:999px;margin-top:12px;}
+  .layout-btn{
+    border:none;background:transparent;color:#b8b0a0;padding:6px 16px;border-radius:999px;
+    font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;
+    cursor:pointer;transition:background .2s,color .2s;
+  }
+  .layout-btn.active{background:var(--stratum-accent,#C9A227);color:#20180c;}
+  .layout-btn:not(.active):hover{color:var(--rail-text);}
+
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;}
+  .toolbar .layout-toggle{margin-top:0;}
+  .fs-btn{
+    border:1px solid rgba(239,232,216,.3);background:transparent;color:var(--rail-text);
+    padding:7px 16px;border-radius:999px;font-family:'Space Mono',monospace;font-size:.7rem;
+    letter-spacing:.03em;cursor:pointer;transition:border-color .2s,background .2s;white-space:nowrap;
+  }
+  .fs-btn:hover{border-color:var(--stratum-accent,#C9A227);background:rgba(255,255,255,.05);}
+
+  /* ---------- Era sub-tabs (used in fullscreen mode) ---------- */
+  .era-tabs{display:none;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+  .era-tab{
+    border:none;border-radius:999px;padding:8px 16px;cursor:pointer;color:var(--rail-text);
+    font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:.85rem;opacity:.6;
+    transition:opacity .2s;
+  }
+  .era-tab.active{opacity:1;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);}
+
+  /* ---------- Horizontal timeline ---------- */
+  .timeline-h-wrap{overflow-x:auto;margin:26px -4px 0;padding:0 4px 18px;}
+  .scroll-hint{
+    font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;
+    color:#8f8778;margin:0 0 10px;
+  }
+  .timeline-h{display:flex;align-items:stretch;position:relative;min-width:max-content;padding:0 24px;}
+  .h-item{display:flex;flex-direction:column;align-items:center;width:230px;flex:0 0 230px;}
+  .h-item .slot{min-height:170px;width:100%;display:flex;}
+  .h-item .slot-top{align-items:flex-end;padding-bottom:14px;}
+  .h-item .slot-bottom{align-items:flex-start;padding-top:14px;}
+  .h-item .dot-row{
+    position:relative;width:100%;height:2px;background:var(--line);flex-shrink:0;
+  }
+  .h-item .dot-row::before{
+    content:"";position:absolute;left:50%;top:50%;width:12px;height:12px;border-radius:50%;
+    background:var(--stratum-accent,#C9A227);transform:translate(-50%,-50%);box-shadow:0 0 0 4px var(--bg);
+  }
+  .h-item .event-card{width:210px;}
+  .h-item .slot:empty{visibility:hidden;}
+
+  /* ---------- Add form ---------- */
+  .add-card{margin:26px 0 0;}
+  .add-btn{
+    width:100%;border:1.5px dashed rgba(239,232,216,.35);background:transparent;color:var(--rail-text);
+    padding:13px;border-radius:var(--radius);font-family:'Source Sans 3';font-weight:700;font-size:.92rem;
+    cursor:pointer;transition:border-color .2s,background .2s;
+  }
+  .add-btn:hover{border-color:var(--stratum-accent,#C9A227);background:rgba(255,255,255,.03);}
+  .add-form{
+    margin-top:14px;background:var(--paper-dim);color:var(--ink);border-radius:var(--radius);
+    padding:18px;display:grid;gap:11px;
+  }
+  .add-form.hidden{display:none;}
+  .add-form label{font-size:.78rem;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px;}
+  .row-year{display:flex;gap:12px;align-items:flex-end;}
+  .row-year > div:first-child{flex:1;}
+  .bc-check{display:flex;align-items:center;gap:6px;padding-bottom:9px;font-size:.85rem;color:var(--ink);white-space:nowrap;}
+  input[type=number], input[type=text], textarea{
+    width:100%;border:1px solid #cfc4a8;border-radius:7px;padding:9px 10px;font-family:inherit;font-size:.92rem;
+    background:#fff; color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:60px;}
+  .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:2px;}
+  .btn-primary, .btn-secondary{
+    border:none;border-radius:7px;padding:9px 18px;font-weight:700;font-size:.88rem;cursor:pointer;
+  }
+  .btn-primary{background:#20180c;color:#F2ECDC;}
+  .btn-secondary{background:transparent;color:var(--ink-soft);}
+  .form-note{font-size:.74rem;color:var(--ink-soft);margin:0;}
+
+  .empty{color:#9a927f;font-size:.88rem;padding:14px 0;}
+  .footnote{
+    text-align:center;color:#8f8778;font-size:.74rem;padding:30px 20px 0;line-height:1.6;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:760px){
+    .layout{flex-direction:column;padding:20px 14px 0;}
+    .strata{flex-direction:row;width:100%;overflow-x:auto;box-shadow:none;border-radius:var(--radius);}
+    .stratum{flex:1 0 108px;min-height:auto;padding:12px;}
+    .stratum.active{flex:1.6 0 130px;padding:14px;box-shadow:inset 0 5px 0 0 var(--stratum-accent,#fff);}
+    .stratum .s-range{font-size:.62rem;}
+    .row-year{flex-direction:column;align-items:stretch;}
+    .bc-check{padding-bottom:0;}
+    .h-item{width:190px;flex:0 0 190px;}
+    .h-item .event-card{width:172px;}
+    .h-item .slot{min-height:150px;}
+  }
+
+  /* ---------- Fullscreen mode ---------- */
+  body.fs-lock{overflow:hidden;}
+  #app.fs-mode{
+    position:fixed;inset:0;z-index:1000;max-width:none;width:100vw;height:100vh;
+    overflow-y:auto;overflow-x:hidden;margin:0;background:var(--bg);padding:0 0 30px;
+  }
+  .fs-mode .topbar{
+    padding:14px 18px 12px;text-align:left;display:flex;align-items:center;
+    flex-wrap:wrap;gap:12px 18px;justify-content:space-between;
+  }
+  .fs-mode .eyebrow,.fs-mode .subtitle{display:none;}
+  .fs-mode h1{font-size:1.05rem;margin:0;}
+  .fs-mode .region-tabs{margin-left:auto;}
+  .fs-mode .layout{padding:0 18px;gap:0;}
+  .fs-mode .strata{display:none;}
+  .fs-mode .era-tabs{display:flex;}
+  .fs-mode #fsToggle{
+    position:fixed;top:14px;right:18px;z-index:1002;background:var(--bg-deep);
+    box-shadow:0 8px 20px rgba(0,0,0,.35);
+  }
+  .fs-mode .era-header{margin-bottom:10px;}
+  .fs-mode .era-blurb{display:none;}
+  .fs-mode .event-title{font-size:.92rem;}
+  .fs-mode .event-desc{
+    font-size:.78rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .fs-mode .event-year{font-size:.68rem;padding:1px 7px;}
+  .fs-mode .event-card{padding:10px 12px;}
+  .fs-mode .h-item{width:158px;flex:0 0 158px;}
+  .fs-mode .h-item .event-card{width:142px;}
+  .fs-mode .h-item .slot{min-height:132px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <p class="eyebrow">Corte estratigráfico</p>
+    <h1>Líneas del tiempo de Historia</h1>
+    <p class="subtitle">Del Mundo y de España, era por era. Explora los hechos ya recogidos y añade los que falten: quedan guardados para toda la clase.</p>
+    <div class="region-tabs" role="tablist">
+      <button class="region-tab active" data-region="mundo">Mundo</button>
+      <button class="region-tab" data-region="espana">España</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="strata" id="strata" aria-label="Selector de era histórica"></nav>
+    <main class="panel">
+      <nav class="era-tabs" id="eraTabs" aria-label="Selector de era histórica"></nav>
+      <div class="era-header">
+        <h2 id="eraName"></h2>
+        <div class="era-range" id="eraRange"></div>
+        <p class="era-blurb" id="eraBlurb"></p>
+        <div class="toolbar">
+          <div class="layout-toggle" role="group" aria-label="Disposición de la línea de tiempo">
+            <button class="layout-btn active" data-layout="vertical" type="button">Vertical</button>
+            <button class="layout-btn" data-layout="horizontal" type="button">Horizontal</button>
+          </div>
+          <button class="fs-btn" id="fsToggle" type="button">⤢ Pantalla completa</button>
+        </div>
+      </div>
+      <div id="eventList"></div>
+
+      <div class="add-card">
+        <button class="add-btn" id="toggleForm" type="button">+ Añadir un hecho a esta era</button>
+        <form class="add-form hidden" id="addForm">
+          <div class="row-year">
+            <div>
+              <label for="fYear">Año</label>
+              <input type="number" id="fYear" min="1" required placeholder="Ej. 1492">
+            </div>
+            <label class="bc-check"><input type="checkbox" id="fBC"> a.C.</label>
+          </div>
+          <div>
+            <label for="fTitle">Título del hecho</label>
+            <input type="text" id="fTitle" maxlength="80" required placeholder="Ej. Tratado de Tordesillas">
+          </div>
+          <div>
+            <label for="fDesc">Descripción breve</label>
+            <textarea id="fDesc" maxlength="280" required placeholder="Una o dos frases explicando qué ocurrió."></textarea>
+          </div>
+          <p class="form-note">Se guardará como aportación de la clase, visible para todos los que abran esta línea de tiempo.</p>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" id="cancelForm">Cancelar</button>
+            <button type="submit" class="btn-primary">Añadir hecho</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <p class="footnote">Los hechos base son fijos; lo que añadáis se guarda en un almacenamiento compartido del centro y lo verá cualquiera que abra esta misma línea de tiempo. Solo puede borrarse lo que vosotros mismos añadáis.</p>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const ERAS = [
+  { id: "prehistoria", name: "Prehistoria", color: "#7A4A30", accent: "#D9A86C" },
+  { id: "antigua", name: "Edad Antigua", color: "#B5652E", accent: "#EFCB8B" },
+  { id: "media", name: "Edad Media", color: "#5B3A5C", accent: "#D8B8DA" },
+  { id: "moderna", name: "Edad Moderna", color: "#204A66", accent: "#9FD0E8" },
+  { id: "contemporanea", name: "Edad Contemporánea", color: "#455260", accent: "#E8A199" }
+];
+
+const DATA = {
+  mundo: {
+    prehistoria: {
+      range: "c. 2,8 millones de años – 3300 a.C.",
+      blurb: "Desde las primeras herramientas de piedra hasta la invención de la escritura, el periodo más largo de la historia humana.",
+      events: [
+        [-2800000, "c. 2,8 millones de años", "Primeros útiles de piedra", "El Homo habilis talla las primeras herramientas de piedra (modo Olduvayense) en África oriental."],
+        [-1800000, "c. 1,8 millones de años", "Homo erectus y control del fuego", "Homo erectus domina el fuego y protagoniza las primeras migraciones fuera de África."],
+        [-300000, "c. 300.000 años", "Aparición del Homo sapiens", "Los fósiles de Jebel Irhoud, en Marruecos, documentan los restos de Homo sapiens más antiguos conocidos."],
+        [-40000, "c. 40.000 a.C.", "Arte rupestre paleolítico", "Comienzan las pinturas en cuevas como Chauvet, Altamira o Lascaux: bisontes, caballos y manos en negativo."],
+        [-25000, "c. 25.000 a.C.", "Venus paleolíticas", "Se tallan figurillas femeninas, como la Venus de Willendorf, posibles símbolos de fertilidad."],
+        [-10000, "c. 10.000 a.C.", "Revolución Neolítica", "En el Creciente Fértil se domestican plantas y animales: nacen la agricultura y la ganadería."],
+        [-9000, "c. 9000 a.C.", "Sedentarización", "Aparecen los primeros poblados estables, como Jericó, uno de los asentamientos más antiguos conocidos."],
+        [-7000, "c. 7000 a.C.", "Çatalhöyük", "Se desarrolla en Anatolia una de las primeras protociudades de la historia, con miles de habitantes."],
+        [-5000, "c. 5000 a.C.", "Edad del Cobre", "Se generaliza el uso del cobre para fabricar herramientas y armas (Calcolítico)."],
+        [-3300, "c. 3300 a.C.", "Escritura y Edad del Bronce", "En Sumeria se crea la escritura cuneiforme y se extiende el bronce: fin convencional de la Prehistoria."]
+      ]
+    },
+    antigua: {
+      range: "3300 a.C. – 476 d.C.",
+      blurb: "Nacen las primeras civilizaciones urbanas, la escritura, la filosofía y los grandes imperios mediterráneos.",
+      events: [
+        [-3300, "c. 3300 a.C.", "Escritura cuneiforme", "Sumeria inventa la escritura, con la que arranca convencionalmente la Historia."],
+        [-3100, "c. 3100 a.C.", "Unificación de Egipto", "El faraón Narmer unifica el Alto y el Bajo Egipto."],
+        [-2560, "c. 2560 a.C.", "Gran Pirámide de Guiza", "Se construye como tumba del faraón Keops."],
+        [-1750, "c. 1750 a.C.", "Código de Hammurabi", "Babilonia promulga uno de los primeros códigos legales escritos de la historia."],
+        [-1200, "c. 1200 a.C.", "Colapso de la Edad del Bronce", "Caen los grandes reinos del Mediterráneo oriental ante crisis internas y los llamados «pueblos del mar»."],
+        [-1000, "c. 1000 a.C.", "Reino de Israel", "David y Salomón consolidan el reino hebreo y su monoteísmo."],
+        [-814, "814 a.C.", "Fundación de Cartago", "Colonos fenicios fundan Cartago en el norte de África."],
+        [-776, "776 a.C.", "Primeros Juegos Olímpicos", "Se celebran en Olimpia, Grecia."],
+        [-753, "753 a.C.", "Fundación de Roma", "Fecha tradicional de la fundación de la ciudad."],
+        [-508, "508 a.C.", "Democracia ateniense", "Las reformas de Clístenes sientan las bases de la democracia en Atenas."],
+        [-490, "490-479 a.C.", "Guerras Médicas", "Grecia resiste la invasión persa en batallas como Maratón y Salamina."],
+        [-431, "431-404 a.C.", "Guerra del Peloponeso", "Enfrenta a Atenas y Esparta por la hegemonía griega."],
+        [-336, "336-323 a.C.", "Imperio de Alejandro Magno", "Sus conquistas, desde Grecia hasta la India, difunden la cultura helenística."],
+        [-264, "264-146 a.C.", "Guerras Púnicas", "Roma derrota a Cartago y domina el Mediterráneo occidental."],
+        [-44, "44 a.C.", "Asesinato de Julio César", "Marca el fin de la República romana."],
+        [-27, "27 a.C.", "Augusto y el Imperio", "Octavio Augusto se convierte en el primer emperador romano."],
+        [30, "c. 30", "Origen del cristianismo", "Crucifixión de Jesús de Nazaret en Judea."],
+        [313, "313", "Edicto de Milán", "El emperador Constantino tolera el cristianismo en el Imperio romano."],
+        [395, "395", "División del Imperio Romano", "Se separa en Imperio de Oriente e Imperio de Occidente."],
+        [476, "476", "Caída de Roma", "Odoacro depone al último emperador de Occidente: fin de la Edad Antigua."]
+      ]
+    },
+    media: {
+      range: "476 – 1492",
+      blurb: "Feudalismo, expansión del cristianismo y del islam, cruzadas y una Europa fragmentada en reinos.",
+      events: [
+        [476, "476", "Caída del Imperio Romano de Occidente", "Convencionalmente marca el inicio de la Edad Media."],
+        [496, "496", "Bautismo de Clodoveo", "El rey franco se convierte al catolicismo."],
+        [527, "527", "Justiniano y Bizancio", "El emperador bizantino codifica el derecho romano en el Corpus Iuris Civilis."],
+        [622, "622", "Héjira", "Mahoma emigra de La Meca a Medina: inicio del calendario islámico."],
+        [711, "711", "Conquista musulmana de Hispania", "Los ejércitos musulmanes derrotan al reino visigodo."],
+        [732, "732", "Batalla de Poitiers", "Carlos Martel frena el avance musulmán en Europa occidental."],
+        [800, "800", "Coronación de Carlomagno", "Es coronado emperador por el papa León III."],
+        [843, "843", "Tratado de Verdún", "Se divide el Imperio carolingio entre los nietos de Carlomagno."],
+        [1054, "1054", "Cisma de Oriente", "Se separan definitivamente la Iglesia católica y la ortodoxa."],
+        [1066, "1066", "Batalla de Hastings", "Guillermo el Conquistador se hace con el trono inglés."],
+        [1096, "1096", "Primera Cruzada", "Se inicia la primera expedición cristiana a Tierra Santa."],
+        [1215, "1215", "Carta Magna", "Los nobles ingleses limitan el poder del rey Juan Sin Tierra."],
+        [1337, "1337-1453", "Guerra de los Cien Años", "Enfrenta a Francia e Inglaterra."],
+        [1347, "1347", "Peste Negra", "La epidemia mata a un tercio de la población europea."],
+        [1378, "1378", "Cisma de Occidente", "La Iglesia católica se divide entre dos y hasta tres papas rivales."],
+        [1453, "1453", "Caída de Constantinopla", "Los turcos otomanos toman la capital bizantina: fin del Imperio Bizantino."],
+        [1454, "c. 1454", "Imprenta de Gutenberg", "Revoluciona la difusión de libros e ideas en Europa."],
+        [1492, "1492", "Fin de la Edad Media", "Caída de Granada y llegada de Colón a América."]
+      ]
+    },
+    moderna: {
+      range: "1492 – 1789",
+      blurb: "Expansión europea por el mundo, Reforma protestante, monarquías absolutas e Ilustración.",
+      events: [
+        [1492, "1492", "Llegada de Colón a América", "Cristóbal Colón alcanza el Caribe buscando una ruta a Asia."],
+        [1494, "1494", "Tratado de Tordesillas", "España y Portugal se reparten los territorios por descubrir."],
+        [1517, "1517", "Reforma protestante", "Martín Lutero publica sus 95 tesis contra la Iglesia católica."],
+        [1519, "1519-1521", "Caída del Imperio azteca", "Hernán Cortés conquista Tenochtitlan."],
+        [1522, "1519-1522", "Primera vuelta al mundo", "La expedición Magallanes-Elcano completa la primera circunnavegación."],
+        [1533, "1533", "Caída del Imperio inca", "Francisco Pizarro conquista el imperio inca."],
+        [1545, "1545-1563", "Concilio de Trento", "La Iglesia católica organiza la Contrarreforma."],
+        [1588, "1588", "Derrota de la Armada Invencible", "La flota española es derrotada frente a Inglaterra."],
+        [1618, "1618-1648", "Guerra de los Treinta Años", "Conflicto religioso y político que asola Europa central."],
+        [1642, "1642-1651", "Guerra Civil inglesa", "Enfrenta a monarquía y Parlamento en Inglaterra."],
+        [1687, "1687", "Newton y la Revolución Científica", "Newton publica los Principia Mathematica."],
+        [1688, "1688", "Revolución Gloriosa", "Se refuerza la monarquía parlamentaria en Inglaterra."],
+        [1751, "1751-1772", "La Enciclopedia", "Diderot y d'Alembert publican la gran obra de la Ilustración francesa."],
+        [1776, "1776", "Independencia de Estados Unidos", "Las Trece Colonias se declaran independientes de Gran Bretaña."],
+        [1789, "1789", "Fin de la Edad Moderna", "Estalla la Revolución Francesa."]
+      ]
+    },
+    contemporanea: {
+      range: "1789 – hoy",
+      blurb: "Revoluciones, industrialización, guerras mundiales y globalización: el mundo se transforma a un ritmo acelerado.",
+      events: [
+        [1789, "1789", "Revolución Francesa", "Cae el Antiguo Régimen en Francia."],
+        [1804, "1804", "Napoleón, emperador", "Napoleón Bonaparte se corona emperador de los franceses."],
+        [1815, "1815", "Waterloo y Congreso de Viena", "Derrota final de Napoleón y reordenación de Europa."],
+        [1830, "1830-1840", "Revolución Industrial", "Se extiende por Europa la industrialización iniciada en Gran Bretaña."],
+        [1848, "1848", "Primaveras de los pueblos", "Oleada de revoluciones liberales y nacionalistas recorre Europa."],
+        [1861, "1861-1865", "Guerra de Secesión estadounidense", "Concluye con la abolición de la esclavitud en EE. UU."],
+        [1871, "1871", "Unificación de Alemania e Italia", "Ambos países completan su unidad nacional."],
+        [1914, "1914-1918", "Primera Guerra Mundial", "Enfrenta a las grandes potencias europeas."],
+        [1917, "1917", "Revolución Rusa", "Los bolcheviques toman el poder e instauran el primer estado comunista."],
+        [1929, "1929", "Crack del 29", "El crash bursátil desata la Gran Depresión mundial."],
+        [1939, "1939-1945", "Segunda Guerra Mundial", "El conflicto más mortífero de la historia."],
+        [1945, "1945", "Fundación de la ONU", "Se crea para preservar la paz internacional."],
+        [1947, "1947-1991", "Guerra Fría", "Enfrentamiento ideológico entre EE. UU. y la URSS."],
+        [1957, "1957", "Tratado de Roma", "Nace la Comunidad Económica Europea, origen de la UE."],
+        [1969, "1969", "Llegada a la Luna", "El Apolo 11 lleva al ser humano a la Luna."],
+        [1989, "1989", "Caída del Muro de Berlín", "Símbolo del fin de la Guerra Fría."],
+        [1991, "1991", "Disolución de la URSS", "Se desintegra la Unión Soviética."],
+        [2001, "2001", "Atentados del 11-S", "Ataques terroristas en Nueva York y Washington."],
+        [2008, "2008", "Crisis financiera global", "Una crisis bancaria internacional golpea la economía mundial."],
+        [2020, "2020", "Pandemia de COVID-19", "Una pandemia global paraliza gran parte del planeta."]
+      ]
+    }
+  },
+  espana: {
+    prehistoria: {
+      range: "c. 1,2 millones de años – s. VI a.C.",
+      blurb: "Los yacimientos más antiguos de Europa, el arte rupestre cantábrico y las primeras colonizaciones del Mediterráneo.",
+      events: [
+        [-1200000, "c. 1,2 millones de años", "Atapuerca", "Los yacimientos de Atapuerca (Burgos) conservan algunos de los restos humanos más antiguos de Europa (Homo antecessor)."],
+        [-35000, "c. 35.000 a.C.", "Arte rupestre de Altamira", "Se pintan los bisontes de la cueva de Altamira (Cantabria), declarada Patrimonio de la Humanidad."],
+        [-5000, "c. 5000 a.C.", "Neolítico peninsular", "Llegan la agricultura y la ganadería; se levantan monumentos megalíticos como dólmenes y menhires."],
+        [-3000, "c. 3000 a.C.", "Cultura de Los Millares", "Se desarrolla en Almería una sociedad calcolítica con poblados fortificados."],
+        [-1100, "c. 1100 a.C.", "Llegada de los fenicios", "Los fenicios fundan Gadir (Cádiz), una de las ciudades más antiguas de Occidente."],
+        [-700, "c. 700 a.C.", "Colonización griega", "Los griegos fundan colonias como Emporion (Ampurias) en la costa catalana."],
+        [-600, "c. 600 a.C.", "Tartessos", "Florece en el suroeste peninsular la legendaria civilización de Tartessos."],
+        [-500, "c. 500 a.C.", "Íberos y celtas", "Los íberos (este y sur) y los celtas (interior y norte) organizan la Península en tribus y ciudades-estado."],
+        [-237, "237 a.C.", "Llegada de los cartagineses", "Amílcar Barca desembarca en Iberia e inicia la expansión cartaginesa."]
+      ]
+    },
+    antigua: {
+      range: "218 a.C. – 711 d.C.",
+      blurb: "Hispania romana y, tras la caída de Roma, el reino visigodo de Toledo.",
+      events: [
+        [-218, "218 a.C.", "Desembarco romano en Ampurias", "Comienza la conquista romana de Hispania durante la Segunda Guerra Púnica."],
+        [-133, "133 a.C.", "Caída de Numancia", "Tras un largo asedio, la ciudad celtíbera de Numancia cae ante Roma."],
+        [-19, "19 a.C.", "Fin de la conquista romana", "Augusto somete a cántabros y astures: toda Hispania queda bajo dominio romano."],
+        [74, "74", "Edicto de Vespasiano", "Se concede el derecho latino a las ciudades hispanas."],
+        [98, "98", "Trajano, emperador hispano", "Nacido en Itálica (Sevilla), inaugura la época de mayor esplendor de Hispania romana."],
+        [380, "380", "Teodosio y el cristianismo", "El emperador hispano Teodosio I declara el cristianismo religión oficial del Imperio."],
+        [409, "409", "Invasiones germánicas", "Suevos, vándalos y alanos cruzan los Pirineos y se reparten el territorio."],
+        [507, "507", "Reino visigodo de Toledo", "Tras la derrota de Vouillé, los visigodos trasladan su capital a Toledo."],
+        [589, "589", "Conversión de Recaredo", "El rey visigodo abandona el arrianismo y se convierte al catolicismo."],
+        [654, "654", "Liber Iudiciorum", "Se promulga un código legal único para hispanorromanos y visigodos."],
+        [711, "711", "Batalla de Guadalete", "Las tropas musulmanas derrotan al rey Don Rodrigo: fin del reino visigodo."]
+      ]
+    },
+    media: {
+      range: "711 – 1492",
+      blurb: "Al-Ándalus, los reinos cristianos del norte y la larga Reconquista peninsular.",
+      events: [
+        [711, "711", "Conquista musulmana", "Los musulmanes conquistan la mayor parte de la Península en pocos años."],
+        [722, "722", "Batalla de Covadonga", "Inicio simbólico de la Reconquista; nace el reino de Asturias."],
+        [756, "756", "Emirato de Córdoba", "Abderramán I funda el emirato independiente de Córdoba."],
+        [929, "929", "Califato de Córdoba", "Abderramán III se proclama califa: apogeo de Al-Ándalus."],
+        [1031, "1031", "Reinos de taifas", "Se disuelve el califato y Al-Ándalus se fragmenta en pequeños reinos."],
+        [1085, "1085", "Toma de Toledo", "Alfonso VI de Castilla conquista la ciudad."],
+        [1094, "1094", "El Cid conquista Valencia", "Rodrigo Díaz de Vivar toma la ciudad de Valencia."],
+        [1137, "1137", "Unión de Aragón y Cataluña", "Se unen dinásticamente la corona de Aragón y el condado de Barcelona."],
+        [1212, "1212", "Batalla de las Navas de Tolosa", "Gran victoria cristiana que abre el paso a la conquista de Andalucía."],
+        [1236, "1236-1248", "Conquista de Córdoba y Sevilla", "Fernando III de Castilla incorpora ambas ciudades."],
+        [1238, "1238", "Reino nazarí de Granada", "Se funda el último reino musulmán peninsular."],
+        [1348, "1348", "Peste Negra en la Península", "La epidemia causa una gran mortandad en los reinos hispánicos."],
+        [1469, "1469", "Matrimonio de los Reyes Católicos", "Se unen las coronas de Castilla y Aragón."],
+        [1478, "1478", "Inquisición española", "Los Reyes Católicos establecen el Tribunal de la Inquisición."],
+        [1492, "1492", "Fin de la Edad Media española", "Conquista de Granada, expulsión de los judíos y llegada de Colón a América."]
+      ]
+    },
+    moderna: {
+      range: "1492 – 1808",
+      blurb: "El imperio de los Austrias, el Siglo de Oro y la llegada de los Borbones tras la Guerra de Sucesión.",
+      events: [
+        [1492, "1492", "Fin de la Reconquista", "Toma de Granada y descubrimiento de América."],
+        [1512, "1512", "Incorporación de Navarra", "El reino de Navarra se une a la corona de Castilla."],
+        [1516, "1516", "Carlos I, primer Austria", "Se inicia la dinastía de los Habsburgo en España."],
+        [1519, "1519-1521", "Guerra de las Comunidades", "Revuelta de las ciudades castellanas contra Carlos I."],
+        [1556, "1556", "Felipe II hereda el trono", "Abdicación de Carlos V y reparto de sus territorios."],
+        [1571, "1571", "Batalla de Lepanto", "La flota cristiana vence a los otomanos en el Mediterráneo."],
+        [1580, "1580", "Unión con Portugal", "Felipe II reúne las coronas de España y Portugal (hasta 1640)."],
+        [1588, "1588", "Derrota de la Armada Invencible", "Fracasa la expedición naval contra Inglaterra."],
+        [1609, "1609-1614", "Expulsión de los moriscos", "Cientos de miles de moriscos son expulsados de España."],
+        [1640, "1640", "Sublevación de Cataluña y Portugal", "Ambos territorios se rebelan contra la monarquía hispánica."],
+        [1700, "1700", "Muerte de Carlos II", "Se extingue la dinastía de los Austrias en España."],
+        [1701, "1701-1713", "Guerra de Sucesión española", "Conflicto europeo por el trono entre Borbones y Austrias."],
+        [1713, "1713", "Tratado de Utrecht", "España pierde sus posesiones europeas fuera de la Península."],
+        [1714, "1714", "Decretos de Nueva Planta", "Felipe V centraliza la administración del reino."],
+        [1788, "1759-1788", "Reinado de Carlos III", "Despotismo ilustrado y reformas ilustradas en España."]
+      ]
+    },
+    contemporanea: {
+      range: "1808 – hoy",
+      blurb: "De la Guerra de la Independencia a la España democrática actual.",
+      events: [
+        [1808, "1808", "Levantamiento del 2 de mayo", "Comienza la Guerra de la Independencia contra la ocupación francesa."],
+        [1812, "1812", "Constitución de Cádiz", "«La Pepa»: primera constitución liberal española."],
+        [1814, "1814", "Vuelta de Fernando VII", "Restauración del absolutismo tras la guerra."],
+        [1833, "1833-1839", "Primera Guerra Carlista", "Enfrenta a isabelinos y carlistas por la sucesión al trono."],
+        [1868, "1868", "La Gloriosa", "Revolución que destrona a Isabel II."],
+        [1873, "1873-1874", "Primera República", "Breve experiencia republicana marcada por la inestabilidad."],
+        [1874, "1874", "Restauración borbónica", "Alfonso XII regresa al trono."],
+        [1898, "1898", "Desastre del 98", "España pierde Cuba, Puerto Rico y Filipinas."],
+        [1923, "1923", "Dictadura de Primo de Rivera", "Golpe de Estado que instaura un régimen autoritario."],
+        [1931, "1931", "Segunda República", "Proclamación de la República tras las elecciones municipales."],
+        [1936, "1936-1939", "Guerra Civil española", "Enfrentamiento entre el bando republicano y el sublevado."],
+        [1939, "1939-1975", "Dictadura franquista", "Francisco Franco gobierna España durante casi cuatro décadas."],
+        [1975, "1975", "Muerte de Franco", "Comienza la Transición hacia la democracia."],
+        [1978, "1978", "Constitución española", "Se aprueba la actual Constitución democrática."],
+        [1981, "1981", "23-F", "Intento fallido de golpe de Estado."],
+        [1986, "1986", "Ingreso en la CEE", "España entra en la actual Unión Europea."],
+        [2004, "2004", "Atentados del 11-M", "Atentados terroristas en trenes de Madrid."],
+        [2008, "2008", "Crisis económica", "Una crisis financiera global golpea con fuerza a España."]
+      ]
+    }
+  }
+};
+
+/* ================= STATE ================= */
+const state = { region: "mundo", era: "contemporanea", layout: "vertical" };
+const customCache = {};
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function formatYearLabel(n, isBC){
+  const s = Math.abs(n).toLocaleString("es-ES");
+  return isBC ? `${s} a.C.` : s;
+}
+
+async function loadCustom(region, era){
+  const key = `custom_${region}_${era}`;
+  if (customCache[key]) return customCache[key];
+  try{
+    const res = await window.storage.get(key, true);
+    const arr = res && res.value ? JSON.parse(res.value) : [];
+    customCache[key] = arr;
+    return arr;
+  }catch(e){
+    customCache[key] = [];
+    return [];
+  }
+}
+async function saveCustom(region, era, arr){
+  const key = `custom_${region}_${era}`;
+  customCache[key] = arr;
+  try{
+    const ok = await window.storage.set(key, JSON.stringify(arr), true);
+    if(!ok) console.error("No se pudo guardar (respuesta vacía).");
+  }catch(e){
+    console.error("Error guardando hecho:", e);
+  }
+}
+
+/* ================= RENDER ================= */
+const strataEl = document.getElementById("strata");
+const eraTabsEl = document.getElementById("eraTabs");
+const eventListEl = document.getElementById("eventList");
+
+function renderStrata(){
+  const order = [...ERAS].reverse(); // newest on top, like real strata
+  strataEl.innerHTML = `<div class="strata-label" style="display:none"></div>` + order.map(era => {
+    const active = era.id === state.era;
+    return `<button class="stratum${active ? " active" : ""}" data-era="${era.id}"
+      style="background:${era.color}; ${active ? `--stratum-accent:${era.accent}` : ""}">
+        <span class="s-name">${era.name}</span>
+        <span class="s-range">${DATA[state.region][era.id].range}</span>
+      </button>`;
+  }).join("");
+}
+
+function renderEraTabs(){
+  eraTabsEl.innerHTML = ERAS.map(era => {
+    const active = era.id === state.era;
+    return `<button class="era-tab${active ? " active" : ""}" data-era="${era.id}"
+      style="background:${era.color};">${era.name}</button>`;
+  }).join("");
+}
+
+function eventCardHtml(ev, i){
+  return `
+    <div class="event-card">
+      ${ev.custom ? `<button class="del-btn" data-idx="${i}" title="Eliminar este hecho añadido">×</button>` : ""}
+      <span class="event-year">${escapeHtml(ev.yl)}</span>
+      ${ev.custom ? '<span class="custom-badge">añadido por la clase</span>' : ""}
+      <p class="event-title">${escapeHtml(ev.t)}</p>
+      <p class="event-desc">${escapeHtml(ev.d)}</p>
+    </div>`;
+}
+
+function renderVerticalHtml(all){
+  return `<ol class="timeline">` + all.map((ev, i) => `
+    <li class="event">${eventCardHtml(ev, i)}</li>
+  `).join("") + `</ol>`;
+}
+
+function renderHorizontalHtml(all){
+  const items = all.map((ev, i) => {
+    const up = i % 2 === 0; // alternate above/below the line
+    return `
+      <div class="h-item">
+        <div class="slot slot-top">${up ? eventCardHtml(ev, i) : ""}</div>
+        <div class="dot-row"></div>
+        <div class="slot slot-bottom">${!up ? eventCardHtml(ev, i) : ""}</div>
+      </div>`;
+  }).join("");
+  return `
+    <p class="scroll-hint">← desliza para ver más →</p>
+    <div class="timeline-h-wrap"><div class="timeline-h">${items}</div></div>`;
+}
+
+function wireDeleteButtons(all){
+  // index maps into the *custom* subset only
+  const customIndexMap = [];
+  all.forEach((ev, i) => { if (ev.custom) customIndexMap.push(i); });
+  eventListEl.querySelectorAll(".del-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const i = parseInt(btn.dataset.idx, 10);
+      const posInCustom = customIndexMap.indexOf(i);
+      if (posInCustom === -1) return;
+      const current = await loadCustom(state.region, state.era);
+      current.splice(posInCustom, 1);
+      await saveCustom(state.region, state.era, current);
+      renderEvents();
+    });
+  });
+}
+
+async function renderEvents(){
+  const eraMeta = ERAS.find(e => e.id === state.era);
+  const eraData = DATA[state.region][state.era];
+  document.getElementById("eraName").textContent = eraData ? eraMeta.name : "";
+  document.getElementById("eraRange").textContent = eraData.range;
+  document.getElementById("eraBlurb").textContent = eraData.blurb;
+  document.querySelector(".panel").style.setProperty("--stratum-accent", eraMeta.accent);
+
+  eventListEl.innerHTML = `<p class="empty">Cargando hechos…</p>`;
+  const custom = await loadCustom(state.region, state.era);
+
+  const base = eraData.events.map(([y, yl, t, d]) => ({ y, yl, t, d, custom: false }));
+  const all = base.concat(custom.map(ev => ({ ...ev, custom: true }))).sort((a,b) => a.y - b.y);
+
+  if (!all.length){
+    eventListEl.innerHTML = `<p class="empty">Todavía no hay hechos en esta era.</p>`;
+    return;
+  }
+
+  eventListEl.innerHTML = state.layout === "horizontal" ? renderHorizontalHtml(all) : renderVerticalHtml(all);
+  wireDeleteButtons(all);
+}
+
+function render(){
+  renderStrata();
+  renderEraTabs();
+  renderEvents();
+  document.querySelectorAll(".region-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.region === state.region);
+  });
+  document.querySelectorAll(".layout-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.layout === state.layout);
+  });
+}
+
+/* ================= EVENTS ================= */
+document.querySelectorAll(".region-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.region = btn.dataset.region;
+    render();
+  });
+});
+
+strataEl.addEventListener("click", (e) => {
+  const btn = e.target.closest(".stratum");
+  if (!btn) return;
+  state.era = btn.dataset.era;
+  render();
+});
+
+eraTabsEl.addEventListener("click", (e) => {
+  const btn = e.target.closest(".era-tab");
+  if (!btn) return;
+  state.era = btn.dataset.era;
+  render();
+});
+
+document.querySelectorAll(".layout-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.layout = btn.dataset.layout;
+    document.querySelectorAll(".layout-btn").forEach(b => b.classList.toggle("active", b === btn));
+    renderEvents();
+  });
+});
+
+const toggleFormBtn = document.getElementById("toggleForm");
+const addForm = document.getElementById("addForm");
+toggleFormBtn.addEventListener("click", () => {
+  addForm.classList.toggle("hidden");
+  toggleFormBtn.style.display = addForm.classList.contains("hidden") ? "block" : "none";
+});
+document.getElementById("cancelForm").addEventListener("click", () => {
+  addForm.reset();
+  addForm.classList.add("hidden");
+  toggleFormBtn.style.display = "block";
+});
+
+addForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const yearVal = parseInt(document.getElementById("fYear").value, 10);
+  const isBC = document.getElementById("fBC").checked;
+  const title = document.getElementById("fTitle").value.trim();
+  const desc = document.getElementById("fDesc").value.trim();
+  if (!yearVal || !title || !desc) return;
+
+  const y = isBC ? -yearVal : yearVal;
+  const yl = formatYearLabel(yearVal, isBC);
+
+  const current = await loadCustom(state.region, state.era);
+  current.push({ y, yl, t: title, d: desc });
+  await saveCustom(state.region, state.era, current);
+
+  addForm.reset();
+  addForm.classList.add("hidden");
+  toggleFormBtn.style.display = "block";
+  renderEvents();
+});
+
+/* ================= FULLSCREEN ================= */
+const appEl = document.getElementById("app");
+const fsToggleBtn = document.getElementById("fsToggle");
+let fsMode = false;
+
+function setFsMode(on){
+  fsMode = on;
+  appEl.classList.toggle("fs-mode", on);
+  document.body.classList.toggle("fs-lock", on);
+  fsToggleBtn.textContent = on ? "✕ Salir de pantalla completa" : "⤢ Pantalla completa";
+}
+
+fsToggleBtn.addEventListener("click", async () => {
+  if (!fsMode){
+    setFsMode(true);
+    try{ if (appEl.requestFullscreen) await appEl.requestFullscreen(); }catch(e){ /* CSS overlay still works */ }
+  } else {
+    setFsMode(false);
+    try{ if (document.fullscreenElement) await document.exitFullscreen(); }catch(e){ /* ignore */ }
+  }
+});
+
+document.addEventListener("fullscreenchange", () => {
+  // keeps our state in sync if the person exits native fullscreen with Esc
+  if (!document.fullscreenElement && fsMode) setFsMode(false);
+});
+
+render();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

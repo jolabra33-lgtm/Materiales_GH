@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor de Mapas</title>
+<style>
+  :root{
+    --navy-deep:#0b1c2c;
+    --navy:#132c42;
+    --navy-light:#1c3c56;
+    --paper:#f6efdc;
+    --paper-dim:#ece1c6;
+    --paper-line:#d8c9a3;
+    --ink:#20261c;
+    --ink-soft:#4a4536;
+    --sienna:#b9502f;
+    --sienna-deep:#7c3520;
+    --ochre:#cf9a44;
+    --teal:#1c6e8c;
+    --teal-deep:#134f65;
+    --shadow: 0 12px 30px -12px rgba(6,14,22,0.55);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #1c3c56 0%, transparent 55%),
+      var(--navy-deep);
+    color:var(--paper);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:26px 18px 50px;}
+
+  header.masthead{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    padding-bottom:16px; margin-bottom:18px;
+    border-bottom:1px solid rgba(246,239,220,0.18);
+    flex-wrap:wrap;
+  }
+  .masthead-title{display:flex; align-items:center; gap:14px;}
+  .compass{width:44px;height:44px;flex:0 0 auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));}
+  h1{
+    font-family: Georgia,'Iowan Old Style','Palatino Linotype',serif;
+    font-size:clamp(1.4rem, 1.05rem + 1.5vw, 2.2rem);
+    font-weight:600; letter-spacing:0.2px; margin:0; line-height:1.15; color:var(--paper);
+  }
+  h1 small{
+    display:block; font-family:inherit; font-size:0.82rem; font-weight:400;
+    letter-spacing:2.1px; text-transform:uppercase; color:var(--ochre); margin-bottom:4px;
+  }
+  .masthead-note{font-size:0.83rem; color:#c9d2da; max-width:320px; text-align:right; line-height:1.5;}
+
+  /* ---------- Tabs nivel 1 y 2 ---------- */
+  .tabs-l1{display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;}
+  .tabs-l1 button{
+    font-family:Georgia,'Iowan Old Style',serif; font-size:1rem; font-weight:600;
+    padding:11px 22px; border-radius:10px 10px 0 0; border:1px solid rgba(246,239,220,0.22);
+    border-bottom:3px solid transparent; background:rgba(246,239,220,0.05); color:#c9d2da;
+    cursor:pointer; transition:all .15s ease;
+  }
+  .tabs-l1 button:hover{background:rgba(246,239,220,0.1);}
+  .tabs-l1 button.active{background:var(--paper); color:var(--navy-deep); border-color:var(--paper); border-bottom-color:var(--ochre);}
+
+  .tabs-l2{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+  .tabs-l2 button{
+    font-size:0.82rem; font-weight:700; letter-spacing:0.3px; padding:7px 16px; border-radius:20px;
+    border:1px solid rgba(246,239,220,0.24); background:rgba(246,239,220,0.04); color:#dfe6ea;
+    cursor:pointer; transition:all .15s ease;
+  }
+  .tabs-l2 button:hover{background:rgba(246,239,220,0.1);}
+  .tabs-l2 button.active{background:var(--ochre); color:var(--navy-deep); border-color:var(--ochre);}
+
+  /* ---------- Toolbar (dentro del panel, para que siga disponible en pantalla completa) ---------- */
+  .toolbar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px; flex:0 0 auto;
+    background:var(--navy); border-bottom:1px solid rgba(246,239,220,0.14);
+    padding:9px 12px;
+  }
+  .tgroup{display:flex; align-items:center; gap:4px; background:var(--navy-deep); border-radius:8px; padding:3px;}
+  .tgroup button, .tbtn{
+    font-size:0.78rem; font-weight:700; letter-spacing:0.2px; padding:7px 11px; border:none;
+    background:transparent; color:#c9d2da; border-radius:6px; cursor:pointer; transition:all .15s ease;
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .tgroup button:hover, .tbtn:hover{background:rgba(246,239,220,0.12); color:var(--paper);}
+  .tgroup button.active{background:var(--ochre); color:var(--navy-deep);}
+  .tbtn{background:rgba(246,239,220,0.06); border:1px solid rgba(246,239,220,0.2);}
+  .tbtn.primary{background:var(--sienna); color:var(--paper); border-color:var(--sienna);}
+  .tbtn.primary:hover{background:var(--sienna-deep); color:var(--paper);}
+  .zoom-label{font-size:0.76rem; color:#9fb0c0; min-width:40px; text-align:center; font-variant-numeric:tabular-nums;}
+  .tdivider{width:1px; height:22px; background:rgba(246,239,220,0.18);}
+  .pen-colors{display:flex; gap:4px; align-items:center;}
+  .pen-swatch{width:18px; height:18px; border-radius:50%; border:2px solid rgba(246,239,220,0.5); cursor:pointer; padding:0;}
+  .pen-swatch.sel{border-color:var(--paper); box-shadow:0 0 0 2px var(--ochre);}
+  .toolbar-spacer{flex:1 1 auto;}
+
+  /* ---------- Escenario del visor ---------- */
+  .viewer-panel{
+    background:var(--navy); border:1px solid rgba(246,239,220,0.14); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden; position:relative;
+    display:flex; flex-direction:column;
+  }
+  .viewer-stage{
+    position:relative; width:100%; flex:1 1 600px; min-height:0; overflow:hidden; background:#0e2033;
+    touch-action:none; cursor:grab;
+  }
+  .viewer-stage.dragging{cursor:grabbing;}
+  .viewer-stage.draw-mode{cursor:crosshair;}
+  .viewer-panel.is-fullscreen{position:fixed; inset:0; z-index:2000; width:100vw; height:100vh; height:100dvh; margin:0; border-radius:0;}
+  .canvas-wrap{position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform;}
+  .canvas-wrap img{display:block; user-select:none; -webkit-user-drag:none; pointer-events:none;}
+  .canvas-wrap canvas{position:absolute; left:0; top:0; pointer-events:none;}
+
+  .loading-msg{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#9fb0c0; font-size:0.9rem; letter-spacing:0.3px;
+  }
+  .hint{
+    position:absolute; left:10px; bottom:10px; z-index:20; background:rgba(11,28,44,0.78);
+    border:1px solid rgba(246,239,220,0.2); border-radius:7px; padding:5px 10px; font-size:0.7rem;
+    color:#c9d2da; pointer-events:none;
+  }
+
+  footer.note{margin-top:16px; font-size:0.76rem; color:#93a3ad; line-height:1.6; text-align:center;}
+
+  @media (max-width:760px){
+    .masthead{flex-direction:column; align-items:flex-start;}
+    .masthead-note{text-align:left;}
+    .viewer-stage{flex-basis:420px;}
+    .toolbar{gap:6px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="masthead-title">
+      <svg class="compass" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#cf9a44" stroke-width="2"/>
+        <circle cx="50" cy="50" r="3" fill="#cf9a44"/>
+        <path d="M50 6 L57 50 L50 94 L43 50 Z" fill="#f6efdc" opacity="0.9"/>
+        <path d="M6 50 L50 57 L94 50 L50 43 Z" fill="#b9502f" opacity="0.9"/>
+      </svg>
+      <h1><small>Material de clase</small>Visor de Mapas</h1>
+    </div>
+    <p class="masthead-note">Haz zoom con la rueda o pellizcando, arrastra para mover, y usa el lápiz para señalar en clase.</p>
+  </header>
+
+  <div class="tabs-l1" id="tabsL1"></div>
+  <div class="tabs-l2" id="tabsL2"></div>
+
+  <div class="viewer-panel" id="viewerPanel">
+    <div class="toolbar">
+      <div class="tgroup">
+        <button id="fitBtn" title="Ajustar a la pantalla">⤢ Ajustar</button>
+        <button id="zoomOutBtn" title="Alejar">−</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button id="zoomInBtn" title="Acercar">+</button>
+      </div>
+
+      <div class="tdivider"></div>
+
+      <div class="tgroup">
+        <button id="penBtn" title="Lápiz para señalar">✏️ Lápiz</button>
+        <div class="pen-colors" id="penColors"></div>
+        <button id="clearBtn" title="Borrar anotaciones">🗑 Borrar</button>
+      </div>
+
+      <div class="toolbar-spacer"></div>
+
+      <button class="tbtn" id="downloadBtn">⬇ Descargar</button>
+
+      <button class="tbtn primary" id="fsBtn">⛶ Pantalla completa</button>
+    </div>
+
+    <div class="viewer-stage" id="viewerStage">
+      <div class="canvas-wrap" id="canvasWrap">
+        <img id="mapImg" draggable="false" alt="">
+        <canvas id="drawCanvas"></canvas>
+      </div>
+      <div class="loading-msg" id="loadingMsg">Cargando mapa…</div>
+      <div class="hint">Rueda / pellizco: zoom · Arrastrar: mover · Doble clic: ajustar</div>
+    </div>
+  </div>
+
+  <footer class="note">
+    Mapas físicos escolares en alta resolución. El lápiz de anotación funciona también en pantalla completa; es temporal y se borra al cambiar de mapa.
+  </footer>
+
+</div>
+
+<script>
+/* ================= DATOS DE MAPAS ================= */
+var MAP_GROUPS = {
+  continentes: [
+    { key:'EUROPA',  label:'Europa',   file:'Europa.jpg' },
+    { key:'AFRICA',  label:'África',   file:'Africa.jpg' },
+    { key:'AMERICA', label:'América',  file:'America.jpg' },
+    { key:'ASIA',    label:'Asia',     file:'Asia.jpg' },
+    { key:'OCEANIA', label:'Oceanía',  file:'Oceania.jpg' }
+  ],
+  espana: [
+    { key:'ESPANA_RELIEVE', label:'Relieve', file:'Espana_Relieve.jpg' },
+    { key:'ESPANA_RIOS',    label:'Ríos',    file:'Espana_Rios.jpg' }
+  ],
+  valencia: [
+    { key:'VALENCIA_RELIEVE', label:'Relieve', file:'C_Valenciana_Relieve.jpg' },
+    { key:'VALENCIA_RIOS',    label:'Ríos',    file:'C_Valenciana_Rios.jpg' }
+  ]
+};
+var GROUP_LABELS = { continentes:'Continentes', espana:'España', valencia:'Comunidad Valenciana' };
+var GROUP_ORDER = ['continentes','espana','valencia'];
+
+/* Rellenado por el paso de construcción: clave del mapa -> imagen en base64 */
+var MAP_DATA = {
+  "EUROPA": "assets/mapas/EUROPA.jpg",
+  "AFRICA": "assets/mapas/AFRICA.jpg",
+  "AMERICA": "assets/mapas/AMERICA.jpg",
+  "ASIA": "assets/mapas/ASIA.jpg",
+  "OCEANIA": "assets/mapas/OCEANIA.jpg",
+  "ESPANA_RELIEVE": "assets/mapas/ESPANA_RELIEVE.jpg",
+  "ESPANA_RIOS": "assets/mapas/ESPANA_RIOS.jpg",
+  "VALENCIA_RELIEVE": "assets/mapas/VALENCIA_RELIEVE.jpg",
+  "VALENCIA_RIOS": "assets/mapas/VALENCIA_RIOS.jpg"
+};
+
+var PEN_COLORS = ['#e53935','#1e88e5','#ffd400','#ffffff'];
+
+/* ================= ESTADO ================= */
+var activeGroup = 'continentes';
+var activeItem = MAP_GROUPS.continentes[0];
+var scale = 1, tx = 0, ty = 0, fitScale = 1;
+var drawMode = false;
+var penColor = PEN_COLORS[0];
+var isPanning = false, panStart = null, startTxTy = null;
+var isDrawing = false, lastDrawPt = null;
+var activePointers = new Map();
+var pinchStart = null;
+
+var stage = document.getElementById('viewerStage');
+var wrapEl = document.getElementById('canvasWrap');
+var img = document.getElementById('mapImg');
+var canvas = document.getElementById('drawCanvas');
+var ctx = canvas.getContext('2d');
+var loadingMsg = document.getElementById('loadingMsg');
+var zoomLabel = document.getElementById('zoomLabel');
+
+/* ================= CONSTRUCCIÓN DE PESTAÑAS ================= */
+function buildTabsL1(){
+  var holder = document.getElementById('tabsL1');
+  holder.innerHTML = '';
+  GROUP_ORDER.forEach(function(g){
+    var b = document.createElement('button');
+    b.textContent = GROUP_LABELS[g];
+    b.className = (g === activeGroup) ? 'active' : '';
+    b.addEventListener('click', function(){
+      activeGroup = g;
+      buildTabsL1();
+      buildTabsL2();
+      selectItem(MAP_GROUPS[g][0]);
+    });
+    holder.appendChild(b);
+  });
+}
+function buildTabsL2(){
+  var holder = document.getElementById('tabsL2');
+  holder.innerHTML = '';
+  MAP_GROUPS[activeGroup].forEach(function(item){
+    var b = document.createElement('button');
+    b.textContent = item.label;
+    b.className = (item.key === activeItem.key) ? 'active' : '';
+    b.addEventListener('click', function(){ selectItem(item); });
+    holder.appendChild(b);
+  });
+}
+
+function selectItem(item){
+  activeItem = item;
+  buildTabsL2Highlight();
+  loadMap(item);
+}
+function buildTabsL2Highlight(){
+  document.querySelectorAll('.tabs-l2 button').forEach(function(b){
+    b.classList.toggle('active', b.textContent === activeItem.label);
+  });
+}
+
+/* ================= CARGA DE MAPA ================= */
+function loadMap(item){
+  loadingMsg.style.display = 'flex';
+  loadingMsg.textContent = 'Cargando mapa…';
+  clearAnnotations();
+  var src = MAP_DATA[item.key];
+  if(!src){
+    loadingMsg.textContent = 'No se encontró la imagen de este mapa.';
+    return;
+  }
+  img.onload = function(){
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    wrapEl.style.width = img.naturalWidth + 'px';
+    wrapEl.style.height = img.naturalHeight + 'px';
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    loadingMsg.style.display = 'none';
+    fitToScreen();
+  };
+  img.onerror = function(){
+    loadingMsg.textContent = 'No se pudo cargar la imagen de este mapa.';
+  };
+  img.src = src;
+}
+
+/* ================= TRANSFORMACIÓN (PAN / ZOOM) ================= */
+function applyTransform(){
+  wrapEl.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+  var pct = Math.round((scale / fitScale) * 100);
+  zoomLabel.textContent = pct + '%';
+}
+
+function fitToScreen(){
+  var cw = stage.clientWidth, ch = stage.clientHeight;
+  var iw = img.naturalWidth || 1, ih = img.naturalHeight || 1;
+  fitScale = Math.min(cw / iw, ch / ih);
+  scale = fitScale;
+  tx = (cw - iw * scale) / 2;
+  ty = (ch - ih * scale) / 2;
+  applyTransform();
+}
+
+function clampScale(s){
+  var minS = fitScale * 0.98;
+  var maxS = 3.2;
+  return Math.max(minS, Math.min(maxS, s));
+}
+
+function zoomAt(factor, cx, cy){
+  var newScale = clampScale(scale * factor);
+  if(newScale === scale) return;
+  var imgX = (cx - tx) / scale;
+  var imgY = (cy - ty) / scale;
+  scale = newScale;
+  tx = cx - imgX * scale;
+  ty = cy - imgY * scale;
+  applyTransform();
+}
+
+/* ================= EVENTOS: RUEDA ================= */
+stage.addEventListener('wheel', function(e){
+  e.preventDefault();
+  var rect = stage.getBoundingClientRect();
+  var cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  var factor = e.deltaY < 0 ? 1.18 : (1/1.18);
+  zoomAt(factor, cx, cy);
+}, { passive:false });
+
+/* ================= EVENTOS: PUNTERO (arrastrar / dibujar / pellizco) ================= */
+function stagePoint(e){
+  var rect = stage.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+function toImagePoint(sp){
+  return { x: (sp.x - tx) / scale, y: (sp.y - ty) / scale };
+}
+
+stage.addEventListener('pointerdown', function(e){
+  stage.setPointerCapture(e.pointerId);
+  var sp = stagePoint(e);
+  activePointers.set(e.pointerId, sp);
+
+  if(activePointers.size === 2){
+    isPanning = false; isDrawing = false;
+    var pts = Array.from(activePointers.values());
+    var dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    var mid = { x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2 };
+    pinchStart = { dist: dist, scale: scale, imgPoint: toImagePoint(mid) };
+    return;
+  }
+
+  if(drawMode){
+    isDrawing = true;
+    lastDrawPt = toImagePoint(sp);
+  } else {
+    isPanning = true;
+    stage.classList.add('dragging');
+    panStart = sp;
+    startTxTy = { tx:tx, ty:ty };
+  }
+});
+
+stage.addEventListener('pointermove', function(e){
+  if(!activePointers.has(e.pointerId)) return;
+  var sp = stagePoint(e);
+  activePointers.set(e.pointerId, sp);
+
+  if(activePointers.size === 2 && pinchStart){
+    var pts = Array.from(activePointers.values());
+    var dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    var mid = { x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2 };
+    var newScale = clampScale(pinchStart.scale * (dist / pinchStart.dist));
+    scale = newScale;
+    tx = mid.x - pinchStart.imgPoint.x * scale;
+    ty = mid.y - pinchStart.imgPoint.y * scale;
+    applyTransform();
+    return;
+  }
+
+  if(isDrawing){
+    var p = toImagePoint(sp);
+    drawSegment(lastDrawPt, p);
+    lastDrawPt = p;
+    return;
+  }
+
+  if(isPanning){
+    tx = startTxTy.tx + (sp.x - panStart.x);
+    ty = startTxTy.ty + (sp.y - panStart.y);
+    applyTransform();
+  }
+});
+
+function endPointer(e){
+  activePointers.delete(e.pointerId);
+  if(activePointers.size < 2) pinchStart = null;
+  if(activePointers.size === 0){
+    isPanning = false; isDrawing = false; lastDrawPt = null;
+    stage.classList.remove('dragging');
+  }
+}
+stage.addEventListener('pointerup', endPointer);
+stage.addEventListener('pointercancel', endPointer);
+stage.addEventListener('pointerleave', function(e){
+  if(activePointers.size <= 1) endPointer(e);
+});
+
+stage.addEventListener('dblclick', function(e){
+  var sp = stagePoint(e);
+  if(Math.abs(scale - fitScale) < 0.001){
+    zoomAt(2, sp.x, sp.y);
+  } else {
+    fitToScreen();
+  }
+});
+
+/* ================= LÁPIZ DE ANOTACIÓN ================= */
+function drawSegment(p1, p2){
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = penColor;
+  ctx.lineWidth = Math.max(4, img.naturalWidth / 220);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.stroke();
+  ctx.restore();
+}
+function clearAnnotations(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+function buildPenColors(){
+  var holder = document.getElementById('penColors');
+  holder.innerHTML = '';
+  PEN_COLORS.forEach(function(c){
+    var b = document.createElement('button');
+    b.className = 'pen-swatch' + (c === penColor ? ' sel' : '');
+    b.style.background = c;
+    b.title = 'Color del lápiz';
+    b.addEventListener('click', function(){
+      penColor = c;
+      document.querySelectorAll('.pen-swatch').forEach(function(s){ s.classList.remove('sel'); });
+      b.classList.add('sel');
+    });
+    holder.appendChild(b);
+  });
+}
+document.getElementById('penBtn').addEventListener('click', function(){
+  drawMode = !drawMode;
+  this.classList.toggle('active', drawMode);
+  stage.classList.toggle('draw-mode', drawMode);
+});
+document.getElementById('clearBtn').addEventListener('click', clearAnnotations);
+
+/* ================= BOTONES DE ZOOM ================= */
+document.getElementById('fitBtn').addEventListener('click', fitToScreen);
+document.getElementById('zoomInBtn').addEventListener('click', function(){
+  zoomAt(1.35, stage.clientWidth/2, stage.clientHeight/2);
+});
+document.getElementById('zoomOutBtn').addEventListener('click', function(){
+  zoomAt(1/1.35, stage.clientWidth/2, stage.clientHeight/2);
+});
+
+/* ================= COMPONER IMAGEN FINAL (mapa + anotaciones) ================= */
+function composeFlatDataUrl(){
+  var out = document.createElement('canvas');
+  out.width = img.naturalWidth;
+  out.height = img.naturalHeight;
+  var octx = out.getContext('2d');
+  octx.drawImage(img, 0, 0);
+  octx.drawImage(canvas, 0, 0);
+  return out.toDataURL('image/jpeg', 0.92);
+}
+
+/* ================= DESCARGAR ================= */
+document.getElementById('downloadBtn').addEventListener('click', function(){
+  var dataUrl = composeFlatDataUrl();
+  var a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = (GROUP_LABELS[activeGroup] + '_' + activeItem.label).replace(/\s+/g,'_') + '.jpg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+});
+
+/* ================= PANTALLA COMPLETA ================= */
+var viewerPanel = document.getElementById('viewerPanel');
+var fsBtn = document.getElementById('fsBtn');
+var fsActive = false;
+
+function enterFs(){
+  fsActive = true;
+  viewerPanel.classList.add('is-fullscreen');
+  fsBtn.textContent = '⤡ Salir de pantalla completa';
+  setTimeout(fitToScreen, 60);
+  try{
+    var p = viewerPanel.requestFullscreen ? viewerPanel.requestFullscreen() : (viewerPanel.webkitRequestFullscreen ? viewerPanel.webkitRequestFullscreen() : null);
+    if(p && p.catch) p.catch(function(){ /* el respaldo con CSS ya funciona igualmente */ });
+  }catch(e){ /* el respaldo con CSS ya funciona igualmente */ }
+}
+function exitFs(){
+  fsActive = false;
+  viewerPanel.classList.remove('is-fullscreen');
+  fsBtn.textContent = '⛶ Pantalla completa';
+  setTimeout(fitToScreen, 60);
+  try{
+    if(document.fullscreenElement || document.webkitFullscreenElement){
+      if(document.exitFullscreen) document.exitFullscreen().catch(function(){});
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  }catch(e){ /* ignore */ }
+}
+fsBtn.addEventListener('click', function(){
+  fsActive ? exitFs() : enterFs();
+});
+function onFsChange(){
+  // Red de seguridad: si se sale de la pantalla completa NATIVA (Esc, gesto del
+  // navegador) pero nuestro estado seguía activo, lo sincronizamos.
+  var nativeFs = document.fullscreenElement === viewerPanel || document.webkitFullscreenElement === viewerPanel;
+  if(!nativeFs && fsActive){ exitFs(); }
+}
+document.addEventListener('fullscreenchange', onFsChange);
+document.addEventListener('webkitfullscreenchange', onFsChange);
+
+/* ================= REDIMENSIONADO ================= */
+var resizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(fitToScreen, 120);
+});
+
+/* ================= INICIO ================= */
+buildTabsL1();
+buildTabsL2();
+buildPenColors();
+loadMap(activeItem);
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Comparador Estadístico</title>
+
+    <!-- Icono y color del navegador -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+    <meta name="theme-color" content="#1c3456">
+
+    <!-- Soporte PWA / "Añadir a pantalla de inicio" en iPad -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GeoStats Pro">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f8fafc;
+               padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+               padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-800">
+    <div class="min-h-screen p-4 md:p-8">
+        <div class="max-w-[1400px] w-full mx-auto space-y-4">
+            
+            <!-- Cabecera -->
+            <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-earth-americas text-blue-600"></i>
+                        GeoStats Pro
+                    </h1>
+                    <p class="text-sm text-slate-500 mt-1">Datos estimados globales (2020) y nacionales</p>
+                </div>
+                <div class="flex bg-slate-100 p-1 rounded-xl">
+                    <button onclick="app.switchDataset('countries')" id="btn-countries" class="px-6 py-2 rounded-lg text-sm font-medium transition-all bg-white text-blue-600 shadow-sm">Países</button>
+                    <button onclick="app.switchDataset('regions')" id="btn-regions" class="px-6 py-2 rounded-lg text-sm font-medium transition-all text-slate-500 hover:text-slate-700">CC.AA. (España)</button>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
+                
+                <!-- Panel Lateral (Buscador y Lista) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col sticky top-4 md:top-8 max-h-[85vh]">
+                    <h2 class="font-semibold text-lg mb-3 flex items-center justify-between">
+                        Territorios
+                        <div class="flex items-center gap-2">
+                            <button onclick="app.clearSelection()" class="text-xs font-medium text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-2.5 py-1 rounded-md transition-colors" title="Borrar toda la selección">
+                                <i class="fa-solid fa-trash-can mr-1"></i> Limpiar
+                            </button>
+                            <span id="selection-count" class="bg-blue-100 text-blue-700 text-xs py-1 px-2 rounded-full font-bold">0</span>
+                        </div>
+                    </h2>
+                    <div class="relative mb-3 flex-shrink-0">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="app.filterList()" placeholder="Buscar territorio..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div id="territories-list" class="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-1.5 pb-2">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <div class="lg:col-span-3 flex flex-col gap-4">
+                    
+                    <!-- Carrusel de Métricas -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2">
+                        <div class="relative">
+                            <div id="metrics-container" class="flex overflow-x-auto hide-scrollbar gap-2 p-1 cursor-grab active:cursor-grabbing scroll-smooth">
+                                <!-- Generado por JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 relative flex flex-col h-[350px] xl:h-[400px]">
+                        <div class="flex justify-between items-center mb-2 flex-shrink-0">
+                            <h2 id="chart-title" class="text-lg font-bold text-slate-800">Comparativa</h2>
+                            <div class="flex items-center gap-1 sm:gap-2">
+                                <button onclick="app.toggleSort()" id="btn-sort" class="w-9 h-7 rounded-md flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" title="Ordenar Mayor/Menor">
+                                    <i class="fa-solid fa-arrow-down-9-1 text-sm"></i>
+                                </button>
+                                <div class="w-px h-5 bg-slate-200 mx-1"></div>
+                                <div class="flex bg-slate-100 p-1 rounded-lg">
+                                    <button onclick="app.setChartType('bar')" id="btn-bar" class="w-9 h-7 rounded-md flex items-center justify-center bg-white text-blue-600 shadow-sm transition-all"><i class="fa-solid fa-chart-simple text-sm"></i></button>
+                                    <button onclick="app.setChartType('line')" id="btn-line" class="w-9 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all"><i class="fa-solid fa-chart-line text-sm"></i></button>
+                                </div>
+                                <div class="w-px h-5 bg-slate-200 mx-1"></div>
+                                <button onclick="app.downloadChart()" class="w-9 h-7 rounded-md flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-blue-100 hover:text-blue-600 transition-all" title="Descargar Gráfico como PNG">
+                                    <i class="fa-solid fa-download text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 w-full relative">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                        <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 hidden rounded-2xl">
+                            <i class="fa-solid fa-chart-pie text-5xl text-slate-200 mb-3"></i>
+                            <p class="text-slate-500 font-medium">Selecciona al menos un territorio</p>
+                        </div>
+                    </div>
+
+                    <!-- Tarjetas Detalladas -->
+                    <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-8">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición -->
+    <div id="edit-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col transform scale-95 transition-transform duration-300" id="edit-modal-content">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <h3 class="text-lg font-bold text-slate-800" id="edit-modal-title">Editar Territorio</h3>
+                <button onclick="app.closeEditModal()" class="text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4" id="edit-modal-body">
+                <!-- Generado por JS -->
+            </div>
+            <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl flex-shrink-0">
+                <button onclick="app.closeEditModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-200 transition-all">Cancelar</button>
+                <button id="save-edit-btn" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-sm">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const formatDec = (v) => v !== null && v !== undefined && !isNaN(v) ? Number(v).toLocaleString('es-ES', {minimumFractionDigits: 1, maximumFractionDigits: 2}) : '-';
+        const formatInt = (v) => v !== null && v !== undefined && !isNaN(v) ? Number(v).toLocaleString('es-ES', {maximumFractionDigits: 0}) : '-';
+        
+        const db = {
+            countries: {
+                metrics: [
+                    { id: 'population', name: 'Población (miles)', icon: 'fa-users', color: '#3b82f6', fmt: formatInt },
+                    { id: 'birthRate', name: 'Natalidad (‰)', icon: 'fa-baby', color: '#10b981', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}‰` : '-' },
+                    { id: 'deathRate', name: 'Mortalidad (‰)', icon: 'fa-book-skull', color: '#ef4444', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}‰` : '-' },
+                    { id: 'infantMortality', name: 'Mort. Infantil', icon: 'fa-child', color: '#f97316', fmt: formatDec },
+                    { id: 'naturalGrowth', name: 'Crec. Vegetativo', icon: 'fa-seedling', color: '#84cc16', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'lifeExpectancy', name: 'Esperanza Vida', icon: 'fa-heart-pulse', color: '#8b5cf6', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)} años` : '-' },
+                    { id: 'youthPop', name: '0-14 años (%)', icon: 'fa-children', color: '#06b6d4', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'elderPop', name: '>65 años (%)', icon: 'fa-person-cane', color: '#6366f1', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'urbanPop', name: 'Pob. Urbana (%)', icon: 'fa-city', color: '#ec4899', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'migrationRate', name: 'Tasa Migración', icon: 'fa-plane-arrival', color: '#f43f5e', fmt: formatDec },
+                    { id: 'gdp', name: 'PIB per cápita ($)', icon: 'fa-sack-dollar', color: '#eab308', fmt: (v) => v !== null && v !== undefined ? `$${formatInt(v)}` : '-' },
+                    { id: 'poverty', name: 'Pobreza Extrema', icon: 'fa-arrow-trend-down', color: '#dc2626', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'literacy', name: 'Alfabetización', icon: 'fa-book-open', color: '#14b8a6', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'internet', name: 'Uso Internet', icon: 'fa-wifi', color: '#3b82f6', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'physicians', name: 'Médicos (x10k)', icon: 'fa-user-doctor', color: '#0ea5e9', fmt: formatDec }
+                ],
+                data: [
+                    { id: 'AFG', name: 'Afganistán', population: 38928, birthRate: 32.9, deathRate: 4.5, infantMortality: 68, naturalGrowth: 26.3, lifeExpectancy: 64.28, youthPop: 41.8, elderPop: 2.6, urbanPop: 26.0, migrationRate: -1.7, gdp: 508.81, poverty: 43.02, literacy: null, internet: null, physicians: 2.78 },
+                    { id: 'ALB', name: 'Albania', population: 2878, birthRate: 11.8, deathRate: 7.8, infantMortality: 11, naturalGrowth: 4.0, lifeExpectancy: 78.40, youthPop: 17.2, elderPop: 14.7, urbanPop: 62.1, migrationRate: -4.9, gdp: 5215.28, poverty: 1.3, literacy: 98.14, internet: 72.24, physicians: 16.47 },
+                    { id: 'DEU', name: 'Alemania', population: 83784, birthRate: 9.4, deathRate: 11.2, infantMortality: 4, naturalGrowth: -1.7, lifeExpectancy: 81.11, youthPop: 14.0, elderPop: 21.7, urbanPop: 77.5, migrationRate: 0.0, gdp: 45723.64, poverty: null, literacy: null, internet: 89.81, physicians: 43.00 },
+                    { id: 'AND', name: 'Andorra', population: 77, birthRate: null, deathRate: null, infantMortality: null, naturalGrowth: null, lifeExpectancy: null, youthPop: null, elderPop: null, urbanPop: 87.9, migrationRate: null, gdp: 40897.33, poverty: null, literacy: 100, internet: 91.57, physicians: 33.33 },
+                    { id: 'AGO', name: 'Angola', population: 32866, birthRate: 40.9, deathRate: 8.3, infantMortality: 81, naturalGrowth: 32.6, lifeExpectancy: 60.61, youthPop: 46.4, elderPop: 2.2, urbanPop: 66.8, migrationRate: 0.2, gdp: 1895.77, poverty: 49.9, literacy: null, internet: 36.00, physicians: 2.15 },
+                    { id: 'ATG', name: 'Antigua y Barbuda', population: 98, birthRate: 15.5, deathRate: 6.3, infantMortality: 7, naturalGrowth: 9.1, lifeExpectancy: 76.82, youthPop: 21.8, elderPop: 9.3, urbanPop: 24.4, migrationRate: 0.0, gdp: 14450.00, poverty: null, literacy: 98.95, internet: null, physicians: 27.67 },
+                    { id: 'SAU', name: 'Arabia Saudí', population: 34814, birthRate: 18.0, deathRate: 3.5, infantMortality: 7, naturalGrowth: 14.6, lifeExpectancy: 74.92, youthPop: 24.7, elderPop: 3.5, urbanPop: 84.3, migrationRate: 4.1, gdp: 20110.32, poverty: null, literacy: 95.33, internet: 97.86, physicians: 26.12 },
+                    { id: 'DZA', name: 'Argelia', population: 43851, birthRate: 24.7, deathRate: 4.7, infantMortality: 25, naturalGrowth: 20.0, lifeExpectancy: 76.59, youthPop: 30.8, elderPop: 6.7, urbanPop: 73.7, migrationRate: -0.2, gdp: 3310.39, poverty: null, literacy: 81.41, internet: 57.50, physicians: 17.19 },
+                    { id: 'ARG', name: 'Argentina', population: 45196, birthRate: 17.1, deathRate: 7.6, infantMortality: 12, naturalGrowth: 9.5, lifeExpectancy: 76.45, youthPop: 24.4, elderPop: 11.4, urbanPop: 92.1, migrationRate: 1.5, gdp: 8441.92, poverty: 0.1, literacy: 99.00, internet: 74.29, physicians: 39.90 },
+                    { id: 'ARM', name: 'Armenia', population: 2963, birthRate: 14.2, deathRate: 9.9, infantMortality: 13, naturalGrowth: 4.3, lifeExpectancy: 74.87, youthPop: 20.8, elderPop: 11.8, urbanPop: 63.3, migrationRate: -1.7, gdp: 4267.45, poverty: 1.1, literacy: 99.74, internet: 66.54, physicians: 44.02 },
+                    { id: 'AUS', name: 'Australia', population: 25500, birthRate: 12.9, deathRate: null, infantMortality: 4, naturalGrowth: 6.3, lifeExpectancy: 83.20, youthPop: 19.3, elderPop: 16.2, urbanPop: 86.2, migrationRate: 5.4, gdp: 51812.15, poverty: null, literacy: null, internet: 86.55, physicians: 37.60 },
+                    { id: 'AUT', name: 'Austria', population: 9006, birthRate: 9.9, deathRate: 9.9, infantMortality: 4, naturalGrowth: 0.1, lifeExpectancy: 81.36, youthPop: 14.4, elderPop: 19.2, urbanPop: 58.7, migrationRate: 0.6, gdp: 48105.36, poverty: null, literacy: null, internet: 87.53, physicians: 52.11 },
+                    { id: 'AZE', name: 'Azerbaiyán', population: 10139, birthRate: 17.1, deathRate: 6.8, infantMortality: 25, naturalGrowth: 10.3, lifeExpectancy: 72.81, youthPop: 23.5, elderPop: 6.7, urbanPop: 56.4, migrationRate: 0.1, gdp: 4214.31, poverty: null, literacy: 99.79, internet: 81.10, physicians: 34.46 },
+                    { id: 'BHS', name: 'Bahamas', population: 393, birthRate: 14.0, deathRate: 6.7, infantMortality: 7, naturalGrowth: 7.3, lifeExpectancy: 73.73, youthPop: 21.6, elderPop: 7.7, urbanPop: 83.2, migrationRate: 2.6, gdp: 28607.90, poverty: null, literacy: null, internet: 85.00, physicians: 19.39 },
+                    { id: 'BHR', name: 'Bahrein', population: 1702, birthRate: 14.2, deathRate: 2.4, infantMortality: null, naturalGrowth: 11.8, lifeExpectancy: 77.10, youthPop: 18.3, elderPop: 2.7, urbanPop: 89.5, migrationRate: 31.1, gdp: 23443.43, poverty: null, literacy: 97.46, internet: 99.54, physicians: 9.26 },
+                    { id: 'BGD', name: 'Bangladesh', population: 164689, birthRate: 18.4, deathRate: 5.5, infantMortality: 32, naturalGrowth: 12.8, lifeExpectancy: 72.15, youthPop: 26.8, elderPop: 5.2, urbanPop: 38.2, migrationRate: -2.3, gdp: 1968.79, poverty: 14.3, literacy: 74.68, internet: 12.90, physicians: 6.37 },
+                    { id: 'BRB', name: 'Barbados', population: 287, birthRate: 10.7, deathRate: 9.0, infantMortality: 12, naturalGrowth: 1.7, lifeExpectancy: 79.02, youthPop: 16.7, elderPop: 16.8, urbanPop: 31.2, migrationRate: -0.3, gdp: 15191.16, poverty: null, literacy: null, internet: 81.76, physicians: 24.88 },
+                    { id: 'BEL', name: 'Bélgica', population: 11590, birthRate: 10.9, deathRate: 9.8, infantMortality: 3, naturalGrowth: null, lifeExpectancy: 81.39, youthPop: 17.0, elderPop: 19.3, urbanPop: 98.1, migrationRate: 4.2, gdp: 44594.38, poverty: null, literacy: null, internet: 91.52, physicians: 59.56 },
+                    { id: 'BLZ', name: 'Belice', population: 398, birthRate: 20.9, deathRate: 4.7, infantMortality: 15, naturalGrowth: 16.2, lifeExpectancy: 74.37, youthPop: 29.2, elderPop: 5.0, urbanPop: 46.0, migrationRate: 3.2, gdp: 4435.62, poverty: null, literacy: null, internet: 47.08, physicians: 10.78 },
+                    { id: 'BEN', name: 'Benin', population: 12123, birthRate: 36.4, deathRate: 9.0, infantMortality: 96, naturalGrowth: 27.4, lifeExpectancy: 61.30, youthPop: 41.9, elderPop: 3.3, urbanPop: 48.4, migrationRate: -0.2, gdp: 1291.04, poverty: null, literacy: 42.36, internet: 29.00, physicians: 0.65 },
+                    { id: 'BTN', name: 'Bhután', population: 772, birthRate: 17.5, deathRate: 6.3, infantMortality: 30, naturalGrowth: 11.2, lifeExpectancy: 71.28, youthPop: 24.9, elderPop: 6.2, urbanPop: 42.3, migrationRate: 1.5, gdp: 3122.38, poverty: 0.4, literacy: 66.56, internet: null, physicians: 4.60 },
+                    { id: 'BLR', name: 'Bielorrusia', population: 9449, birthRate: 11.8, deathRate: 12.6, infantMortality: 4, naturalGrowth: -0.7, lifeExpectancy: 74.49, youthPop: 17.2, elderPop: 15.6, urbanPop: 79.5, migrationRate: 0.9, gdp: 6411.23, poverty: 0.0, literacy: 99.76, internet: 85.09, physicians: 51.91 },
+                    { id: 'BOL', name: 'Bolivia', population: 11673, birthRate: 21.9, deathRate: 6.8, infantMortality: 49, naturalGrowth: 15.1, lifeExpectancy: 71.08, youthPop: 30.2, elderPop: 7.5, urbanPop: 70.1, migrationRate: 0.8, gdp: 3143.05, poverty: 3.2, literacy: 92.46, internet: 55.14, physicians: 10.30 },
+                    { id: 'BIH', name: 'Bosnia y Herzegovina', population: 3281, birthRate: 8.2, deathRate: 10.6, infantMortality: 7, naturalGrowth: -2.4, lifeExpectancy: 77.1, youthPop: 14.5, elderPop: 17.9, urbanPop: 49.0, migrationRate: -6.4, gdp: 6031.56, poverty: null, literacy: null, internet: 73.21, physicians: 21.62 },
+                    { id: 'BWA', name: 'Botswana', population: 2352, birthRate: 25.1, deathRate: 5.8, infantMortality: null, naturalGrowth: 19.3, lifeExpectancy: 69.09, youthPop: 33.4, elderPop: 4.5, urbanPop: 70.9, migrationRate: 1.3, gdp: 6710.99, poverty: null, literacy: null, internet: 61.00, physicians: 2.89 },
+                    { id: 'BRA', name: 'Brasil', population: 212559, birthRate: 14.1, deathRate: 6.4, infantMortality: 15, naturalGrowth: 7.7, lifeExpectancy: 75.56, youthPop: 20.7, elderPop: 9.6, urbanPop: 87.1, migrationRate: 0.1, gdp: 6796.84, poverty: 4.6, literacy: 93.23, internet: 73.91, physicians: 23.11 },
+                    { id: 'BRN', name: 'Brunei Darussalam', population: 437, birthRate: 15.0, deathRate: 4.4, infantMortality: 10, naturalGrowth: 10.6, lifeExpectancy: 75.66, youthPop: 22.3, elderPop: 5.6, urbanPop: 78.2, migrationRate: 0.0, gdp: 27466.34, poverty: null, literacy: 97.21, internet: 95.00, physicians: 16.09 },
+                    { id: 'BGR', name: 'Bulgaria', population: 6948, birthRate: 9.0, deathRate: 15.4, infantMortality: 7, naturalGrowth: -6.4, lifeExpectancy: 74.85, youthPop: 14.7, elderPop: 21.5, urbanPop: 75.7, migrationRate: -0.7, gdp: 9975.78, poverty: 0.9, literacy: null, internet: 70.16, physicians: 42.07 },
+                    { id: 'BFA', name: 'Burkina Faso', population: 20903, birthRate: 38.2, deathRate: 8.3, infantMortality: 84, naturalGrowth: 29.9, lifeExpectancy: 60.92, youthPop: 44.4, elderPop: 2.4, urbanPop: 30.6, migrationRate: -1.3, gdp: 830.93, poverty: null, literacy: 41.22, internet: 18.00, physicians: 0.94 },
+                    { id: 'BDI', name: 'Burundi', population: 11891, birthRate: 39.3, deathRate: 8.0, infantMortality: 63, naturalGrowth: 31.2, lifeExpectancy: 61.02, youthPop: 45.3, elderPop: 2.4, urbanPop: 13.7, migrationRate: 0.2, gdp: 274.01, poverty: null, literacy: 68.38, internet: 5.20, physicians: 1.00 },
+                    { id: 'CPV', name: 'Cabo Verde', population: 556, birthRate: 19.7, deathRate: 5.6, infantMortality: 20, naturalGrowth: 14.0, lifeExpectancy: 72.78, youthPop: 28.1, elderPop: 4.8, urbanPop: 66.7, migrationRate: -2.5, gdp: 3064.27, poverty: null, literacy: 86.79, internet: 61.94, physicians: 7.81 },
+                    { id: 'KHM', name: 'Camboya', population: 16719, birthRate: 22.7, deathRate: 6.0, infantMortality: 28, naturalGrowth: 16.7, lifeExpectancy: 69.36, youthPop: 30.9, elderPop: 4.9, urbanPop: 24.2, migrationRate: -1.9, gdp: 1512.73, poverty: null, literacy: 80.53, internet: 78.80, physicians: 1.93 },
+                    { id: 'CMR', name: 'Camerún', population: 26546, birthRate: 35.6, deathRate: 9.4, infantMortality: null, naturalGrowth: 26.3, lifeExpectancy: 58.77, youthPop: 42.1, elderPop: 2.7, urbanPop: 57.6, migrationRate: -0.2, gdp: 1507.45, poverty: null, literacy: 77.07, internet: 33.50, physicians: 0.88 },
+                    { id: 'CAN', name: 'Canadá', population: 37742, birthRate: 10.5, deathRate: 7.7, infantMortality: 5, naturalGrowth: 2.7, lifeExpectancy: 82.22, youthPop: 15.8, elderPop: 18.1, urbanPop: 81.6, migrationRate: 6.1, gdp: 43241.62, poverty: 0.2, literacy: null, internet: 96.50, physicians: 24.43 },
+                    { id: 'CIV', name: 'Costa de Marfil', population: 26378, birthRate: 35.9, deathRate: 10.2, infantMortality: null, naturalGrowth: 25.7, lifeExpectancy: 57.25, youthPop: 41.5, elderPop: 2.9, urbanPop: 51.7, migrationRate: -0.3, gdp: 2325.72, poverty: null, literacy: 47.17, internet: 36.29, physicians: 1.62 },
+                    { id: 'HRV', name: 'Croacia', population: 4105, birthRate: 8.9, deathRate: 13.1, infantMortality: 5, naturalGrowth: -4.2, lifeExpectancy: 78.2, youthPop: 14.5, elderPop: 21.3, urbanPop: 57.6, migrationRate: -1.9, gdp: 13828.47, poverty: 0.4, literacy: null, internet: 78.32, physicians: 30.00 },
+                    { id: 'CHN', name: 'China', population: 1437324, birthRate: 11.9, deathRate: 7.1, infantMortality: 12, naturalGrowth: 4.8, lifeExpectancy: 76.62, youthPop: 17.7, elderPop: 12.0, urbanPop: 61.4, migrationRate: -0.2, gdp: 10500.40, poverty: 0.5, literacy: 96.84, internet: 70.64, physicians: 19.80 },
+                    { id: 'USA', name: 'Estados Unidos', population: 331003, birthRate: 12.0, deathRate: 8.7, infantMortality: 7, naturalGrowth: 3.3, lifeExpectancy: 78.81, youthPop: 18.4, elderPop: 16.6, urbanPop: 82.7, migrationRate: 2.9, gdp: 63543.58, poverty: 1.0, literacy: null, internet: 89.43, physicians: 26.04 },
+                    { id: 'ESP', name: 'España', population: 46755, birthRate: 8.5, deathRate: 9.0, infantMortality: 3, naturalGrowth: -0.5, lifeExpectancy: 83.36, youthPop: 14.4, elderPop: 20.0, urbanPop: 80.8, migrationRate: 0.9, gdp: 27057.16, poverty: 0.9, literacy: 98.44, internet: 93.21, physicians: 40.30 },
+                    { id: 'FRA', name: 'Francia', population: 65274, birthRate: 11.2, deathRate: 9.3, infantMortality: 4, naturalGrowth: 2.0, lifeExpectancy: 82.46, youthPop: 17.7, elderPop: 20.8, urbanPop: 81.0, migrationRate: 1.6, gdp: 38625.07, poverty: 0.0, literacy: null, internet: 83.34, physicians: 65.34 },
+                    { id: 'ITA', name: 'Italia', population: 60462, birthRate: 7.6, deathRate: 10.5, infantMortality: 3, naturalGrowth: -2.8, lifeExpectancy: 83.28, youthPop: 13.0, elderPop: 23.3, urbanPop: 71.0, migrationRate: 2.5, gdp: 31676.20, poverty: 1.4, literacy: 99.16, internet: 76.10, physicians: 80.13 },
+                    { id: 'JPN', name: 'Japón', population: 126476, birthRate: 7.5, deathRate: 10.4, infantMortality: 2, naturalGrowth: -2.9, lifeExpectancy: 84.43, youthPop: 12.4, elderPop: 28.4, urbanPop: 91.8, migrationRate: 0.6, gdp: 40113.06, poverty: null, literacy: null, internet: 92.73, physicians: 24.80 },
+                    { id: 'MAR', name: 'Marruecos', population: 36911, birthRate: 19.1, deathRate: 5.1, infantMortality: 23, naturalGrowth: 14.0, lifeExpectancy: 76.33, youthPop: 24.8, elderPop: 7.6, urbanPop: 63.5, migrationRate: -1.4, gdp: 3009.25, poverty: null, literacy: 73.75, internet: 84.12, physicians: 7.31 },
+                    { id: 'MEX', name: 'México', population: 128933, birthRate: 17.7, deathRate: 6.0, infantMortality: 16, naturalGrowth: 11.8, lifeExpectancy: 74.98, youthPop: 25.8, elderPop: 7.6, urbanPop: 80.7, migrationRate: -0.5, gdp: 8346.70, poverty: 1.7, literacy: 95.38, internet: 71.92, physicians: 48.50 },
+                    { id: 'RUS', name: 'Rusia', population: 145934, birthRate: 12.8, deathRate: 12.7, infantMortality: 7, naturalGrowth: 0.1, lifeExpectancy: 72.29, youthPop: 15.5, elderPop: 18.4, urbanPop: 74.8, migrationRate: 1.3, gdp: 10126.72, poverty: 0.0, literacy: 99.73, internet: 84.99, physicians: 44.40 },
+                    { id: 'IND', name: 'India', population: 1380004, birthRate: 18.0, deathRate: 7.2, infantMortality: 39, naturalGrowth: 10.8, lifeExpectancy: 69.27, youthPop: 26.2, elderPop: 6.6, urbanPop: 34.9, migrationRate: -0.4, gdp: 1900.70, poverty: 10.7, literacy: 74.37, internet: 41.00, physicians: 9.28 },
+                    { id: 'GBR', name: 'Reino Unido', population: 67886, birthRate: 11.5, deathRate: 9.4, infantMortality: 4, naturalGrowth: 2.2, lifeExpectancy: 83.15, youthPop: 18.7, elderPop: 17.7, urbanPop: 83.9, migrationRate: 3.9, gdp: 40284.64, poverty: 0.3, literacy: null, internet: 94.82, physicians: 58.23 },
+                    { id: 'VEN', name: 'Venezuela', population: 28436, birthRate: 18.0, deathRate: 7.0, infantMortality: 31, naturalGrowth: 11.1, lifeExpectancy: 72.14, youthPop: 27.3, elderPop: 8.0, urbanPop: 88.3, migrationRate: -22.3, gdp: null, poverty: null, literacy: 97.13, internet: 17.30, physicians: null },
+                    { id: 'COL', name: 'Colombia', population: 50883, birthRate: 15.0, deathRate: 5.5, infantMortality: 15, naturalGrowth: 9.5, lifeExpectancy: 77.02, youthPop: 22.2, elderPop: 9.1, urbanPop: 81.4, migrationRate: 4.9, gdp: 5332.77, poverty: 4.2, literacy: 95.09, internet: 65.01, physicians: 38.44 },
+                    { id: 'CUB', name: 'Cuba', population: 11327, birthRate: 10.2, deathRate: 8.9, infantMortality: 6, naturalGrowth: 1.3, lifeExpectancy: 78.69, youthPop: 15.9, elderPop: 15.9, urbanPop: 77.2, migrationRate: -1.3, gdp: 9099.67, poverty: null, literacy: null, internet: 67.97, physicians: 84.20 },
+                    { id: 'CHL', name: 'Chile', population: 19116, birthRate: 12.5, deathRate: null, infantMortality: 8, naturalGrowth: 6.3, lifeExpectancy: 79.96, youthPop: 19.2, elderPop: 12.2, urbanPop: 87.7, migrationRate: 6.6, gdp: 13231.70, poverty: 0.3, literacy: 96.40, internet: 82.33, physicians: 51.82 },
+                    { id: 'ZWE', name: 'Zimbabwe', population: 14863, birthRate: 31.8, deathRate: 8.1, infantMortality: 51, naturalGrowth: 22.8, lifeExpectancy: 60.83, youthPop: 41.9, elderPop: 3.0, urbanPop: 32.2, migrationRate: -8.2, gdp: 1128.21, poverty: 21.0, literacy: 88.69, internet: 25.10, physicians: 2.10 }
+                ]
+            },
+            regions: {
+                metrics: [
+                    { id: 'population', name: 'Población', icon: 'fa-users', color: '#3b82f6', fmt: formatInt },
+                    { id: 'birthRate', name: 'Natalidad (‰)', icon: 'fa-baby', color: '#10b981', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}‰` : '-' },
+                    { id: 'deathRate', name: 'Mortalidad (‰)', icon: 'fa-book-skull', color: '#ef4444', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}‰` : '-' },
+                    { id: 'infantMortality', name: 'Mort. Infantil', icon: 'fa-child', color: '#f97316', fmt: formatDec },
+                    { id: 'naturalGrowth', name: 'Crecimiento (%)', icon: 'fa-seedling', color: '#84cc16', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'lifeExpectancy', name: 'Esperanza Vida', icon: 'fa-heart-pulse', color: '#8b5cf6', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)} años` : '-' },
+                    { id: 'youthPop', name: '<15 años (%)', icon: 'fa-children', color: '#06b6d4', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'elderPop', name: '>65 años (%)', icon: 'fa-person-cane', color: '#6366f1', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'foreignPop', name: 'Extranjeros (%)', icon: 'fa-passport', color: '#ec4899', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'gdp', name: 'PIB per cápita', icon: 'fa-sack-dollar', color: '#eab308', fmt: (v) => v !== null && v !== undefined ? `${formatInt(v)}€` : '-' },
+                    { id: 'unemployment', name: 'Tasa Paro (%)', icon: 'fa-person-walking-luggage', color: '#f43f5e', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'poverty', name: 'Riesgo Pobreza', icon: 'fa-arrow-trend-down', color: '#dc2626', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' },
+                    { id: 'physicians', name: 'Médicos (x10k)', icon: 'fa-user-doctor', color: '#0ea5e9', fmt: formatDec },
+                    { id: 'higherEd', name: 'Estudios Sup.', icon: 'fa-graduation-cap', color: '#14b8a6', fmt: (v) => v !== null && v !== undefined ? `${formatDec(v)}%` : '-' }
+                ],
+                data: [
+                    { id: 'AND', name: 'Andalucía', population: 8465236, birthRate: 7.65, deathRate: 9.21, infantMortality: 2.96, naturalGrowth: -1.56, lifeExpectancy: 81.59, youthPop: 16.23, elderPop: 17.66, foreignPop: 8.35, gdp: 19633, unemployment: 22.67, poverty: 35.1, physicians: 41.83, higherEd: 26.0 },
+                    { id: 'ARA', name: 'Aragón', population: 1325371, birthRate: 6.79, deathRate: 12.53, infantMortality: 2.21, naturalGrowth: -5.74, lifeExpectancy: 82.46, youthPop: 14.61, elderPop: 21.85, foreignPop: 12.19, gdp: 28727, unemployment: 11.82, poverty: 18.5, physicians: 56.48, higherEd: 31.0 },
+                    { id: 'AST', name: 'Asturias', population: 1011560, birthRate: 4.70, deathRate: 14.33, infantMortality: 2.93, naturalGrowth: -9.63, lifeExpectancy: 82.04, youthPop: 11.37, elderPop: 26.58, foreignPop: 4.47, gdp: 23299, unemployment: 14.13, poverty: 23.7, physicians: 53.73, higherEd: 33.6 },
+                    { id: 'CAN', name: 'Canarias', population: 2171364, birthRate: 5.86, deathRate: 7.31, infantMortality: 2.51, naturalGrowth: -1.46, lifeExpectancy: 82.74, youthPop: 13.58, elderPop: 16.63, foreignPop: 13.20, gdp: 21244, unemployment: 22.69, poverty: 36.3, physicians: 46.84, higherEd: 28.7 },
+                    { id: 'CAB', name: 'Cantabria', population: 584308, birthRate: 5.81, deathRate: 11.09, infantMortality: 3.25, naturalGrowth: -5.28, lifeExpectancy: 83.00, youthPop: 13.67, elderPop: 22.59, foreignPop: 6.10, gdp: 24383, unemployment: 12.17, poverty: 23.7, physicians: 53.87, higherEd: 33.6 },
+                    { id: 'CYL', name: 'Castilla y León', population: 2381281, birthRate: 5.70, deathRate: 15.13, infantMortality: 3.08, naturalGrowth: -9.43, lifeExpectancy: 82.61, youthPop: 12.45, elderPop: 25.76, foreignPop: 6.00, gdp: 24886, unemployment: 12.15, poverty: 19.8, physicians: 50.96, higherEd: 29.2 },
+                    { id: 'CLM', name: 'Castilla-La Mancha', population: 2047792, birthRate: 7.13, deathRate: 12.61, infantMortality: 2.61, naturalGrowth: -5.48, lifeExpectancy: 81.05, youthPop: 15.68, elderPop: 19.03, foreignPop: 9.20, gdp: 21004, unemployment: 18.28, poverty: 29.8, physicians: 38.95, higherEd: 23.9 },
+                    { id: 'CAT', name: 'Cataluña', population: 7756928, birthRate: 7.58, deathRate: 10.41, infantMortality: 2.65, naturalGrowth: -2.83, lifeExpectancy: 82.22, youthPop: 15.75, elderPop: 19.06, foreignPop: 16.05, gdp: 31119, unemployment: 12.66, poverty: 22.8, physicians: 48.63, higherEd: 33.0 },
+                    { id: 'CVA', name: 'C. Valenciana', population: 5049415, birthRate: 7.37, deathRate: 9.65, infantMortality: 2.53, naturalGrowth: -2.58, lifeExpectancy: 82.34, youthPop: 15.27, elderPop: 19.70, foreignPop: 14.73, gdp: 23206, unemployment: 16.35, poverty: 29.3, physicians: 45.59, higherEd: 30.1 },
+                    { id: 'EXT', name: 'Extremadura', population: 1058763, birthRate: 6.94, deathRate: 12.33, infantMortality: 1.50, naturalGrowth: -5.39, lifeExpectancy: 81.88, youthPop: 14.15, elderPop: 21.18, foreignPop: 3.27, gdp: 19454, unemployment: 22.16, poverty: 38.7, physicians: 48.52, higherEd: 21.0 },
+                    { id: 'GAL', name: 'Galicia', population: 2694245, birthRate: 5.64, deathRate: 12.16, infantMortality: 2.63, naturalGrowth: -4.53, lifeExpectancy: 83.31, youthPop: 12.37, elderPop: 25.76, foreignPop: 4.22, gdp: 23873, unemployment: 14.57, poverty: 25.7, physicians: 46.55, higherEd: 29.7 },
+                    { id: 'BAL', name: 'Illes Balears', population: 1149460, birthRate: 7.72, deathRate: 7.05, infantMortality: 2.35, naturalGrowth: 0.67, lifeExpectancy: 83.43, youthPop: 15.59, elderPop: 15.97, foreignPop: 18.75, gdp: 28213, unemployment: 16.23, poverty: 22.0, physicians: 43.86, higherEd: 28.9 },
+                    { id: 'MAD', name: 'Madrid', population: 6745591, birthRate: 7.68, deathRate: 9.85, infantMortality: 2.49, naturalGrowth: -2.18, lifeExpectancy: 82.23, youthPop: 15.71, elderPop: 17.98, foreignPop: 14.09, gdp: 35913, unemployment: 12.51, poverty: 20.9, physicians: 61.60, higherEd: 40.5 },
+                    { id: 'MUR', name: 'Murcia', population: 1517938, birthRate: 9.06, deathRate: 8.11, infantMortality: 2.85, naturalGrowth: 0.95, lifeExpectancy: 82.39, youthPop: 17.82, elderPop: 15.96, foreignPop: 14.62, gdp: 21642, unemployment: 16.53, poverty: 29.7, physicians: 47.35, higherEd: 26.6 },
+                    { id: 'NAV', name: 'Navarra', population: 661023, birthRate: 7.67, deathRate: 10.14, infantMortality: 1.98, naturalGrowth: -2.47, lifeExpectancy: 83.36, youthPop: 16.13, elderPop: 19.96, foreignPop: 10.75, gdp: 32141, unemployment: 10.06, poverty: 12.0, physicians: 54.49, higherEd: 37.9 },
+                    { id: 'PVA', name: 'País Vasco', population: 2212561, birthRate: 6.74, deathRate: 11.07, infantMortality: 2.78, naturalGrowth: -4.34, lifeExpectancy: 83.11, youthPop: 14.27, elderPop: 22.82, foreignPop: 8.21, gdp: 34142, unemployment: 9.56, poverty: 13.9, physicians: 56.03, higherEd: 41.2 },
+                    { id: 'RIO', name: 'La Rioja', population: 319224, birthRate: 7.33, deathRate: 11.70, infantMortality: 3.02, naturalGrowth: -4.37, lifeExpectancy: 82.50, youthPop: 15.12, elderPop: 21.24, foreignPop: 12.65, gdp: 28200, unemployment: 10.91, poverty: 19.0, physicians: 45.41, higherEd: 30.7 },
+                    { id: 'CEU', name: 'Ceuta', population: 83517, birthRate: 9.97, deathRate: 7.73, infantMortality: 3.58, naturalGrowth: 2.24, lifeExpectancy: 79.36, youthPop: 20.72, elderPop: 12.35, foreignPop: 6.43, gdp: 20903, unemployment: 25.03, poverty: 38.8, physicians: 37.60, higherEd: 21.6 },
+                    { id: 'MEL', name: 'Melilla', population: 86199, birthRate: 11.14, deathRate: 7.13, infantMortality: 3.19, naturalGrowth: 4.01, lifeExpectancy: 78.87, youthPop: 18.81, elderPop: 13.60, foreignPop: 14.60, gdp: 19211, unemployment: 23.95, poverty: 42.4, physicians: 35.59, higherEd: 28.7 }
+                ]
+            }
+        };
+
+        const state = {
+            dataset: 'countries',
+            chartType: 'bar',
+            selectedMetric: 'population',
+            selectedIds: ['ESP', 'FRA', 'DEU', 'ITA', 'USA', 'CIV', 'HRV'],
+            searchQuery: '',
+            sortOrder: 'desc'
+        };
+
+        let chartInstance = null;
+
+        const app = {
+            openEditModal: (id) => {
+                const item = db[state.dataset].data.find(d => d.id === id);
+                if (!item) return;
+
+                document.getElementById('edit-modal-title').innerText = `Editar: ${item.name}`;
+                
+                const body = document.getElementById('edit-modal-body');
+                let html = '';
+                
+                db[state.dataset].metrics.forEach(m => {
+                    const value = item[m.id] !== null && item[m.id] !== undefined ? item[m.id] : '';
+                    html += `
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1 ml-1 flex items-center gap-1">
+                                <i class="fa-solid ${m.icon} text-slate-400"></i> ${m.name}
+                            </label>
+                            <input type="number" step="any" id="edit-input-${m.id}" value="${value}" 
+                                class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
+                                placeholder="Sin datos">
+                        </div>
+                    `;
+                });
+                
+                body.innerHTML = html;
+                
+                const btnSave = document.getElementById('save-edit-btn');
+                btnSave.onclick = () => app.saveEdit(id);
+
+                const modal = document.getElementById('edit-modal');
+                const content = document.getElementById('edit-modal-content');
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                }, 10);
+            },
+
+            closeEditModal: () => {
+                const modal = document.getElementById('edit-modal');
+                const content = document.getElementById('edit-modal-content');
+                
+                modal.classList.add('opacity-0');
+                content.classList.add('scale-95');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            },
+
+            saveEdit: (id) => {
+                const item = db[state.dataset].data.find(d => d.id === id);
+                if (!item) return;
+
+                db[state.dataset].metrics.forEach(m => {
+                    const inputVal = document.getElementById(`edit-input-${m.id}`).value;
+                    item[m.id] = inputVal === '' ? null : Number(inputVal);
+                });
+
+                app.closeEditModal();
+                app.renderAll(); 
+            },
+
+            toggleSort: () => {
+                state.sortOrder = state.sortOrder === 'desc' ? 'asc' : 'desc';
+                const icon = document.querySelector('#btn-sort i');
+                icon.className = state.sortOrder === 'desc' ? 'fa-solid fa-arrow-down-9-1 text-sm' : 'fa-solid fa-arrow-up-1-9 text-sm';
+                app.renderChart();
+                app.renderCards();
+            },
+
+            downloadChart: () => {
+                const canvas = document.getElementById('mainChart');
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const ctx = tempCanvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                ctx.drawImage(canvas, 0, 0);
+                
+                const url = tempCanvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Grafico_${state.dataset}_${state.selectedMetric}.png`;
+                a.click();
+            },
+
+            getSortedData: () => {
+                let data = db[state.dataset].data.filter(d => state.selectedIds.includes(d.id));
+                data.sort((a, b) => {
+                    const vA = a[state.selectedMetric];
+                    const vB = b[state.selectedMetric];
+                    const aMissing = (vA === null || vA === undefined);
+                    const bMissing = (vB === null || vB === undefined);
+                    if (aMissing && bMissing) return 0;
+                    if (aMissing) return 1;
+                    if (bMissing) return -1;
+                    return state.sortOrder === 'desc' ? vB - vA : vA - vB;
+                });
+                return data;
+            },
+
+            switchDataset: (type) => {
+                state.dataset = type;
+                state.selectedMetric = 'population';
+                state.selectedIds = type === 'countries' 
+                    ? ['ESP', 'FRA', 'DEU', 'ITA', 'USA', 'CIV', 'HRV']
+                    : ['MAD', 'CAT', 'AND', 'CVA', 'PVA'];
+                state.searchQuery = '';
+                document.getElementById('search-input').value = '';
+                
+                document.getElementById('btn-countries').className = type === 'countries' 
+                    ? 'px-6 py-2 rounded-lg text-sm font-medium transition-all bg-white text-blue-600 shadow-sm' 
+                    : 'px-6 py-2 rounded-lg text-sm font-medium transition-all text-slate-500 hover:text-slate-700';
+                document.getElementById('btn-regions').className = type === 'regions' 
+                    ? 'px-6 py-2 rounded-lg text-sm font-medium transition-all bg-white text-blue-600 shadow-sm' 
+                    : 'px-6 py-2 rounded-lg text-sm font-medium transition-all text-slate-500 hover:text-slate-700';
+                
+                app.renderAll();
+            },
+
+            setChartType: (type) => {
+                state.chartType = type;
+                document.getElementById('btn-bar').className = type === 'bar'
+                    ? 'w-9 h-7 rounded-md flex items-center justify-center bg-white text-blue-600 shadow-sm transition-all'
+                    : 'w-9 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all';
+                document.getElementById('btn-line').className = type === 'line'
+                    ? 'w-9 h-7 rounded-md flex items-center justify-center bg-white text-blue-600 shadow-sm transition-all'
+                    : 'w-9 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all';
+                app.renderChart();
+            },
+
+            toggleTerritory: (id) => {
+                const idx = state.selectedIds.indexOf(id);
+                if (idx > -1) {
+                    state.selectedIds.splice(idx, 1);
+                } else {
+                    state.selectedIds.push(id);
+                }
+                app.renderAll();
+            },
+
+            clearSelection: () => {
+                state.selectedIds = [];
+                app.renderAll();
+            },
+
+            filterList: () => {
+                state.searchQuery = document.getElementById('search-input').value.toLowerCase();
+                app.renderSidebar();
+            },
+
+            renderSidebar: () => {
+                const list = document.getElementById('territories-list');
+                document.getElementById('selection-count').innerText = state.selectedIds.length;
+                
+                const dataList = [...db[state.dataset].data].sort((a,b) => a.name.localeCompare(b.name));
+                
+                let html = '';
+                dataList.forEach(item => {
+                    if (item.name.toLowerCase().includes(state.searchQuery)) {
+                        const isSelected = state.selectedIds.includes(item.id);
+                        html += `
+                            <button onclick="app.toggleTerritory('${item.id}')" 
+                                    class="w-full flex items-center justify-between p-2.5 rounded-lg border transition-all ${isSelected ? 'border-blue-500 bg-blue-50/50 text-blue-700' : 'border-slate-100 hover:border-slate-200 text-slate-600 hover:bg-slate-50'}">
+                                <span class="font-medium text-[13px] text-left truncate">${item.name}</span>
+                                <div class="w-4 h-4 flex-shrink-0 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'bg-slate-100 text-transparent'}">
+                                    <i class="fa-solid fa-check text-[9px]"></i>
+                                </div>
+                            </button>
+                        `;
+                    }
+                });
+                list.innerHTML = html;
+            },
+
+            renderMetrics: () => {
+                const container = document.getElementById('metrics-container');
+                let html = '';
+                db[state.dataset].metrics.forEach(m => {
+                    const isActive = state.selectedMetric === m.id;
+                    html += `
+                        <button onclick="state.selectedMetric='${m.id}'; app.renderChart(); app.renderMetrics(); app.renderCards();" 
+                                class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all ${isActive ? 'bg-slate-800 border-slate-800 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}">
+                            <i class="fa-solid ${m.icon} ${isActive ? 'text-white' : 'text-slate-400'}"></i>
+                            <span class="text-xs font-semibold whitespace-nowrap">${m.name}</span>
+                        </button>
+                    `;
+                });
+                container.innerHTML = html;
+            },
+
+            renderChart: () => {
+                const metricObj = db[state.dataset].metrics.find(m => m.id === state.selectedMetric);
+                document.getElementById('chart-title').innerText = `Comparativa: ${metricObj.name}`;
+                
+                const selectedData = app.getSortedData();
+                const emptyState = document.getElementById('empty-state');
+                
+                if (selectedData.length === 0) {
+                    if (chartInstance) chartInstance.destroy();
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+                emptyState.classList.add('hidden');
+
+                if (typeof Chart === 'undefined') {
+                    // Chart.js no ha podido cargarse (p.ej. sin conexión al abrir la app).
+                    // No bloqueamos el resto de la interfaz: sidebar y tarjetas siguen funcionando.
+                    console.warn('Chart.js no está disponible; no se puede dibujar el gráfico.');
+                    return;
+                }
+
+                const ctx = document.getElementById('mainChart').getContext('2d');
+                if (chartInstance) chartInstance.destroy();
+
+                chartInstance = new Chart(ctx, {
+                    type: state.chartType,
+                    data: {
+                        labels: selectedData.map(d => d.name),
+                        datasets: [{
+                            label: metricObj.name,
+                            data: selectedData.map(d => d[state.selectedMetric]),
+                            backgroundColor: state.chartType === 'bar' ? metricObj.color : metricObj.color + '33',
+                            borderColor: metricObj.color,
+                            borderWidth: 2,
+                            borderRadius: state.chartType === 'bar' ? 4 : 0,
+                            fill: state.chartType === 'line',
+                            tension: 0.3,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: metricObj.color,
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                grid: { borderDash: [4, 4], color: '#f1f5f9' },
+                                ticks: { font: {size: 11}, color: '#94a3b8' }
+                            },
+                            x: { 
+                                grid: { display: false },
+                                ticks: { font: {size: 11}, color: '#64748b', maxRotation: 45, minRotation: 0 }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        }
+                    }
+                });
+            },
+
+            renderCards: () => {
+                const container = document.getElementById('cards-container');
+                const selectedData = app.getSortedData();
+                const metrics = db[state.dataset].metrics;
+                
+                let html = '';
+                selectedData.forEach(item => {
+                    html += `
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 relative overflow-hidden group hover:border-blue-200 transition-colors">
+                            <button onclick="app.openEditModal('${item.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-blue-600 p-1.5 hover:bg-blue-50 rounded-md transition-all z-20" title="Editar datos">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <h3 class="text-base font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 relative z-10 pr-8">${item.name}</h3>
+                            <div class="grid grid-cols-2 gap-2 relative z-10">
+                    `;
+                    metrics.forEach(m => {
+                        const isHighlighted = state.selectedMetric === m.id;
+                        html += `
+                            <div class="flex flex-col p-1.5 rounded-lg ${isHighlighted ? 'bg-blue-50/50' : ''}">
+                                <div class="flex items-center gap-1.5 text-slate-500 mb-0.5">
+                                    <i class="fa-solid ${m.icon} text-[9px] ${isHighlighted ? 'text-blue-500' : ''}"></i>
+                                    <span class="text-[9px] font-semibold uppercase tracking-wider truncate" title="${m.name}">${m.name}</span>
+                                </div>
+                                <span class="text-xs font-bold ${isHighlighted ? 'text-slate-900' : 'text-slate-700'}">
+                                    ${m.fmt(item[m.id])}
+                                </span>
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                });
+                container.innerHTML = html;
+            },
+
+            renderAll: () => {
+                app.renderSidebar();
+                app.renderMetrics();
+                app.renderChart();
+                app.renderCards();
+            }
+        };
+
+        window.onload = app.renderAll;
+
+        const slider = document.getElementById('metrics-container');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('mouseleave', () => { isDown = false; });
+        slider.addEventListener('mouseup', () => { isDown = false; });
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+    </script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

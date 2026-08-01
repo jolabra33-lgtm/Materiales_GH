@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recursos de Geografía e Historia</title>
+
+    <!-- PWA / instalación en pantalla de inicio -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Geo e Historia">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome y Google Fonts -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; 
+        }
+        h1, h2, .font-serif {
+            font-family: 'Fraunces', serif;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-pattern {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-blue-200 selection:text-blue-900">
+
+    <header class="bg-slate-900 text-white relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10 hero-pattern"></div>
+        <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+        <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-16 md:py-24">
+            <div class="text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-blue-200 text-sm font-semibold tracking-wide uppercase mb-6 backdrop-blur-sm">
+                    <i class="fa-solid fa-graduation-cap"></i> Portal Educativo
+                </div>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-tight">
+                    Recursos de <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Geografía e Historia</span>
+                </h1>
+                <p class="max-w-2xl mx-auto text-lg md:text-xl text-slate-300 font-light leading-relaxed">
+                    Aplicaciones interactivas, talleres prácticos y herramientas de análisis para explorar nuestro mundo y comprender nuestro pasado.
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full -mt-8 relative z-20">
+        
+        <!-- Pestañas -->
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-2 flex flex-col sm:flex-row justify-center gap-2 mb-12 max-w-xl mx-auto">
+            <button onclick="switchTab('historia')" id="tab-historia" class="flex-1 py-3 px-6 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all bg-blue-50 text-blue-700 shadow-sm border border-blue-100">
+                <i class="fa-solid fa-monument"></i> Historia
+            </button>
+            <button onclick="switchTab('geografia')" id="tab-geografia" class="flex-1 py-3 px-6 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50 border border-transparent">
+                <i class="fa-solid fa-earth-europe"></i> Geografía
+            </button>
+        </div>
+
+        <!-- Contenedor HISTORIA -->
+        <div id="grid-historia" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">
+            
+            <!-- App 1: Cronología HE Contemporánea -->
+            <a href="atlas_historia_espana.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col">
+                <div class="h-40 bg-gradient-to-br from-red-600 to-orange-500 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <i class="fa-solid fa-book-atlas text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-red-600 uppercase mb-2">Atlas Interactivo</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Historia de España Contemporánea</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Herramienta integral con comparador de constituciones, genealogía de partidos, pronunciamientos, elecciones y flashcards de repaso.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-red-600 group-hover:text-red-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 2: Línea del tiempo interactiva -->
+            <a href="linea_tiempo_espana.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.1s;">
+                <div class="h-40 bg-gradient-to-br from-blue-700 to-indigo-800 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <i class="fa-solid fa-timeline text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-blue-600 uppercase mb-2">Línea del Tiempo</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">España: Cronología Editable</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Línea del tiempo horizontal e interactiva desde 1808 hasta 1982. Permite acercar, alejar, imprimir y añadir nuevos hechos históricos.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-blue-600 group-hover:text-blue-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 3: Líneas del tiempo Estratigráficas -->
+            <a href="lineas_estratigraficas.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.2s;">
+                <div class="h-40 bg-gradient-to-br from-amber-700 to-yellow-600 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <i class="fa-solid fa-layer-group text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-amber-600 uppercase mb-2">Corte Estratigráfico</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Eras del Mundo y España</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Explora los hechos recogidos era por era. Alterna entre la historia de España y del Mundo. Permite a la clase guardar nuevos hechos colaborativamente.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-amber-600 group-hover:text-amber-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- Contenedor GEOGRAFÍA -->
+        <div id="grid-geografia" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden fade-in">
+            
+            <!-- App 1: Sectores Económicos -->
+            <a href="taller_sectores_economicos.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col">
+                <div class="h-40 bg-gradient-to-br from-emerald-500 to-teal-700 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-industry text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-emerald-600 uppercase mb-2">Taller Práctico</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Sectores Económicos</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Dibuja el reparto de la población activa por sectores y descubre mediante IA el grado de desarrollo económico de un país. Permite comparar países.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-emerald-600 group-hover:text-emerald-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 2: Taller del IDH -->
+            <a href="taller_idh.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.1s;">
+                <div class="h-40 bg-gradient-to-br from-cyan-500 to-blue-600 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-child-reaching text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-cyan-600 uppercase mb-2">Calculadora</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Índice de Desarrollo Humano</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Calcula el IDH real paso a paso a partir de la esperanza de vida, educación y renta, siguiendo exactamente la metodología de la ONU.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-cyan-600 group-hover:text-cyan-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 3: Regímenes Fluviales -->
+            <a href="taller_regimenes_fluviales.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.2s;">
+                <div class="h-40 bg-gradient-to-br from-blue-400 to-indigo-600 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-water text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-blue-600 uppercase mb-2">Taller Hidrológico</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Regímenes Fluviales</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Construye el hidrograma de un río, calcula su módulo, su coeficiente de irregularidad y averigua a qué régimen fluvial pertenece.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-blue-600 group-hover:text-blue-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 4: GeoStats Pro -->
+            <a href="comparador_estadistico.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.3s;">
+                <div class="h-40 bg-gradient-to-br from-indigo-500 to-purple-700 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-earth-americas text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-indigo-600 uppercase mb-2">Base de Datos</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Comparador Estadístico</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Analiza y compara visualmente decenas de métricas de países del mundo y Comunidades Autónomas de España mediante gráficos dinámicos.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-indigo-600 group-hover:text-indigo-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 5: Taller de Demografía -->
+            <a href="taller_demografia.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.4s;">
+                <div class="h-40 bg-gradient-to-br from-rose-500 to-pink-700 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-users-line text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-rose-600 uppercase mb-2">Taller Poblacional</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Laboratorio de Demografía</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Construye pirámides de población interactivas y calcula automáticamente tasas demográficas, analizando su evolución en el tiempo.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-rose-600 group-hover:text-rose-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 6: Taller de Climogramas -->
+            <a href="taller_climogramas.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.5s;">
+                <div class="h-40 bg-gradient-to-br from-amber-400 to-orange-500 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-cloud-sun-rain text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-amber-600 uppercase mb-2">Taller Climatológico</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Creador de Climogramas</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Localiza un lugar en el mapa, introduce sus datos y genera el climograma con un detallado análisis climático automático.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-amber-600 group-hover:text-amber-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 7: Atlas de Mapas Temáticos Mundiales -->
+            <a href="atlas-mapas-tematicos-mundiales.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.6s;">
+                <div class="h-40 bg-gradient-to-br from-sky-600 to-blue-900 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-globe text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-sky-700 uppercase mb-2">Atlas Temático</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Mapas Temáticos del Mundo</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Colorea el planeta según PIB per cápita, población urbana, empleo por sectores o esperanza de vida, con animación histórica desde 1960 y comparador de países.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-sky-700 group-hover:text-sky-800 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- App 8: Visor de Mapas Físicos -->
+            <a href="visor_mapas.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.7s;">
+                <div class="h-40 bg-gradient-to-br from-lime-600 to-stone-800 relative flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-mountain text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-lime-700 uppercase mb-2">Mapas Físicos</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Visor de Mapas</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Explora en alta resolución los mapas físicos de los continentes, España y la Comunidad Valenciana, con zoom, lápiz para señalar en clase y pantalla completa.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-lime-700 group-hover:text-lime-800 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <script>
+        function switchTab(tab) {
+            const gridHistoria = document.getElementById('grid-historia');
+            const gridGeografia = document.getElementById('grid-geografia');
+            const btnHistoria = document.getElementById('tab-historia');
+            const btnGeografia = document.getElementById('tab-geografia');
+
+            if (tab === 'historia') {
+                gridHistoria.classList.remove('hidden');
+                gridGeografia.classList.add('hidden');
+                
+                btnHistoria.className = "flex-1 py-3 px-6 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all bg-blue-50 text-blue-700 shadow-sm border border-blue-100";
+                btnGeografia.className = "flex-1 py-3 px-6 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50 border border-transparent";
+            } else {
+                gridGeografia.classList.remove('hidden');
+                gridHistoria.classList.add('hidden');
+                
+                btnGeografia.className = "flex-1 py-3 px-6 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100";
+                btnHistoria.className = "flex-1 py-3 px-6 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50 border border-transparent";
+            }
+        }
+    </script>
+</body>
+</html>
