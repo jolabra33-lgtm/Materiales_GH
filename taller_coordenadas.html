@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Taller de Coordenadas Geográficas: aprende a situar un punto en el planeta a partir de su latitud y longitud, y a hallar las coordenadas de cualquier lugar sobre un mapa satelital.">
+<title>Taller de Coordenadas Geográficas</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Coordenadas">
+<meta name="theme-color" content="#182338">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+  :root{
+    --ink:#182338;
+    --ink-soft:#3C4A66;
+    --muted:#5E6779;
+    --paper:#EDEFE8;
+    --card:#FFFFFF;
+    --line:#E2E0D2;
+    --lat:#1F6E8C;
+    --lat-2:#4C99B5;
+    --lat-soft:rgba(31,110,140,0.12);
+    --lon:#C1440E;
+    --lon-2:#E2703A;
+    --lon-soft:rgba(193,68,14,0.10);
+    --gold:#B4790F;
+    --gold-2:#E0A83D;
+    --gold-soft:rgba(180,121,15,0.14);
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-sm:0 1px 2px rgba(20,30,50,.05);
+    --shadow-md:0 10px 28px rgba(20,30,50,.08);
+    --shadow-lg:0 20px 46px rgba(20,30,50,.14);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:960px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
+
+  header.hero{
+    position:relative; padding:34px 36px 40px; margin-bottom:26px; border-radius:18px;
+    background:var(--ink); color:var(--paper); overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(224,168,61,0.30), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(76,153,181,0.28), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--gold-2); font-weight:500; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--gold-2); display:inline-block; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(30px, 4.2vw, 46px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
+  }
+  .lede{ max-width:64ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+
+  /* ---- App-level tabs ---- */
+  .app-tabs{
+    display:flex; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:6px; margin-bottom:26px; box-shadow:var(--shadow-sm);
+  }
+  .app-tab{
+    flex:1; border:none; background:transparent; color:var(--muted); font-family:'Inter', sans-serif;
+    font-weight:700; font-size:14.5px; padding:13px 14px; border-radius:10px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px; transition:background .15s ease, color .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .app-tab svg{ width:16px; height:16px; flex:none; }
+  .app-tab.active{ background:var(--ink); color:var(--paper); box-shadow:var(--shadow-sm); }
+
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ---- Panels ---- */
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-md); padding:26px 28px 30px; margin-bottom:24px;
+    border-top:3px solid var(--accent, var(--ink)); animation:riseIn .5s ease both;
+  }
+  .panel.acc-lat{ --accent:var(--lat); } .panel.acc-lon{ --accent:var(--lon); }
+  .panel.acc-gold{ --accent:var(--gold); } .panel.acc-ink{ --accent:var(--ink); }
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+
+  .panel-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+  .badge{
+    flex:none; width:36px; height:36px; border-radius:50%; background:var(--accent, var(--ink)); color:#fff;
+    font-family:'Fraunces', serif; font-weight:600; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent, var(--ink)) 14%, transparent);
+  }
+  .panel-head-text h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:21px; margin:5px 0 4px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-head-text h2 svg{ width:19px; height:19px; color:var(--accent, var(--ink)); flex:none; }
+  .panel-head-text p{ margin:0; color:var(--muted); font-size:14.5px; max-width:66ch; }
+
+  .diagram-wrap{ margin:6px 0 8px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#FBFAF5; padding:14px; }
+  .diagram-wrap svg{ display:block; width:100%; height:auto; }
+  .diagram-caption{ margin:10px 2px 0; font-size:13px; color:var(--muted); }
+
+  .step-list{ list-style:none; margin:14px 0 0; padding:0; display:grid; gap:10px; }
+  .step-list li{ display:flex; gap:12px; align-items:flex-start; }
+  .step-num{
+    flex:none; width:26px; height:26px; border-radius:50%; background:var(--accent, var(--ink)); color:#fff;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .step-list p{ margin:0; color:var(--ink-soft); font-size:14.5px; }
+  .step-list strong{ color:var(--ink); }
+
+  .ref-lines-row{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px; }
+  @media (min-width:640px){ .ref-lines-row{ grid-template-columns:1fr 1fr; } }
+  .ref-line-card{
+    border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px;
+    border-left:4px solid var(--accent, var(--ink)); background:#F7F6EF;
+  }
+  .ref-line-card.acc-lat{ --accent:var(--lat); } .ref-line-card.acc-lon{ --accent:var(--lon); }
+  .ref-line-title{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600;
+    letter-spacing:0.03em; color:var(--accent, var(--ink)); margin-bottom:6px;
+  }
+  .ref-line-card p{ margin:0; font-size:13.5px; color:var(--ink-soft); }
+
+  .example-layout{ display:flex; gap:20px; flex-wrap:wrap; align-items:stretch; }
+  .example-map{ flex:1 1 280px; min-width:240px; height:270px; border-radius:var(--radius-sm); border:1px solid var(--line); }
+  .example-coords{ flex:1 1 260px; min-width:240px; }
+  .example-coords .point-name{ margin-top:0; }
+
+  /* ---- Fullscreen map ---- */
+  .map-full-wrap{ position:relative; }
+  .map-inner{ position:relative; }
+  .fullscreen-btn{
+    position:absolute; top:10px; right:10px; z-index:500;
+    width:40px; height:40px; padding:0; min-height:0; border-radius:9px;
+    background:var(--ink); color:var(--paper); border:1px solid rgba(255,255,255,0.18);
+    box-shadow:var(--shadow-md); display:flex; align-items:center; justify-content:center;
+  }
+  .map-full-wrap:fullscreen, .map-full-wrap:-webkit-full-screen{
+    background:var(--paper); padding:16px; display:flex; flex-direction:column;
+  }
+  .map-full-wrap:fullscreen .locate-row, .map-full-wrap:-webkit-full-screen .locate-row{ flex:0 0 auto; }
+  .map-full-wrap:fullscreen .map-hint, .map-full-wrap:-webkit-full-screen .map-hint{ flex:0 0 auto; }
+  .map-full-wrap:fullscreen .map-inner, .map-full-wrap:-webkit-full-screen .map-inner{ flex:1 1 auto; min-height:0; display:flex; }
+  .map-full-wrap:fullscreen #map, .map-full-wrap:-webkit-full-screen #map{
+    flex:1 1 auto; height:auto; min-height:0; width:100%;
+  }
+  .map-full-wrap:fullscreen .point-card, .map-full-wrap:-webkit-full-screen .point-card{
+    flex:0 0 auto; max-height:30vh; overflow:auto; margin-top:12px;
+  }
+
+  .formula-row{
+    display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:4px; font-family:'IBM Plex Mono', monospace;
+    font-size:14px; color:var(--gold); font-weight:600;
+  }
+
+  .cta-row{ margin-top:18px; display:flex; }
+
+  button{
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; border-radius:var(--radius-sm);
+    padding:12px 18px; cursor:pointer; border:1px solid transparent;
+    transition:transform .08s ease, background .15s ease, box-shadow .15s ease;
+    display:inline-flex; align-items:center; gap:7px; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button svg{ width:15px; height:15px; flex:none; }
+  button:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--ink); color:var(--paper); }
+  .btn-ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+
+  /* ---- Map tab ---- */
+  .locate-row{ display:flex; gap:10px; margin-bottom:14px; }
+  .locate-row input[type="text"]{
+    flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink);
+  }
+  input:focus-visible, button:focus-visible, select:focus-visible{ outline:2px solid var(--lat); outline-offset:2px; }
+  .map-hint{
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:10px 14px; font-size:13px; color:var(--muted); margin-bottom:12px;
+  }
+  #map{ height:440px; border-radius:var(--radius-sm); border:1px solid var(--line); background:#dfe3e6; }
+
+  .leaflet-popup-content{ font-family:'IBM Plex Mono', monospace; font-size:12.8px; line-height:1.6; color:var(--ink); }
+  .leaflet-popup-content b{ font-family:'Inter', sans-serif; }
+
+  .point-card{
+    margin-top:16px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    background:#F7F6EF; padding:18px 20px;
+  }
+  .point-card-empty{ color:var(--muted); font-size:14px; font-style:italic; margin:0; }
+  .point-name{ font-family:'Fraunces', serif; font-weight:600; font-size:18px; margin:0 0 12px; color:var(--ink); }
+  .coord-grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:6px; }
+  @media (min-width:560px){ .coord-grid{ grid-template-columns:1fr 1fr; } }
+  .coord-box{ background:#fff; border:1px solid var(--line); border-radius:9px; padding:11px 14px; }
+  .coord-box .lbl{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.07em;
+    color:var(--muted); margin-bottom:4px; display:block;
+  }
+  .coord-box .val{ font-family:'IBM Plex Mono', monospace; font-size:19px; font-weight:600; color:var(--ink); }
+  .coord-box.lat .val{ color:var(--lat); } .coord-box.lon .val{ color:var(--lon); }
+  .coord-decimal{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--muted); margin:8px 2px 0; }
+  .coord-elev{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--muted); margin:2px 2px 0; }
+
+  .save-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); }
+  .save-row input[type="text"]{
+    flex:1; min-width:200px; padding:12px 14px; border:1px solid var(--line);
+    border-radius:var(--radius-sm); font-family:'Inter', sans-serif; font-size:16px; background:#fff;
+  }
+  .save-status{ font-size:12.8px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; margin:8px 2px 0; min-height:16px; }
+  .save-status.warn{ color:var(--lon); }
+
+  /* ---- Example chips ---- */
+  .examples-group{ margin-bottom:16px; } .examples-group:last-child{ margin-bottom:0; }
+  .examples-group-title{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--muted); margin:0 0 8px;
+  }
+  .examples-chips{ display:flex; flex-wrap:wrap; gap:9px; }
+  .example-chip{
+    display:flex; align-items:center; gap:9px;
+    background:#fff; border:1px solid var(--line); border-radius:11px;
+    padding:10px 14px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .example-chip:active{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .chip-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .chip-text{ display:flex; flex-direction:column; line-height:1.25; min-width:0; }
+  .chip-text strong{ font-size:13.5px; color:var(--ink); }
+  .chip-text span{ font-size:11.5px; color:var(--muted); font-weight:400; font-family:'IBM Plex Mono', monospace; }
+
+  /* ---- Saved points ---- */
+  .saved-empty{ font-size:13.5px; color:var(--muted); margin:0 0 4px; font-style:italic; }
+  .saved-list{ display:flex; flex-wrap:wrap; gap:9px; margin-bottom:6px; }
+  .saved-chip{
+    display:flex; align-items:stretch; border:1px solid var(--line); border-radius:11px;
+    background:#fff; overflow:hidden;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .saved-chip:active{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+  .saved-chip-main{
+    display:flex; align-items:center; gap:9px; border:none; background:transparent;
+    padding:10px 12px 10px 11px; text-align:left; font-weight:500; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .saved-chip-delete{
+    border:none; background:transparent; color:var(--muted); padding:0 13px; font-size:17px;
+    line-height:1; border-left:1px solid var(--line); min-height:44px; min-width:40px;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:18px 14px 70px; }
+    header.hero{ padding:26px 20px 30px; }
+    .panel{ padding:18px 16px; }
+    #map{ height:340px; }
+    .app-tab{ font-size:13px; padding:12px 8px; }
+  }
+  /* ---- Efectos "hover": solo con ratón/trackpad, nunca al tocar (iPad, móvil) ---- */
+  @media (hover:hover) and (pointer:fine){
+    .app-tab:not(.active):hover{ background:rgba(24,35,56,0.06); color:var(--ink); }
+    .fullscreen-btn:hover{ background:#2A3B5C; }
+    .btn-primary:hover{ background:#2A3B5C; box-shadow:var(--shadow-sm); }
+    .btn-ghost:hover{ background:rgba(24,35,56,0.05); }
+    .example-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+    .saved-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; }
+    .saved-chip-delete:hover{ color:var(--lon); background:rgba(193,68,14,0.08); }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Geografía · Coordenadas geográficas</div>
+      <h1>Taller de Coordenadas Geográficas</h1>
+      <p class="lede">Aprende a situar cualquier punto del planeta a partir de su latitud y longitud, y a averiguar las coordenadas de un lugar señalándolo sobre un mapa satelital.</p>
+    </div>
+  </header>
+
+  <div class="app-tabs">
+    <button class="app-tab active" id="tabBtnTeoria" onclick="showTab('teoria')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.8 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.8-3.8-9s1.3-6.5 3.8-9z"/></svg>
+      1 · Cómo funciona
+    </button>
+    <button class="app-tab" id="tabBtnMapa" onclick="showTab('mapa')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>
+      2 · Mapa interactivo
+    </button>
+  </div>
+
+  <!-- Símbolo SVG reutilizable: cuadrícula de paralelos y meridianos -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <symbol id="graticule-grid" viewBox="0 0 560 320">
+        <rect x="0" y="0" width="560" height="320" fill="#CFE0E6"/>
+        <!-- meridianos secundarios -->
+        <line x1="40" y1="40" x2="40" y2="280" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="120" y1="40" x2="120" y2="280" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="200" y1="40" x2="200" y2="280" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="360" y1="40" x2="360" y2="280" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="440" y1="40" x2="440" y2="280" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="520" y1="40" x2="520" y2="280" stroke="#AFC7CE" stroke-width="1.5"/>
+        <!-- paralelos secundarios -->
+        <line x1="40" y1="40" x2="520" y2="40" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="40" y1="80" x2="520" y2="80" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="40" y1="120" x2="520" y2="120" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="40" y1="200" x2="520" y2="200" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="40" y1="240" x2="520" y2="240" stroke="#AFC7CE" stroke-width="1.5"/>
+        <line x1="40" y1="280" x2="520" y2="280" stroke="#AFC7CE" stroke-width="1.5"/>
+        <!-- croquis de los continentes (esquemático, no a escala exacta) -->
+        <g fill="#E4DBBE" stroke="#B7A97E" stroke-width="1.2" stroke-linejoin="round">
+          <polygon points="60,73 93,67 147,64 187,80 207,93 193,127 173,147 153,136 124,117 113,96 93,87 67,80"/>
+          <polygon points="173,147 187,153 213,160 233,171 227,191 203,211 187,233 180,213 175,184"/>
+          <polygon points="267,112 268,101 283,92 300,87 320,80 340,73 360,69 360,87 333,96 313,100 300,107 280,109"/>
+          <polygon points="257,113 293,117 327,120 337,144 348,163 333,184 327,207 307,200 293,171 273,153 257,140"/>
+          <polygon points="360,69 400,64 440,67 467,80 473,100 453,127 420,147 407,149 387,133 371,127 360,113 353,100 347,87"/>
+          <polygon points="431,176 460,175 484,193 480,211 453,204 433,187"/>
+        </g>
+        <!-- Ecuador y meridiano de Greenwich, resaltados por encima del croquis -->
+        <line x1="40" y1="160" x2="520" y2="160" stroke="#1F6E8C" stroke-width="3"/>
+        <line x1="280" y1="40" x2="280" y2="280" stroke="#C1440E" stroke-width="3"/>
+        <!-- marco -->
+        <rect x="40" y="40" width="480" height="240" fill="none" stroke="#8C8871" stroke-width="1.5"/>
+        <!-- etiquetas meridianos -->
+        <g font-family="IBM Plex Mono, monospace" font-size="11" fill="#3C4A66" text-anchor="middle">
+          <text x="40" y="28">180°</text>
+          <text x="120" y="28">120°O</text>
+          <text x="200" y="28">60°O</text>
+          <text x="280" y="28" fill="#C1440E" font-weight="700">0°</text>
+          <text x="360" y="28">60°E</text>
+          <text x="440" y="28">120°E</text>
+          <text x="520" y="28">180°</text>
+        </g>
+        <!-- etiquetas paralelos -->
+        <g font-family="IBM Plex Mono, monospace" font-size="11" fill="#3C4A66" text-anchor="end">
+          <text x="33" y="44">90°N</text>
+          <text x="33" y="84">60°N</text>
+          <text x="33" y="124">30°N</text>
+          <text x="33" y="164" fill="#1F6E8C" font-weight="700">0°</text>
+          <text x="33" y="204">30°S</text>
+          <text x="33" y="244">60°S</text>
+          <text x="33" y="280">90°S</text>
+        </g>
+        <!-- hemisferios -->
+        <g font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#182338" text-anchor="middle">
+          <text x="280" y="60" opacity="0.75">HEMISFERIO NORTE</text>
+          <text x="280" y="264" opacity="0.75">HEMISFERIO SUR</text>
+        </g>
+        <g font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#182338">
+          <text x="52" y="172" transform="rotate(-90 52 172)" opacity="0.75">HEMISFERIO OESTE</text>
+        </g>
+        <g font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#182338">
+          <text x="508" y="172" transform="rotate(90 508 172)" text-anchor="end" opacity="0.75">HEMISFERIO ESTE</text>
+        </g>
+        <!-- Ancla real 1: Quito, sobre la línea del Ecuador -->
+        <line x1="175" y1="160" x2="167" y2="158" stroke="#182338" stroke-width="1.2"/>
+        <rect x="42" y="140" width="128" height="32" rx="5" fill="#ffffff" stroke="#1F6E8C" stroke-width="1.3"/>
+        <text x="106" y="153" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#182338">Quito (Ecuador)</text>
+        <text x="106" y="165" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="8.5" fill="#1F6E8C">sobre la línea del Ecuador</text>
+        <circle cx="175" cy="160" r="5" fill="#1F6E8C" stroke="#fff" stroke-width="1.5"/>
+        <!-- Ancla real 2: Real Observatorio de Greenwich, sobre el meridiano 0° -->
+        <line x1="280" y1="91" x2="280" y2="80" stroke="#182338" stroke-width="1.2"/>
+        <rect x="205" y="48" width="150" height="32" rx="5" fill="#ffffff" stroke="#C1440E" stroke-width="1.3"/>
+        <text x="280" y="61" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#182338">Greenwich (Londres)</text>
+        <text x="280" y="73" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="8.5" fill="#C1440E">origen del meridiano 0°</text>
+        <circle cx="280" cy="91" r="5" fill="#C1440E" stroke="#fff" stroke-width="1.5"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- ============================================================
+       TAB 1: TEORÍA
+  ============================================================= -->
+  <div id="tabTeoria" class="tab-panel active">
+
+    <section class="panel acc-lat">
+      <div class="panel-head">
+        <div class="badge">1</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg>¿Qué son las coordenadas geográficas?</h2>
+          <p>Sobre el planeta se traza una red de líneas imaginarias, los <strong>paralelos</strong> (horizontales) y los <strong>meridianos</strong> (verticales). Cruzando uno de cada tipo, cualquier punto queda localizado de forma única.</p>
+        </div>
+      </div>
+      <div class="diagram-wrap"><svg viewBox="0 0 560 320"><use href="#graticule-grid"/></svg></div>
+      <p class="diagram-caption">Sobre el croquis se han marcado dos lugares reales para que veas dónde están estas líneas en el mundo de verdad: <strong>Quito</strong>, la capital de Ecuador, está prácticamente sobre el propio Ecuador; y el <strong>Real Observatorio de Greenwich</strong>, en Londres, es el punto que se tomó como origen del meridiano 0°.</p>
+
+      <div class="ref-lines-row">
+        <div class="ref-line-card acc-lat">
+          <span class="ref-line-title">Ecuador · Paralelo 0°</span>
+          <p>Divide la Tierra en <strong>hemisferio Norte</strong> y <strong>hemisferio Sur</strong>. Todas las latitudes (0° a 90°) se cuentan a partir de aquí, hacia el Norte o hacia el Sur.</p>
+        </div>
+        <div class="ref-line-card acc-lon">
+          <span class="ref-line-title">Meridiano de Greenwich · Meridiano 0°</span>
+          <p>Divide la Tierra en <strong>hemisferio Este</strong> y <strong>hemisferio Oeste</strong>. Todas las longitudes (0° a 180°) se cuentan a partir de aquí, hacia el Este o hacia el Oeste.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel acc-gold">
+      <div class="panel-head">
+        <div class="badge">2</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>De grados a segundos</h2>
+          <p>Cada grado se divide en unidades más pequeñas, igual que una hora se divide en minutos y segundos. Este sistema se llama <strong>sexagesimal</strong>.</p>
+        </div>
+      </div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 560 210">
+          <text x="280" y="24" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#3C4A66">1 grado (1°)</text>
+          <rect x="40" y="34" width="480" height="34" fill="#E0A83D22" stroke="#B4790F" stroke-width="1.6" rx="4"/>
+          <g stroke="#B4790F" stroke-width="1.2">
+            <line x1="120" y1="34" x2="120" y2="68"/>
+            <line x1="200" y1="34" x2="200" y2="68"/>
+            <line x1="280" y1="34" x2="280" y2="68"/>
+            <line x1="360" y1="34" x2="360" y2="68"/>
+            <line x1="440" y1="34" x2="440" y2="68"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="#5E6779" text-anchor="middle">
+            <text x="40" y="82">0'</text><text x="120" y="82">10'</text><text x="200" y="82">20'</text>
+            <text x="280" y="82">30'</text><text x="360" y="82">40'</text><text x="440" y="82">50'</text><text x="520" y="82">60'</text>
+          </g>
+          <line x1="80" y1="68" x2="150" y2="112" stroke="#B4790F" stroke-width="1.4" stroke-dasharray="3,3"/>
+          <line x1="120" y1="68" x2="330" y2="112" stroke="#B4790F" stroke-width="1.4" stroke-dasharray="3,3"/>
+          <text x="290" y="106" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#3C4A66">1 minuto (1′)</text>
+          <rect x="150" y="116" width="180" height="30" fill="#C1440E1A" stroke="#C1440E" stroke-width="1.6" rx="4"/>
+          <g stroke="#C1440E" stroke-width="1.1">
+            <line x1="180" y1="116" x2="180" y2="146"/>
+            <line x1="210" y1="116" x2="210" y2="146"/>
+            <line x1="240" y1="116" x2="240" y2="146"/>
+            <line x1="270" y1="116" x2="270" y2="146"/>
+            <line x1="300" y1="116" x2="300" y2="146"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#5E6779" text-anchor="middle">
+            <text x="150" y="159">0″</text><text x="180" y="159">10″</text><text x="210" y="159">20″</text>
+            <text x="240" y="159">30″</text><text x="270" y="159">40″</text><text x="300" y="159">50″</text><text x="330" y="159">60″</text>
+          </g>
+          <text x="280" y="192" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="600" fill="#B4790F">1° = 60′        1′ = 60″        1° = 3600″</text>
+        </svg>
+      </div>
+      <p class="diagram-caption">Por eso una coordenada se escribe, por ejemplo, como <strong>39° 28′ 11,4″ N</strong>: 39 grados, 28 minutos y 11,4 segundos de latitud Norte.</p>
+    </section>
+
+    <section class="panel acc-lon">
+      <div class="panel-head">
+        <div class="badge">3</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Ejemplo resuelto: un lugar bien conocido</h2>
+          <p>Así se aplica todo esto a un lugar real. La <strong>Torre Eiffel</strong>, en París, vista desde satélite y con sus coordenadas ya calculadas.</p>
+        </div>
+      </div>
+      <div class="example-layout">
+        <div id="exampleMap" class="example-map" aria-label="Mapa satelital de la Torre Eiffel"></div>
+        <div class="example-coords">
+          <p class="point-name">📍 Torre Eiffel (París, Francia)</p>
+          <div class="coord-grid">
+            <div class="coord-box lat"><span class="lbl">Latitud</span><span class="val" id="eiffelLat">—</span></div>
+            <div class="coord-box lon"><span class="lbl">Longitud</span><span class="val" id="eiffelLon">—</span></div>
+          </div>
+          <p class="coord-decimal">Coordenadas decimales: 48.8584, 2.2945</p>
+          <p class="diagram-caption" style="margin-top:12px;">Al ser <strong style="color:var(--lat)">N (Norte)</strong>, sabemos que está por encima del Ecuador, en el hemisferio Norte. Al ser <strong style="color:var(--lon)">E (Este)</strong>, sabemos que está justo al este del meridiano de Greenwich, en el hemisferio Este, muy cerca de esa línea de referencia.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel acc-ink">
+      <div class="panel-head">
+        <div class="badge">4</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>Situar un punto conocidas sus coordenadas</h2>
+          <p>Si te dan la latitud y la longitud de un lugar, para encontrarlo sobre un mapa o un globo terráqueo:</p>
+        </div>
+      </div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 560 320">
+          <use href="#graticule-grid"/>
+          <line x1="340" y1="127" x2="40" y2="127" stroke="#182338" stroke-width="1.6" stroke-dasharray="4,3"/>
+          <line x1="340" y1="127" x2="340" y2="40" stroke="#182338" stroke-width="1.6" stroke-dasharray="4,3"/>
+          <circle cx="340" cy="127" r="6" fill="#182338"/>
+          <text x="349" y="122" font-family="Fraunces, serif" font-size="15" font-weight="700" fill="#182338">P</text>
+          <rect x="10" y="115" width="46" height="20" fill="#182338"/>
+          <text x="33" y="129" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#fff">25°N</text>
+          <rect x="316" y="16" width="48" height="20" fill="#182338"/>
+          <text x="340" y="30" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#fff">45°E</text>
+        </svg>
+      </div>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><p>Busca el <strong>paralelo</strong> que corresponde a la latitud dada (contando grados desde el Ecuador hacia el Norte o el Sur).</p></li>
+        <li><span class="step-num">2</span><p>Busca el <strong>meridiano</strong> que corresponde a la longitud dada (contando grados desde Greenwich hacia el Este o el Oeste).</p></li>
+        <li><span class="step-num">3</span><p>El punto buscado está exactamente en la <strong>intersección</strong> de ese paralelo y ese meridiano. En el ejemplo, el punto P se sitúa aproximadamente en 25° N y 45° E.</p></li>
+      </ol>
+    </section>
+
+    <section class="panel acc-lat">
+      <div class="panel-head">
+        <div class="badge">5</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Hallar las coordenadas de un punto dado</h2>
+          <p>El proceso inverso: si te señalan un lugar sobre el mapa, para saber sus coordenadas:</p>
+        </div>
+      </div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 560 320">
+          <use href="#graticule-grid"/>
+          <line x1="187" y1="207" x2="40" y2="207" stroke="#182338" stroke-width="1.6" stroke-dasharray="4,3"/>
+          <line x1="187" y1="207" x2="187" y2="40" stroke="#182338" stroke-width="1.6" stroke-dasharray="4,3"/>
+          <circle cx="187" cy="207" r="6" fill="#182338"/>
+          <text x="196" y="202" font-family="Fraunces, serif" font-size="15" font-weight="700" fill="#182338">Q</text>
+          <rect x="10" y="197" width="46" height="20" fill="#182338"/>
+          <text x="33" y="211" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#fff">35°S</text>
+          <rect x="163" y="16" width="48" height="20" fill="#182338"/>
+          <text x="187" y="30" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#fff">70°O</text>
+        </svg>
+      </div>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><p>Observa a qué distancia está el punto del <strong>Ecuador</strong>: cuenta los grados de latitud y comprueba si queda al Norte o al Sur.</p></li>
+        <li><span class="step-num">2</span><p>Observa a qué distancia está del <strong>meridiano de Greenwich</strong>: cuenta los grados de longitud y comprueba si queda al Este o al Oeste.</p></li>
+        <li><span class="step-num">3</span><p>Escribe ambos valores como coordenada completa. En el ejemplo, el punto Q tiene aproximadamente <strong>35° S de latitud</strong> y <strong>70° O de longitud</strong>.</p></li>
+      </ol>
+      <div class="cta-row">
+        <button class="btn-primary" onclick="showTab('mapa')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          Practicar ahora en el mapa interactivo
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============================================================
+       TAB 2: MAPA INTERACTIVO
+  ============================================================= -->
+  <div id="tabMapa" class="tab-panel">
+
+    <section class="panel acc-ink">
+      <div class="panel-head">
+        <div class="badge">A</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>Busca un lugar o señala un punto</h2>
+          <p>Escribe el nombre de un lugar y búscalo, o simplemente haz clic en cualquier punto del mapa satelital para colocar una chincheta.</p>
+        </div>
+      </div>
+      <div class="map-full-wrap" id="mapFullWrap">
+        <div class="locate-row">
+          <input type="text" id="placeName" placeholder="Ej.: Machu Picchu, Perú" autocomplete="off">
+          <button class="btn-primary" id="btnSearch">Buscar</button>
+        </div>
+        <div class="map-hint">💡 Haz clic o toca cualquier lugar del mapa para clavar una chincheta y ver sus coordenadas al instante. En pantalla completa, además, puedes hacer zoom con la rueda del ratón.</div>
+
+        <div class="map-inner">
+          <button type="button" class="fullscreen-btn" id="btnFullscreen" title="Ver a pantalla completa" aria-label="Ver el mapa a pantalla completa" onclick="toggleFullscreen()">
+            <svg id="fsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </button>
+          <div id="map" aria-label="Mapa satelital interactivo"></div>
+        </div>
+
+        <div class="point-card" id="pointCard">
+          <p class="point-card-empty">Todavía no se ha marcado ningún punto. Busca un lugar, haz clic en el mapa o elige un ejemplo.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel acc-gold">
+      <div class="panel-head">
+        <div class="badge">B</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>Lugares para explorar</h2>
+          <p>Capitales, montañas y otros lugares singulares. Haz clic en uno para verlo en el mapa con sus coordenadas.</p>
+        </div>
+      </div>
+      <div class="examples-wrap" id="examplesWrap"></div>
+    </section>
+
+    <section class="panel acc-lat">
+      <div class="panel-head">
+        <div class="badge">C</div>
+        <div class="panel-head-text">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16"/><path d="M9 21v-4h6v4"/></svg>Tus puntos guardados</h2>
+          <p>Los puntos que guardes se quedan en este navegador. Puedes exportarlos a un archivo para llevártelos o compartirlos.</p>
+        </div>
+      </div>
+      <div id="savedWrap">
+        <p class="saved-empty">Todavía no has guardado ningún punto de interés.</p>
+      </div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn-ghost" id="btnExport">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar puntos
+        </button>
+        <button class="btn-ghost" id="btnImport">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar puntos
+        </button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    Herramienta creada para el aula de Geografía. Los puntos que guardas se almacenan solo en tu propio navegador: no se envían ni se guardan en ningún servidor. Las coordenadas se calculan con un decimal de precisión en los segundos.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------
+     TABS
+  ----------------------------------------------------------------*/
+  var map = null, marker = null, mapInitialized = false;
+
+  window.showTab = function(name){
+    var teoria = document.getElementById('tabTeoria');
+    var mapa = document.getElementById('tabMapa');
+    var btnT = document.getElementById('tabBtnTeoria');
+    var btnM = document.getElementById('tabBtnMapa');
+    if(name === 'mapa'){
+      teoria.classList.remove('active'); mapa.classList.add('active');
+      btnM.classList.add('active'); btnT.classList.remove('active');
+      if(!mapInitialized){ initMap(); mapInitialized = true; }
+      setTimeout(function(){ if(map) map.invalidateSize(); }, 60);
+    } else {
+      mapa.classList.remove('active'); teoria.classList.add('active');
+      btnT.classList.add('active'); btnM.classList.remove('active');
+    }
+  };
+
+  /* ---------------------------------------------------------------
+     COORDINATE FORMATTING (1 decimal en segundos)
+  ----------------------------------------------------------------*/
+  function toDMS(deg, isLat){
+    var hemi = isLat ? (deg >= 0 ? 'N' : 'S') : (deg >= 0 ? 'E' : 'O');
+    var abs = Math.abs(deg);
+    var d = Math.floor(abs);
+    var minFloat = (abs - d) * 60;
+    var m = Math.floor(minFloat);
+    var s = Math.round((minFloat - m) * 60 * 10) / 10;
+    if(s >= 60){ s -= 60; m += 1; }
+    if(m >= 60){ m -= 60; d += 1; }
+    var sTxt = s.toFixed(1).replace('.', ',');
+    return d + '° ' + m + "' " + sTxt + '" ' + hemi;
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function genId(){ return 'p_' + Date.now().toString(36) + '_' + Math.floor(Math.random()*1e6).toString(36); }
+  function downloadJSON(obj, filename){
+    var blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 400);
+  }
+
+  /* ---------------------------------------------------------------
+     MAP
+  ----------------------------------------------------------------*/
+  function initMap(){
+    map = L.map('map', { scrollWheelZoom:false }).setView([25, 10], 2);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 18,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    }).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 18, opacity: 0.9
+    }).addTo(map);
+    map.on('click', function(e){
+      placePoint(e.latlng.lat, e.latlng.lng, null);
+      reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+    if('ResizeObserver' in window){
+      new ResizeObserver(function(){ map.invalidateSize(); }).observe(document.getElementById('map'));
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     FULLSCREEN MAP
+     (el pin, la ventana flotante y el guardado siguen funcionando
+     igual porque el mapa y la ficha del punto son el mismo DOM)
+  ----------------------------------------------------------------*/
+  var EXPAND_ICON = '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+  var COMPRESS_ICON = '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>';
+
+  var fsSupported = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+  if(!fsSupported){
+    var btnFs = document.getElementById('btnFullscreen');
+    if(btnFs) btnFs.style.display = 'none';
+  }
+
+  window.toggleFullscreen = function(){
+    var el = document.getElementById('mapFullWrap');
+    var isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    if(!isFs){
+      if(el.requestFullscreen) el.requestFullscreen();
+      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  };
+
+  function onFullscreenChange(){
+    var isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    var icon = document.getElementById('fsIcon');
+    if(icon) icon.innerHTML = isFs ? COMPRESS_ICON : EXPAND_ICON;
+    var btnFs = document.getElementById('btnFullscreen');
+    if(btnFs) btnFs.title = isFs ? 'Salir de pantalla completa' : 'Ver a pantalla completa';
+    if(map){
+      if(isFs) map.scrollWheelZoom.enable();
+      else map.scrollWheelZoom.disable();
+    }
+    setTimeout(function(){ if(map) map.invalidateSize(); }, 120);
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+  var currentPoint = null; /* { lat, lon, label, elevation } */
+
+  function placePoint(lat, lon, label){
+    currentPoint = { lat:lat, lon:lon, label:label, elevation:undefined };
+    if(marker) map.removeLayer(marker);
+    marker = L.marker([lat, lon]).addTo(map);
+    var popupHtml = '<b>' + (label ? escapeHtml(label) : 'Punto marcado') + '</b><br>' +
+      'Lat: ' + toDMS(lat, true) + '<br>Lon: ' + toDMS(lon, false);
+    marker.bindPopup(popupHtml).openPopup();
+    map.flyTo([lat, lon], Math.max(map.getZoom(), 6));
+    renderPointCard();
+    fetchElevation(lat, lon).then(function(elev){
+      if(currentPoint && currentPoint.lat === lat && currentPoint.lon === lon){
+        currentPoint.elevation = elev;
+        renderPointCard();
+      }
+    });
+  }
+
+  function fetchElevation(lat, lon){
+    return new Promise(function(resolve){
+      var controller = ('AbortController' in window) ? new AbortController() : null;
+      var timer = setTimeout(function(){ if(controller) controller.abort(); }, 6000);
+      var opts = controller ? { signal: controller.signal } : {};
+      fetch('https://api.open-elevation.com/api/v1/lookup?locations=' + lat.toFixed(4) + ',' + lon.toFixed(4), opts)
+        .then(function(res){ return res.json(); })
+        .then(function(data){
+          clearTimeout(timer);
+          if(data && data.results && data.results.length && typeof data.results[0].elevation === 'number'){
+            resolve(data.results[0].elevation);
+          } else { resolve(null); }
+        })
+        .catch(function(){ clearTimeout(timer); resolve(null); });
+    });
+  }
+
+  function reverseGeocode(lat, lon){
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&lat=' + lat + '&lon=' + lon, { headers:{'Accept':'application/json'} })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if(data && data.display_name && currentPoint && currentPoint.lat === lat && currentPoint.lon === lon && !currentPoint.label){
+          var short = data.display_name.split(',').slice(0,2).join(',').trim();
+          currentPoint.label = short || null;
+          renderPointCard();
+        }
+      })
+      .catch(function(){});
+  }
+
+  function renderPointCard(){
+    var wrap = document.getElementById('pointCard');
+    if(!currentPoint){
+      wrap.innerHTML = '<p class="point-card-empty">Todavía no se ha marcado ningún punto. Busca un lugar, haz clic en el mapa o elige un ejemplo.</p>';
+      return;
+    }
+    var name = currentPoint.label || 'Punto marcado en el mapa';
+    var elevTxt = '';
+    if(typeof currentPoint.elevation === 'number'){
+      elevTxt = '<p class="coord-elev">Altitud aproximada: ' + Math.round(currentPoint.elevation) + ' m</p>';
+    } else if(currentPoint.elevation === undefined){
+      elevTxt = '<p class="coord-elev">Calculando altitud…</p>';
+    }
+    var html = '';
+    html += '<p class="point-name">📍 ' + escapeHtml(name) + '</p>';
+    html += '<div class="coord-grid">';
+    html += '<div class="coord-box lat"><span class="lbl">Latitud</span><span class="val">' + toDMS(currentPoint.lat, true) + '</span></div>';
+    html += '<div class="coord-box lon"><span class="lbl">Longitud</span><span class="val">' + toDMS(currentPoint.lon, false) + '</span></div>';
+    html += '</div>';
+    html += '<p class="coord-decimal">Coordenadas decimales: ' + currentPoint.lat.toFixed(4) + ', ' + currentPoint.lon.toFixed(4) + '</p>';
+    html += elevTxt;
+    html += '<div class="save-row">';
+    html += '<input type="text" id="saveNameInput" placeholder="Nombre para guardar este punto" value="' + escapeHtml(currentPoint.label || '') + '">';
+    html += '<button class="btn-primary" id="btnSavePoint">Guardar este punto</button>';
+    html += '</div>';
+    html += '<p class="save-status" id="saveStatus"></p>';
+    wrap.innerHTML = html;
+    document.getElementById('btnSavePoint').addEventListener('click', saveCurrentPoint);
+  }
+
+  function setSaveStatus(text, warn){
+    var el = document.getElementById('saveStatus');
+    if(!el) return;
+    el.textContent = text;
+    el.className = 'save-status' + (warn ? ' warn' : '');
+  }
+
+  /* ---------------------------------------------------------------
+     SEARCH (Nominatim)
+  ----------------------------------------------------------------*/
+  function searchPlace(){
+    var q = document.getElementById('placeName').value.trim();
+    if(!q) return;
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&q=' + encodeURIComponent(q);
+    fetch(url, { headers:{'Accept':'application/json'} })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if(!data || !data.length){
+          alert('No se ha encontrado "' + q + '". Prueba a añadir el país, por ejemplo "Cusco, Perú".');
+          return;
+        }
+        var place = data[0];
+        var lat = parseFloat(place.lat), lon = parseFloat(place.lon);
+        var label = place.display_name ? place.display_name.split(',').slice(0,2).join(',').trim() : q;
+        placePoint(lat, lon, label);
+      })
+      .catch(function(){ alert('No se ha podido consultar el mapa. Comprueba tu conexión a internet.'); });
+  }
+  document.getElementById('btnSearch').addEventListener('click', searchPlace);
+  document.getElementById('placeName').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); searchPlace(); } });
+
+  /* ---------------------------------------------------------------
+     EXAMPLE POINTS
+  ----------------------------------------------------------------*/
+  var EXAMPLES = [
+    { group:'Capitales del mundo', color:'var(--lat)', items:[
+      { name:'Madrid', place:'España', lat:40.4168, lon:-3.7038 },
+      { name:'Londres', place:'Reino Unido', lat:51.5074, lon:-0.1278 },
+      { name:'El Cairo', place:'Egipto', lat:30.0444, lon:31.2357 },
+      { name:'Nueva Delhi', place:'India', lat:28.6139, lon:77.2090 },
+      { name:'Canberra', place:'Australia', lat:-35.2809, lon:149.1300 },
+      { name:'Buenos Aires', place:'Argentina', lat:-34.6037, lon:-58.3816 },
+      { name:'Ciudad del Cabo', place:'Sudáfrica', lat:-33.9249, lon:18.4241 },
+      { name:'Quito', place:'Ecuador', lat:-0.1807, lon:-78.4678 }
+    ]},
+    { group:'Montañas destacadas', color:'var(--lon)', items:[
+      { name:'Everest', place:'Nepal / China', lat:27.9881, lon:86.9250 },
+      { name:'Aconcagua', place:'Argentina', lat:-32.6532, lon:-70.0109 },
+      { name:'Kilimanjaro', place:'Tanzania', lat:-3.0674, lon:37.3556 },
+      { name:'Denali (McKinley)', place:'Estados Unidos', lat:63.0692, lon:-151.0070 },
+      { name:'Mont Blanc', place:'Francia / Italia', lat:45.8326, lon:6.8652 },
+      { name:'Pico Aneto', place:'España, Pirineos', lat:42.6297, lon:0.6528 }
+    ]},
+    { group:'Lugares singulares', color:'var(--gold)', items:[
+      { name:'Real Observatorio de Greenwich', place:'Londres — meridiano 0°', lat:51.4779, lon:-0.0015 },
+      { name:'Machu Picchu', place:'Perú', lat:-13.1631, lon:-72.5450 },
+      { name:'Uluru', place:'Australia', lat:-25.3444, lon:131.0369 },
+      { name:'Cruce Ecuador–Greenwich', place:'Golfo de Guinea (0°,0°)', lat:0, lon:0 }
+    ]}
+  ];
+
+  function renderExamples(){
+    var wrap = document.getElementById('examplesWrap');
+    var html = '';
+    EXAMPLES.forEach(function(grp, gi){
+      html += '<div class="examples-group"><div class="examples-group-title">' + escapeHtml(grp.group) + '</div><div class="examples-chips">';
+      grp.items.forEach(function(it, ii){
+        html += '<button type="button" class="example-chip" data-g="' + gi + '" data-i="' + ii + '">' +
+          '<span class="chip-dot" style="background:' + grp.color + '"></span>' +
+          '<span class="chip-text"><strong>' + escapeHtml(it.name) + '</strong><span>' + escapeHtml(it.place) + '</span></span>' +
+          '</button>';
+      });
+      html += '</div></div>';
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.example-chip').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var g = parseInt(btn.getAttribute('data-g'), 10), i = parseInt(btn.getAttribute('data-i'), 10);
+        var it = EXAMPLES[g].items[i];
+        showTab('mapa');
+        if(!mapInitialized){ initMap(); mapInitialized = true; }
+        setTimeout(function(){
+          if(map) map.invalidateSize();
+          placePoint(it.lat, it.lon, it.name + ' (' + it.place + ')');
+        }, 80);
+      });
+    });
+  }
+  renderExamples();
+
+  /* ---------------------------------------------------------------
+     SAVED POINTS (localStorage + export/import)
+  ----------------------------------------------------------------*/
+  var STORAGE_KEY = 'coords_taller_puntos_v1';
+  var saved = [];
+
+  function loadSaved(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      saved = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(saved)) saved = [];
+    }catch(e){ saved = []; }
+  }
+  function persistSaved(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); return true; }
+    catch(e){ return false; }
+  }
+  function renderSaved(){
+    var wrap = document.getElementById('savedWrap');
+    if(!saved.length){
+      wrap.innerHTML = '<p class="saved-empty">Todavía no has guardado ningún punto de interés.</p>';
+      return;
+    }
+    var html = '<div class="saved-list">';
+    saved.forEach(function(p){
+      html += '<div class="saved-chip">' +
+        '<button type="button" class="saved-chip-main" data-id="' + p.id + '" data-action="goto">' +
+        '<span class="chip-dot" style="background:var(--lat)"></span>' +
+        '<span class="chip-text"><strong>' + escapeHtml(p.name) + '</strong><span>' + toDMS(p.lat,true) + ' · ' + toDMS(p.lon,false) + '</span></span>' +
+        '</button>' +
+        '<button type="button" class="saved-chip-delete" data-id="' + p.id + '" data-action="delete" title="Eliminar">✕</button>' +
+        '</div>';
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('[data-action="goto"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var p = saved.find(function(s){ return s.id === btn.getAttribute('data-id'); });
+        if(!p) return;
+        showTab('mapa');
+        if(!mapInitialized){ initMap(); mapInitialized = true; }
+        setTimeout(function(){ if(map) map.invalidateSize(); placePoint(p.lat, p.lon, p.name); }, 80);
+      });
+    });
+    wrap.querySelectorAll('[data-action="delete"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-id');
+        saved = saved.filter(function(s){ return s.id !== id; });
+        persistSaved(); renderSaved();
+      });
+    });
+  }
+
+  function saveCurrentPoint(){
+    if(!currentPoint) return;
+    var input = document.getElementById('saveNameInput');
+    var name = (input && input.value.trim()) || currentPoint.label || 'Punto sin nombre';
+    saved.push({ id:genId(), name:name, lat:currentPoint.lat, lon:currentPoint.lon, elevation: (typeof currentPoint.elevation === 'number' ? currentPoint.elevation : null), savedAt:new Date().toISOString() });
+    if(persistSaved()){ setSaveStatus('Guardado como "' + name + '".'); renderSaved(); }
+    else{ setSaveStatus('No se ha podido guardar (almacenamiento local no disponible).', true); }
+  }
+
+  document.getElementById('btnExport').addEventListener('click', function(){
+    if(!saved.length){ alert('No tienes puntos guardados para exportar.'); return; }
+    downloadJSON({ app:'Taller de Coordenadas Geográficas', version:1, exportedAt:new Date().toISOString(), puntos:saved },
+      'coordenadas-' + new Date().toISOString().slice(0,10) + '.json');
+  });
+  document.getElementById('btnImport').addEventListener('click', function(){ document.getElementById('importFile').click(); });
+  document.getElementById('importFile').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = JSON.parse(evt.target.result);
+        var incoming = Array.isArray(data) ? data : (data.puntos || []);
+        incoming = incoming.filter(function(p){ return p && typeof p.lat === 'number' && typeof p.lon === 'number'; });
+        if(!incoming.length){ alert('El archivo no contiene puntos válidos.'); return; }
+        var existingIds = saved.map(function(s){ return s.id; });
+        incoming.forEach(function(p){
+          if(!p.id || existingIds.indexOf(p.id) !== -1) p.id = genId();
+          if(!p.name) p.name = 'Punto importado';
+          saved.push(p); existingIds.push(p.id);
+        });
+        persistSaved(); renderSaved();
+        alert('Importados ' + incoming.length + ' punto(s).');
+      }catch(err){ alert('El archivo no tiene un formato JSON válido.'); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  loadSaved();
+  renderSaved();
+
+  /* ---------------------------------------------------------------
+     EJEMPLO RESUELTO (pestaña de teoría): Torre Eiffel
+  ----------------------------------------------------------------*/
+  function initExampleMap(){
+    var elMap = document.getElementById('exampleMap');
+    if(!elMap || typeof L === 'undefined') return;
+    var lat = 48.8584, lon = 2.2945;
+    var exMap = L.map('exampleMap', { scrollWheelZoom:false }).setView([lat, lon], 15);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    }).addTo(exMap);
+    L.marker([lat, lon]).addTo(exMap)
+      .bindPopup('<b>Torre Eiffel</b><br>Lat: ' + toDMS(lat, true) + '<br>Lon: ' + toDMS(lon, false))
+      .openPopup();
+    var latEl = document.getElementById('eiffelLat');
+    var lonEl = document.getElementById('eiffelLon');
+    if(latEl) latEl.textContent = toDMS(lat, true);
+    if(lonEl) lonEl.textContent = toDMS(lon, false);
+
+    /* El contenedor puede cambiar de tamaño mientras cargan las tipografías
+       o se maqueta la página; forzamos a Leaflet a recalcular el tamaño
+       varias veces para evitar que se queden teselas grises sin pedir. */
+    function fixSize(){ exMap.invalidateSize(); exMap.setView([lat, lon], 15); }
+    setTimeout(fixSize, 250);
+    setTimeout(fixSize, 800);
+    window.addEventListener('load', fixSize);
+    if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fixSize); }
+    if('ResizeObserver' in window){
+      new ResizeObserver(function(){ exMap.invalidateSize(); }).observe(elMap);
+    }
+  }
+  initExampleMap();
+
+})();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>

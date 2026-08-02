@@ -4,16 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recursos de Geografía e Historia</title>
-
-    <!-- PWA / instalación en pantalla de inicio -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
-    <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
-    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Geo e Historia">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -151,6 +141,22 @@
                 </div>
             </a>
 
+            <!-- App: Taller de Coordenadas Geográficas -->
+            <a href="taller_coordenadas.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col">
+                <div class="h-40 bg-gradient-to-br from-teal-500 to-cyan-700 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <i class="fa-solid fa-location-crosshairs text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">Mapa Interactivo</div>
+                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Taller de Coordenadas Geográficas</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">Aprende a situar un punto a partir de su latitud y longitud, y marca lugares sobre un mapa satelital para obtener sus coordenadas en grados, minutos y segundos.</p>
+                    <div class="inline-flex items-center text-sm font-bold text-teal-600 group-hover:text-teal-700 transition-colors">
+                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
             <!-- App 2: Taller del IDH -->
             <a href="taller_idh.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.1s;">
                 <div class="h-40 bg-gradient-to-br from-cyan-500 to-blue-600 relative flex items-center justify-center overflow-hidden">
@@ -221,36 +227,6 @@
                     <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Creador de Climogramas</h3>
                     <p class="text-slate-500 text-sm mb-6 flex-grow">Localiza un lugar en el mapa, introduce sus datos y genera el climograma con un detallado análisis climático automático.</p>
                     <div class="inline-flex items-center text-sm font-bold text-amber-600 group-hover:text-amber-700 transition-colors">
-                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </div>
-            </a>
-
-            <!-- App 7: Atlas de Mapas Temáticos Mundiales -->
-            <a href="atlas-mapas-tematicos-mundiales.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.6s;">
-                <div class="h-40 bg-gradient-to-br from-sky-600 to-blue-900 relative flex items-center justify-center overflow-hidden">
-                    <i class="fa-solid fa-globe text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
-                </div>
-                <div class="p-6 flex-grow flex flex-col">
-                    <div class="text-xs font-bold tracking-widest text-sky-700 uppercase mb-2">Atlas Temático</div>
-                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Mapas Temáticos del Mundo</h3>
-                    <p class="text-slate-500 text-sm mb-6 flex-grow">Colorea el planeta según PIB per cápita, población urbana, empleo por sectores o esperanza de vida, con animación histórica desde 1960 y comparador de países.</p>
-                    <div class="inline-flex items-center text-sm font-bold text-sky-700 group-hover:text-sky-800 transition-colors">
-                        Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </div>
-            </a>
-
-            <!-- App 8: Visor de Mapas Físicos -->
-            <a href="visor_mapas.html" class="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1.5 flex flex-col" style="animation-delay: 0.7s;">
-                <div class="h-40 bg-gradient-to-br from-lime-600 to-stone-800 relative flex items-center justify-center overflow-hidden">
-                    <i class="fa-solid fa-mountain text-6xl text-white opacity-90 group-hover:scale-110 transition-transform duration-500"></i>
-                </div>
-                <div class="p-6 flex-grow flex flex-col">
-                    <div class="text-xs font-bold tracking-widest text-lime-700 uppercase mb-2">Mapas Físicos</div>
-                    <h3 class="text-xl font-serif font-bold text-slate-800 mb-3 leading-snug">Visor de Mapas</h3>
-                    <p class="text-slate-500 text-sm mb-6 flex-grow">Explora en alta resolución los mapas físicos de los continentes, España y la Comunidad Valenciana, con zoom, lápiz para señalar en clase y pantalla completa.</p>
-                    <div class="inline-flex items-center text-sm font-bold text-lime-700 group-hover:text-lime-800 transition-colors">
                         Abrir aplicación <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
                     </div>
                 </div>
