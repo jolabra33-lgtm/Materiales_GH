@@ -94,6 +94,60 @@
   }
   .era-blurb{color:#c9c2b0;font-size:.92rem;line-height:1.5;margin:8px 0 0;max-width:60ch;}
 
+  /* ---------- Search ---------- */
+  .search-wrap{position:relative;max-width:420px;margin:16px auto 0;}
+  .search-input{
+    width:100%;box-sizing:border-box;border:1.5px solid rgba(239,232,216,.3);background:rgba(255,255,255,.04);
+    color:var(--rail-text);padding:11px 16px;border-radius:999px;font-family:'Source Sans 3';font-size:.92rem;
+    outline:none;transition:border-color .2s,background .2s;
+  }
+  .search-input::placeholder{color:#9c917d;}
+  .search-input:focus{border-color:var(--stratum-accent,#C9A227);background:rgba(255,255,255,.07);}
+  .search-results{
+    position:absolute;top:calc(100% + 8px);left:0;right:0;max-height:60vh;overflow-y:auto;z-index:50;
+    background:var(--paper);border-radius:var(--radius);box-shadow:0 14px 34px rgba(0,0,0,.4);padding:6px;
+    text-align:left;
+  }
+  .search-results.hidden{display:none;}
+  .search-result{
+    display:block;width:100%;text-align:left;border:none;background:transparent;cursor:pointer;
+    padding:10px 12px;border-radius:10px;color:var(--ink);font-family:'Source Sans 3';
+  }
+  .search-result:hover, .search-result:focus-visible{background:var(--paper-dim);outline:none;}
+  .search-result .sr-year{
+    font-family:'Space Mono',monospace;font-weight:700;font-size:.7rem;color:#7a6a3f;margin-right:6px;
+  }
+  .search-result .sr-title{font-weight:700;font-size:.92rem;}
+  .search-result .sr-path{display:block;font-size:.72rem;color:var(--ink-soft);margin-top:2px;}
+  .search-empty{padding:14px;color:var(--ink-soft);font-size:.88rem;text-align:center;}
+
+  /* ---------- Breadcrumb (zoom) ---------- */
+  .crumb-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .crumb-bar.hidden{display:none;}
+  .crumb-back{
+    border:1px solid rgba(239,232,216,.3);background:transparent;color:var(--rail-text);
+    padding:6px 14px;border-radius:999px;font-family:'Space Mono',monospace;font-size:.7rem;
+    letter-spacing:.03em;cursor:pointer;transition:border-color .2s,background .2s;white-space:nowrap;
+  }
+  .crumb-back:hover{border-color:var(--stratum-accent,#C9A227);background:rgba(255,255,255,.05);}
+  .crumb-path{font-family:'Space Mono',monospace;font-size:.72rem;color:#c9c2b0;letter-spacing:.02em;}
+
+  /* ---------- Subetapas (grouping within an era) ---------- */
+  .subetapa + .subetapa{margin-top:30px;}
+  .subetapa-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:2px;}
+  .subetapa-head h3{
+    font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:1.04rem;margin:0;color:var(--rail-text);
+  }
+  .subetapa-range{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--stratum-accent,#C9A227);opacity:.9;}
+
+  /* ---------- Zoomable event cards ---------- */
+  .event-card.zoomable{cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;}
+  .event-card.zoomable:hover, .event-card.zoomable:focus-visible{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.32);outline:none;}
+  .zoom-hint{
+    display:inline-block;margin-top:8px;font-family:'Space Mono',monospace;font-size:.66rem;
+    letter-spacing:.02em;color:#7a6a3f;
+  }
+
   /* ---------- Timeline ---------- */
   .timeline{list-style:none;margin:22px 0 0;padding:0 0 0 20px;border-left:2px solid var(--line);}
   .event{position:relative;padding:0 0 22px 22px;}
@@ -169,6 +223,12 @@
     background:var(--stratum-accent,#C9A227);transform:translate(-50%,-50%);box-shadow:0 0 0 4px var(--bg);
   }
   .h-item .event-card{width:210px;}
+  .h-item .event-card .event-desc{
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .h-item .event-card .event-title{
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
   .h-item .slot:empty{visibility:hidden;}
 
   /* ---------- Add form ---------- */
@@ -233,6 +293,7 @@
   .fs-mode .eyebrow,.fs-mode .subtitle{display:none;}
   .fs-mode h1{font-size:1.05rem;margin:0;}
   .fs-mode .region-tabs{margin-left:auto;}
+  .fs-mode .search-wrap{flex-basis:100%;margin:2px auto 0;max-width:420px;}
   .fs-mode .layout{padding:0 18px;gap:0;}
   .fs-mode .strata{display:none;}
   .fs-mode .era-tabs{display:flex;}
@@ -263,12 +324,20 @@
       <button class="region-tab active" data-region="mundo">Mundo</button>
       <button class="region-tab" data-region="espana">España</button>
     </div>
+    <div class="search-wrap">
+      <input type="search" id="searchInput" class="search-input" placeholder="Buscar un hecho por palabra clave…" autocomplete="off">
+      <div class="search-results hidden" id="searchResults"></div>
+    </div>
   </header>
 
   <div class="layout">
     <nav class="strata" id="strata" aria-label="Selector de era histórica"></nav>
     <main class="panel">
       <nav class="era-tabs" id="eraTabs" aria-label="Selector de era histórica"></nav>
+      <div class="crumb-bar hidden" id="crumbBar">
+        <button type="button" class="crumb-back" id="zoomBack">← Volver</button>
+        <span class="crumb-path" id="crumbPath"></span>
+      </div>
       <div class="era-header">
         <h2 id="eraName"></h2>
         <div class="era-range" id="eraRange"></div>
@@ -329,114 +398,965 @@ const DATA = {
     prehistoria: {
       range: "c. 2,8 millones de años – 3300 a.C.",
       blurb: "Desde las primeras herramientas de piedra hasta la invención de la escritura, el periodo más largo de la historia humana.",
-      events: [
-        [-2800000, "c. 2,8 millones de años", "Primeros útiles de piedra", "El Homo habilis talla las primeras herramientas de piedra (modo Olduvayense) en África oriental."],
-        [-1800000, "c. 1,8 millones de años", "Homo erectus y control del fuego", "Homo erectus domina el fuego y protagoniza las primeras migraciones fuera de África."],
-        [-300000, "c. 300.000 años", "Aparición del Homo sapiens", "Los fósiles de Jebel Irhoud, en Marruecos, documentan los restos de Homo sapiens más antiguos conocidos."],
-        [-40000, "c. 40.000 a.C.", "Arte rupestre paleolítico", "Comienzan las pinturas en cuevas como Chauvet, Altamira o Lascaux: bisontes, caballos y manos en negativo."],
-        [-25000, "c. 25.000 a.C.", "Venus paleolíticas", "Se tallan figurillas femeninas, como la Venus de Willendorf, posibles símbolos de fertilidad."],
-        [-10000, "c. 10.000 a.C.", "Revolución Neolítica", "En el Creciente Fértil se domestican plantas y animales: nacen la agricultura y la ganadería."],
-        [-9000, "c. 9000 a.C.", "Sedentarización", "Aparecen los primeros poblados estables, como Jericó, uno de los asentamientos más antiguos conocidos."],
-        [-7000, "c. 7000 a.C.", "Çatalhöyük", "Se desarrolla en Anatolia una de las primeras protociudades de la historia, con miles de habitantes."],
-        [-5000, "c. 5000 a.C.", "Edad del Cobre", "Se generaliza el uso del cobre para fabricar herramientas y armas (Calcolítico)."],
-        [-3300, "c. 3300 a.C.", "Escritura y Edad del Bronce", "En Sumeria se crea la escritura cuneiforme y se extiende el bronce: fin convencional de la Prehistoria."]
+      subetapas: [
+        {
+          id: "paleolitico",
+          name: "Paleolítico",
+          range: "c. 2,8 millones – 10.000 a.C.",
+          events: [
+            [-2800000, "c. 2,8 millones de años", "Primeros útiles de piedra", "El Homo habilis talla las primeras herramientas de piedra (modo Olduvayense) en África oriental."],
+            [-1800000, "c. 1,8 millones de años", "Homo erectus y control del fuego", "Homo erectus domina el fuego y protagoniza las primeras migraciones fuera de África."],
+            [-300000, "c. 300.000 años", "Aparición del Homo sapiens", "Los fósiles de Jebel Irhoud, en Marruecos, documentan los restos de Homo sapiens más antiguos conocidos."],
+            { y:-40000, yl:"c. 40.000 a.C.", t:"Arte rupestre paleolítico", d:"Comienzan las pinturas en cuevas como Chauvet, Altamira o Lascaux: bisontes, caballos y manos en negativo.",
+              detail:{
+                range:"c. 36.000 – 12.000 a.C.",
+                blurb:"El arte parietal paleolítico se extiende por Europa durante más de 20.000 años, con distintos estilos y técnicas.",
+                events:[
+                  [-36000,"c. 36.000 a.C.","Cueva de Chauvet","En el sur de Francia se pintan algunas de las representaciones animales más antiguas conocidas."],
+                  [-35000,"c. 35.000 a.C.","Primeras manos en negativo","En Altamira y El Castillo se estampan siluetas de manos soplando pigmento."],
+                  [-25000,"c. 25.000 a.C.","Venus paleolíticas","Se tallan figurillas femeninas como símbolo, quizá, de fertilidad."],
+                  [-17000,"c. 17.000 a.C.","Cueva de Lascaux","Se pintan sus célebres salas de toros en el suroeste de Francia."],
+                  [-15000,"c. 15.000 a.C.","Techo policromo de Altamira","Se pintan los bisontes multicolor que dieron fama mundial a la cueva."],
+                  [-12000,"c. 12.000 a.C.","Fin del arte paleolítico","El deshielo y el cambio climático transforman los modos de vida y el arte se hace más esquemático."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "neolitico",
+          name: "Neolítico",
+          range: "10.000 – 5000 a.C.",
+          events: [
+            { y:-10000, yl:"c. 10.000 a.C.", t:"Revolución Neolítica", d:"En el Creciente Fértil se domestican plantas y animales: nacen la agricultura y la ganadería.",
+              detail:{
+                range:"c. 9500 – 6000 a.C.",
+                blurb:"La domesticación de plantas y animales en el Creciente Fértil transforma para siempre el modo de vida humano.",
+                events:[
+                  [-9500,"c. 9500 a.C.","Domesticación del trigo y la cebada","Comienza el cultivo sistemático de cereales en Oriente Próximo."],
+                  [-9000,"c. 9000 a.C.","Jericó","Se levanta uno de los primeros poblados amurallados y estables de la historia."],
+                  [-8000,"c. 8000 a.C.","Domesticación de ovejas y cabras","Se suma la ganadería a la agricultura como base de la subsistencia."],
+                  [-7000,"c. 7000 a.C.","Çatalhöyük","Se desarrolla en Anatolia una de las primeras protociudades, con miles de habitantes."],
+                  [-7000,"c. 7000 a.C.","Primera cerámica","Se generaliza la fabricación de recipientes de barro cocido para almacenar alimentos."],
+                  [-6000,"c. 6000 a.C.","Expansión hacia Europa","Las técnicas agrícolas y ganaderas se extienden desde Anatolia hacia el continente europeo."]
+                ]
+              } },
+            [-9000, "c. 9000 a.C.", "Sedentarización", "Aparecen los primeros poblados estables, como Jericó, uno de los asentamientos más antiguos conocidos."],
+            [-7000, "c. 7000 a.C.", "Çatalhöyük", "Se desarrolla en Anatolia una de las primeras protociudades de la historia, con miles de habitantes."]
+          ]
+        },
+        {
+          id: "edad-metales",
+          name: "Edad de los Metales",
+          range: "5000 – 3300 a.C.",
+          events: [
+            [-5000, "c. 5000 a.C.", "Edad del Cobre", "Se generaliza el uso del cobre para fabricar herramientas y armas (Calcolítico)."],
+            { y:-3300, yl:"c. 3300 a.C.", t:"Escritura y Edad del Bronce", d:"En Sumeria se crea la escritura cuneiforme y se extiende el bronce: fin convencional de la Prehistoria.",
+              detail:{
+                range:"c. 3500 – 3000 a.C.",
+                blurb:"La aleación de cobre y estaño produce un metal más resistente, mientras las primeras ciudades sumerias inventan la escritura.",
+                events:[
+                  [-3500,"c. 3500 a.C.","Generalización del bronce","La aleación de cobre y estaño mejora notablemente las herramientas y armas."],
+                  [-3500,"c. 3500 a.C.","Invención de la rueda","Se documenta su uso en Mesopotamia, clave para el transporte y la alfarería."],
+                  [-3300,"c. 3300 a.C.","Primeros signos proto-cuneiformes","En Uruk aparecen los primeros registros contables que anuncian la escritura."],
+                  [-3200,"c. 3200 a.C.","Ciudades-estado sumerias","Uruk, Ur y otras ciudades se consolidan como los primeros centros urbanos complejos."],
+                  [-3000,"c. 3000 a.C.","Escritura cuneiforme plena","El sistema se desarrolla hasta poder registrar textos completos: arranca convencionalmente la Historia."]
+                ]
+              } }
+          ]
+        }
       ]
     },
     antigua: {
       range: "3300 a.C. – 476 d.C.",
       blurb: "Nacen las primeras civilizaciones urbanas, la escritura, la filosofía y los grandes imperios mediterráneos.",
-      events: [
-        [-3300, "c. 3300 a.C.", "Escritura cuneiforme", "Sumeria inventa la escritura, con la que arranca convencionalmente la Historia."],
-        [-3100, "c. 3100 a.C.", "Unificación de Egipto", "El faraón Narmer unifica el Alto y el Bajo Egipto."],
-        [-2560, "c. 2560 a.C.", "Gran Pirámide de Guiza", "Se construye como tumba del faraón Keops."],
-        [-1750, "c. 1750 a.C.", "Código de Hammurabi", "Babilonia promulga uno de los primeros códigos legales escritos de la historia."],
-        [-1200, "c. 1200 a.C.", "Colapso de la Edad del Bronce", "Caen los grandes reinos del Mediterráneo oriental ante crisis internas y los llamados «pueblos del mar»."],
-        [-1000, "c. 1000 a.C.", "Reino de Israel", "David y Salomón consolidan el reino hebreo y su monoteísmo."],
-        [-814, "814 a.C.", "Fundación de Cartago", "Colonos fenicios fundan Cartago en el norte de África."],
-        [-776, "776 a.C.", "Primeros Juegos Olímpicos", "Se celebran en Olimpia, Grecia."],
-        [-753, "753 a.C.", "Fundación de Roma", "Fecha tradicional de la fundación de la ciudad."],
-        [-508, "508 a.C.", "Democracia ateniense", "Las reformas de Clístenes sientan las bases de la democracia en Atenas."],
-        [-490, "490-479 a.C.", "Guerras Médicas", "Grecia resiste la invasión persa en batallas como Maratón y Salamina."],
-        [-431, "431-404 a.C.", "Guerra del Peloponeso", "Enfrenta a Atenas y Esparta por la hegemonía griega."],
-        [-336, "336-323 a.C.", "Imperio de Alejandro Magno", "Sus conquistas, desde Grecia hasta la India, difunden la cultura helenística."],
-        [-264, "264-146 a.C.", "Guerras Púnicas", "Roma derrota a Cartago y domina el Mediterráneo occidental."],
-        [-44, "44 a.C.", "Asesinato de Julio César", "Marca el fin de la República romana."],
-        [-27, "27 a.C.", "Augusto y el Imperio", "Octavio Augusto se convierte en el primer emperador romano."],
-        [30, "c. 30", "Origen del cristianismo", "Crucifixión de Jesús de Nazaret en Judea."],
-        [313, "313", "Edicto de Milán", "El emperador Constantino tolera el cristianismo en el Imperio romano."],
-        [395, "395", "División del Imperio Romano", "Se separa en Imperio de Oriente e Imperio de Occidente."],
-        [476, "476", "Caída de Roma", "Odoacro depone al último emperador de Occidente: fin de la Edad Antigua."]
+      subetapas: [
+        {
+          id: "oriente-proximo-egipto",
+          name: "Oriente Próximo y Egipto",
+          range: "3300 – 539 a.C.",
+          events: [
+            [-3300, "c. 3300 a.C.", "Escritura cuneiforme", "Sumeria inventa la escritura, con la que arranca convencionalmente la Historia."],
+            [-3100, "c. 3100 a.C.", "Unificación de Egipto", "El faraón Narmer unifica el Alto y el Bajo Egipto."],
+            { y:-3100, yl:"c. 3100-30 a.C.", t:"Etapas de la civilización egipcia", d:"Del faraón Narmer a Cleopatra VII: tres milenios de historia a orillas del Nilo.",
+              detail:{
+                range:"3100 – 30 a.C.",
+                blurb:"Con altibajos y períodos de fragmentación, la civilización egipcia se mantiene reconocible durante más de tres mil años, hasta su anexión por Roma.",
+                events:[
+                  [-3100,"c. 3100 a.C.","Unificación de Egipto","El faraón Narmer unifica el Alto y el Bajo Egipto: nace el primer Estado egipcio."],
+                  [-2686,"c. 2686 a.C.","Imperio Antiguo","Época de las grandes pirámides de Guiza y del poder absoluto del faraón."],
+                  [-2181,"c. 2181 a.C.","Primer Período Intermedio","El poder central se fragmenta entre distintos señores regionales."],
+                  [-2055,"c. 2055 a.C.","Imperio Medio","Egipto se reunifica y vive una época de estabilidad y esplendor cultural."],
+                  [-1650,"c. 1650 a.C.","Segundo Período Intermedio","Los hicsos, un pueblo de origen asiático, dominan el norte de Egipto."],
+                  [-1550,"c. 1550 a.C.","Imperio Nuevo","Máximo apogeo territorial egipcio, con faraones como Tutmosis III, Akenatón o Ramsés II."],
+                  [-1069,"c. 1069 a.C.","Época Baja","Egipto sufre fragmentación interna y sucesivas dominaciones extranjeras (libia, nubia, persa)."],
+                  [-332,"332 a.C.","Conquista de Alejandro Magno","Egipto pasa a manos griegas y nace la dinastía ptolemaica, con capital en Alejandría."],
+                  [-30,"30 a.C.","Muerte de Cleopatra VII","Roma anexiona Egipto tras su derrota junto a Marco Antonio: fin de la civilización egipcia independiente."]
+                ]
+              } },
+            [-2560, "c. 2560 a.C.", "Gran Pirámide de Guiza", "Se construye como tumba del faraón Keops."],
+            { y:-1750, yl:"c. 1750 a.C.", t:"Código de Hammurabi", d:"Babilonia promulga uno de los primeros códigos legales escritos de la historia.",
+              detail:{
+                range:"3000 – 539 a.C.",
+                blurb:"De las primeras ciudades-estado sumerias a la conquista persa: casi tres milenios de imperios sucesivos en Mesopotamia.",
+                events:[
+                  [-3000,"c. 3000 a.C.","Período Sumerio","Las ciudades-estado sumerias, como Uruk, Ur y Lagash, son las primeras de la historia."],
+                  [-2300,"c. 2300 a.C.","Imperio Acadio","El rey Sargón somete las ciudades sumerias y funda el primer gran imperio de la historia."],
+                  [-1800,"c. 1800 a.C.","Imperio Babilónico","Hammurabi funda el imperio babilónico y promulga uno de los primeros códigos legales."],
+                  [-1356,"c. 1356 a.C.","Imperio Asirio","Los asirios conquistan Mesopotamia y extienden su imperio hasta el Mediterráneo."],
+                  [-612,"612 a.C.","Imperio Neobabilónico","Los caldeos, con Nabucodonosor II, se imponen tras la caída de Asiria."],
+                  [-539,"539 a.C.","Conquista persa de Babilonia","Ciro el Grande pone fin al imperio neobabilónico."]
+                ]
+              } },
+            [-1200, "c. 1200 a.C.", "Colapso de la Edad del Bronce", "Caen los grandes reinos del Mediterráneo oriental ante crisis internas y los llamados «pueblos del mar»."],
+            [-1000, "c. 1000 a.C.", "Reino de Israel", "David y Salomón consolidan el reino hebreo y su monoteísmo."],
+            [-814, "814 a.C.", "Fundación de Cartago", "Colonos fenicios fundan Cartago en el norte de África."]
+          ]
+        },
+        {
+          id: "grecia",
+          name: "Grecia",
+          range: "3000 – 30 a.C.",
+          events: [
+            { y:-3000, yl:"3000-30 a.C.", t:"Etapas de la civilización griega", d:"De los primeros palacios minoicos al fin de la independencia griega.",
+              detail:{
+                range:"3000 – 30 a.C.",
+                blurb:"De los primeros palacios minoicos al fin de la independencia griega tras la conquista romana de Egipto.",
+                events:[
+                  [-3000,"c. 3000 a.C.","Civilización minoica","Florece en Creta, con Cnosos como principal centro palaciego."],
+                  [-1400,"c. 1400 a.C.","Civilización micénica","Los aqueos dominan el mundo griego desde ciudadelas fortificadas como Micenas."],
+                  [-1150,"c. 1150 a.C.","Época Oscura","El colapso de la civilización micénica inaugura un período de fuerte retroceso documental."],
+                  [-800,"c. 800 a.C.","Época Arcaica","Surgen la polis, el alfabeto griego y las primeras colonizaciones mediterráneas."],
+                  [-490,"490 a.C.","Época Clásica","Atenas y Esparta lideran el mundo griego frente a la amenaza persa."],
+                  [-334,"334 a.C.","Época Helenística","Las conquistas de Alejandro Magno difunden la cultura griega por Asia."],
+                  [-30,"30 a.C.","Fin de la independencia griega","Roma anexiona Egipto, el último gran reino helenístico."]
+                ]
+              } },
+            [-776, "776 a.C.", "Primeros Juegos Olímpicos", "Se celebran en Olimpia, Grecia."],
+            { y:-508, yl:"508 a.C.", t:"Democracia ateniense", d:"Las reformas de Clístenes sientan las bases de la democracia en Atenas.",
+              detail:{
+                range:"594 – 431 a.C.",
+                blurb:"De las reformas de Solón a la Edad de Oro de Pericles: Atenas construye gradualmente el primer sistema democrático de la historia.",
+                events:[
+                  [-594,"594 a.C.","Reformas de Solón","Sienta las primeras bases legales para superar el poder absoluto de la aristocracia hereditaria."],
+                  [-561,"561 a.C.","Tiranía de Pisístrato","Gobierna apoyándose en el pueblo, debilitando aún más a la vieja aristocracia terrateniente."],
+                  [-508,"508 a.C.","Reformas de Clístenes","Reorganiza a los ciudadanos por demos, no por linaje, y crea el ostracismo: nace la democracia ateniense."],
+                  [-462,"462-461 a.C.","Reformas de Efialtes","Reduce drásticamente los poderes del Areópago aristocrático en favor de la Asamblea popular."],
+                  [-451,"451 a.C.","Ley de ciudadanía de Pericles","Restringe la ciudadanía a los hijos de padre y madre atenienses."],
+                  [-431,"431 a.C.","Edad de Oro de Pericles","Atenas alcanza su máximo esplendor democrático, cultural y político."]
+                ]
+              } },
+            { y:-490, yl:"490-479 a.C.", t:"Guerras Médicas", d:"Grecia resiste la invasión persa en batallas como Maratón y Salamina.",
+              detail:{
+                range:"490 – 478 a.C.",
+                blurb:"Las ciudades griegas, unidas frente a la amenaza persa, logran frenar al imperio más poderoso de su tiempo en una serie de batallas legendarias.",
+                events:[
+                  [-490,"490 a.C.","Batalla de Maratón","Atenas derrota en solitario al primer intento de invasión persa."],
+                  [-480,"480 a.C.","Batalla de las Termópilas","Trescientos espartanos y sus aliados resisten heroicamente al ejército de Jerjes."],
+                  [-480,"480 a.C.","Batalla de Salamina","La flota griega, liderada por Atenas, destruye a la armada persa."],
+                  [-479,"479 a.C.","Batalla de Platea","La victoria terrestre griega expulsa definitivamente a los persas de Grecia."],
+                  [-478,"478 a.C.","Liga de Delos","Atenas lidera una alianza defensiva que acabará convirtiéndose en su propio imperio marítimo."]
+                ]
+              } },
+            { y:-431, yl:"431-404 a.C.", t:"Guerra del Peloponeso", d:"Enfrenta a Atenas y Esparta por la hegemonía griega.",
+              detail:{
+                range:"431 – 404 a.C.",
+                blurb:"El enfrentamiento entre las dos grandes potencias griegas agota a ambas y allana el camino para el declive de las polis clásicas.",
+                events:[
+                  [-431,"431 a.C.","Estalla la guerra","Esparta invade el Ática al inicio del conflicto, la llamada Guerra Arquidámica."],
+                  [-429,"429 a.C.","Peste de Atenas","Una epidemia diezma la ciudad; entre sus víctimas, el propio Pericles."],
+                  [-421,"421 a.C.","Paz de Nicias","Una tregua frágil interrumpe temporalmente el conflicto."],
+                  [-415,"415-413 a.C.","Expedición a Sicilia","La ambiciosa y desastrosa campaña ateniense contra Siracusa termina en catástrofe."],
+                  [-405,"405 a.C.","Batalla de Egospótamos","Esparta destruye la flota ateniense y corta su suministro de grano."],
+                  [-404,"404 a.C.","Rendición de Atenas","Esparta se impone como nueva potencia hegemónica en Grecia."]
+                ]
+              } },
+            { y:-336, yl:"336-323 a.C.", t:"Imperio de Alejandro Magno", d:"Sus conquistas, desde Grecia hasta la India, difunden la cultura helenística.",
+              detail:{
+                range:"336 – 323 a.C.",
+                blurb:"En apenas trece años, Alejandro Magno construye el mayor imperio conocido hasta entonces y difunde la cultura griega por Asia.",
+                events:[
+                  [-336,"336 a.C.","Alejandro, rey de Macedonia","Sucede a su padre Filipo II al frente del reino y de la liga griega."],
+                  [-334,"334 a.C.","Inicio de la campaña contra Persia","Cruza el Helesponto y vence a los persas en el Gránico."],
+                  [-332,"332 a.C.","Conquista de Egipto","Es proclamado faraón y funda la ciudad de Alejandría."],
+                  [-331,"331 a.C.","Batalla de Gaugamela","Derrota decisiva del imperio persa de Darío III."],
+                  [-326,"326 a.C.","Campaña de la India","Alcanza el río Hidaspes, límite oriental de sus conquistas."],
+                  [-323,"323 a.C.","Muerte de Alejandro","Fallece en Babilonia; sus generales, los diádocos, se reparten el imperio."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "monarquia-romana",
+          name: "Monarquía Romana",
+          range: "753 – 509 a.C.",
+          events: [
+            { y:-753, yl:"753 a.C.", t:"Fundación de Roma", d:"Fecha tradicional de la fundación de la ciudad.",
+              detail:{
+                range:"753 – 509 a.C.",
+                blurb:"Según la tradición, siete reyes gobiernan Roma antes de que la monarquía sea sustituida por la República.",
+                events:[
+                  [-753,"753 a.C.","Fundación legendaria de Roma","Rómulo funda la ciudad, según la tradición, en el Monte Palatino."],
+                  [-716,"716 a.C.","Numa Pompilio","El segundo rey organiza las instituciones religiosas romanas."],
+                  [-616,"616 a.C.","Dinastía etrusca","Los reyes de origen etrusco introducen avances urbanísticos y militares."],
+                  [-575,"575 a.C.","Servio Tulio","Reforma el ejército y la organización social por censo económico."],
+                  [-509,"509 a.C.","Expulsión de Tarquinio el Soberbio","El último rey es depuesto: nace la República romana."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "republica-romana",
+          name: "República Romana",
+          range: "509 – 27 a.C.",
+          events: [
+            { y:-509, yl:"509 a.C.", t:"Instituciones republicanas", d:"Roma se organiza en torno al Senado, los cónsules y las magistraturas.",
+              detail:{
+                range:"509 – 27 a.C.",
+                blurb:"De la expulsión de los reyes a las guerras civiles: la larga evolución política que lleva del gobierno colegiado al poder de un solo hombre.",
+                events:[
+                  [-509,"509 a.C.","Primeros cónsules","Dos magistrados anuales sustituyen al rey al frente del Estado."],
+                  [-494,"494 a.C.","Tribunos de la plebe","La plebe logra representación política tras su primera secesión."],
+                  [-451,"451 a.C.","Ley de las XII Tablas","Primer código legal escrito de Roma, accesible a patricios y plebeyos."],
+                  [-133,"133 a.C.","Reforma agraria de los Gracos","Tiberio Graco intenta repartir tierras públicas, lo que desata una fuerte crisis política."],
+                  [-60,"60 a.C.","Primer Triunvirato","Pompeyo, Craso y César se reparten el poder de facto."],
+                  [-49,"49 a.C.","César cruza el Rubicón","Desencadena la guerra civil que le llevará al poder personal."],
+                  [-27,"27 a.C.","Fin de la República","Octavio recibe el título de Augusto: nace el Imperio."]
+                ]
+              } },
+            { y:-264, yl:"264-146 a.C.", t:"Guerras Púnicas", d:"Roma derrota a Cartago y domina el Mediterráneo occidental.",
+              detail:{
+                range:"264 – 146 a.C.",
+                blurb:"Tres guerras sucesivas enfrentan a Roma y Cartago por el control del Mediterráneo occidental, hasta la destrucción total de la ciudad africana.",
+                events:[
+                  [-264,"264 a.C.","Estalla la Primera Guerra Púnica","Roma y Cartago chocan por el control de Sicilia."],
+                  [-241,"241 a.C.","Fin de la Primera Guerra Púnica","Roma vence y se anexiona Sicilia, su primera provincia."],
+                  [-218,"218 a.C.","Aníbal cruza los Alpes","Al frente de un ejército con elefantes, sorprende a Roma invadiendo Italia por el norte."],
+                  [-216,"216 a.C.","Batalla de Cannas","Aníbal inflige a Roma una de sus mayores derrotas militares de la historia."],
+                  [-202,"202 a.C.","Batalla de Zama","Escipión el Africano derrota a Aníbal en suelo africano: fin de la Segunda Guerra Púnica."],
+                  [-149,"149 a.C.","Estalla la Tercera Guerra Púnica","Roma decide acabar definitivamente con Cartago."],
+                  [-146,"146 a.C.","Destrucción de Cartago","La ciudad es arrasada y su territorio se convierte en provincia romana."]
+                ]
+              } },
+            [-44, "44 a.C.", "Asesinato de Julio César", "Marca el fin de la República romana."]
+          ]
+        },
+        {
+          id: "imperio-romano",
+          name: "Imperio Romano",
+          range: "27 a.C. – 476 d.C.",
+          events: [
+            { y:-27, yl:"27 a.C.", t:"Augusto y el Imperio", d:"Octavio Augusto se convierte en el primer emperador romano.",
+              detail:{
+                range:"27 a.C. – 235 d.C.",
+                blurb:"Dos siglos de paz relativa (la Pax Romana) llevan al Imperio a su máxima extensión y esplendor.",
+                events:[
+                  [-27,"27 a.C.","Augusto, primer emperador","Inaugura la dinastía Julio-Claudia y dos siglos de Pax Romana."],
+                  [64,"64","Incendio de Roma","Bajo Nerón, arrasa buena parte de la ciudad y agrava las persecuciones a los cristianos."],
+                  [96,"96-180","Dinastía de los Antoninos","Los «cinco buenos emperadores» llevan Roma a su época de mayor estabilidad."],
+                  [117,"117","Máxima extensión del Imperio","Bajo Trajano, nacido en Hispania, el Imperio alcanza su mayor tamaño."],
+                  [212,"212","Edicto de Caracalla","Concede la ciudadanía romana a todos los habitantes libres del Imperio."],
+                  [235,"235","Inicio de la crisis del siglo III","Un período de anarquía militar y crisis económica debilita al Imperio."]
+                ]
+              } },
+            [30, "c. 30", "Origen del cristianismo", "Crucifixión de Jesús de Nazaret en Judea."],
+            [313, "313", "Edicto de Milán", "El emperador Constantino tolera el cristianismo en el Imperio romano."],
+            [395, "395", "División del Imperio Romano", "Se separa en Imperio de Oriente e Imperio de Occidente."],
+            { y:476, yl:"476", t:"Caída de Roma", d:"Odoacro depone al último emperador de Occidente: fin de la Edad Antigua.",
+              detail:{
+                range:"235 – 476",
+                blurb:"Invasiones germánicas, crisis económica y división administrativa desembocan en el fin del Imperio de Occidente.",
+                events:[
+                  [284,"284","Reformas de Diocleciano","Divide el Imperio en tetrarquía para gobernarlo con más eficacia."],
+                  [378,"378","Batalla de Adrianópolis","Los godos derrotan a Roma: se acelera la presión de los pueblos germánicos."],
+                  [395,"395","División definitiva del Imperio","Teodosio reparte el Imperio entre sus dos hijos."],
+                  [410,"410","Saqueo de Roma por Alarico","Los visigodos saquean la ciudad, un golpe simbólico devastador."],
+                  [451,"451","Batalla de los Campos Cataláunicos","Roma y sus aliados frenan el avance de Atila y los hunos."],
+                  [476,"476","Deposición de Rómulo Augústulo","Odoacro depone al último emperador de Occidente: fin del Imperio romano de Occidente."]
+                ]
+              } }
+          ]
+        }
       ]
     },
     media: {
       range: "476 – 1492",
       blurb: "Feudalismo, expansión del cristianismo y del islam, cruzadas y una Europa fragmentada en reinos.",
-      events: [
-        [476, "476", "Caída del Imperio Romano de Occidente", "Convencionalmente marca el inicio de la Edad Media."],
-        [496, "496", "Bautismo de Clodoveo", "El rey franco se convierte al catolicismo."],
-        [527, "527", "Justiniano y Bizancio", "El emperador bizantino codifica el derecho romano en el Corpus Iuris Civilis."],
-        [622, "622", "Héjira", "Mahoma emigra de La Meca a Medina: inicio del calendario islámico."],
-        [711, "711", "Conquista musulmana de Hispania", "Los ejércitos musulmanes derrotan al reino visigodo."],
-        [732, "732", "Batalla de Poitiers", "Carlos Martel frena el avance musulmán en Europa occidental."],
-        [800, "800", "Coronación de Carlomagno", "Es coronado emperador por el papa León III."],
-        [843, "843", "Tratado de Verdún", "Se divide el Imperio carolingio entre los nietos de Carlomagno."],
-        [1054, "1054", "Cisma de Oriente", "Se separan definitivamente la Iglesia católica y la ortodoxa."],
-        [1066, "1066", "Batalla de Hastings", "Guillermo el Conquistador se hace con el trono inglés."],
-        [1096, "1096", "Primera Cruzada", "Se inicia la primera expedición cristiana a Tierra Santa."],
-        [1215, "1215", "Carta Magna", "Los nobles ingleses limitan el poder del rey Juan Sin Tierra."],
-        [1337, "1337-1453", "Guerra de los Cien Años", "Enfrenta a Francia e Inglaterra."],
-        [1347, "1347", "Peste Negra", "La epidemia mata a un tercio de la población europea."],
-        [1378, "1378", "Cisma de Occidente", "La Iglesia católica se divide entre dos y hasta tres papas rivales."],
-        [1453, "1453", "Caída de Constantinopla", "Los turcos otomanos toman la capital bizantina: fin del Imperio Bizantino."],
-        [1454, "c. 1454", "Imprenta de Gutenberg", "Revoluciona la difusión de libros e ideas en Europa."],
-        [1492, "1492", "Fin de la Edad Media", "Caída de Granada y llegada de Colón a América."]
+      subetapas: [
+        {
+          id: "reinos-germanicos-bizancio",
+          name: "Reinos Germánicos y Bizancio",
+          range: "476 – 800",
+          events: [
+            [476, "476", "Caída del Imperio Romano de Occidente", "Convencionalmente marca el inicio de la Edad Media."],
+            [496, "496", "Bautismo de Clodoveo", "El rey franco se convierte al catolicismo, iniciando una alianza duradera entre la monarquía franca y la Iglesia."],
+            { y:527, yl:"527", t:"Justiniano y Bizancio", d:"El emperador bizantino codifica el derecho romano en el Corpus Iuris Civilis.",
+              detail:{
+                range:"395 – 1453",
+                blurb:"Heredero directo de Roma, el Imperio Bizantino sobrevive mil años más que Occidente, entre el esplendor de Justiniano y un largo declive final.",
+                events:[
+                  [395,"395","División de Teodosio","El Imperio Romano se divide definitivamente en Oriente y Occidente."],
+                  [476,"476","Fin del Imperio de Occidente","Bizancio queda como único heredero legítimo del Imperio romano."],
+                  [527,"527-565","Reinado de Justiniano","Codifica el derecho romano y reconquista temporalmente Italia y el norte de África."],
+                  [726,"726","Prohibición del culto a las imágenes","La crisis iconoclasta sacude la Iglesia bizantina durante más de un siglo."],
+                  [1054,"1054","Cisma de Oriente","Se separan definitivamente la Iglesia católica y la ortodoxa."],
+                  [1203,"1203","Primera conquista de Constantinopla","Los cruzados de la Cuarta Cruzada saquean la capital bizantina."],
+                  [1453,"1453","Caída de Constantinopla","Los turcos otomanos toman la ciudad: fin definitivo del Imperio Bizantino."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "expansion-islam",
+          name: "Expansión del Islam",
+          range: "622 – 1258",
+          events: [
+            { y:622, yl:"622", t:"Héjira", d:"Mahoma emigra de La Meca a Medina: inicio del calendario islámico.",
+              detail:{
+                range:"622 – 1258",
+                blurb:"En apenas un siglo, el islam pasa de una comunidad perseguida en Arabia a construir uno de los mayores imperios de la historia.",
+                events:[
+                  [622,"622","Héjira","Mahoma emigra de La Meca a Medina: arranca el calendario musulmán."],
+                  [632,"632","Muerte de Mahoma","Comienza el califato ortodoxo, guiado por los cuatro primeros califas."],
+                  [661,"661","Asesinato de Alí y califato omeya","Se instaura la dinastía omeya, con capital en Damasco."],
+                  [711,"711","Conquista de Hispania","Los ejércitos omeyas cruzan el Estrecho y conquistan la península ibérica."],
+                  [750,"750","Rebelión abasí","Los abasíes derrocan a los omeyas y trasladan la capital a Bagdad."],
+                  [786,"786-809","Apogeo abasí","Bajo Harún al-Rashid, Bagdad se convierte en centro cultural y científico mundial."],
+                  [1258,"1258","Conquista mongola de Bagdad","Los mongoles destruyen la capital abasí: fin del califato unificado."]
+                ]
+              } },
+            [711, "711", "Conquista musulmana de Hispania", "Los ejércitos musulmanes derrotan al reino visigodo."],
+            [732, "732", "Batalla de Poitiers", "Carlos Martel frena el avance musulmán en Europa occidental."]
+          ]
+        },
+        {
+          id: "feudalismo-cruzadas",
+          name: "Feudalismo y Cruzadas",
+          range: "800 – 1300",
+          events: [
+            [800, "800", "Coronación de Carlomagno", "Es coronado emperador por el papa León III, restaurando la idea de un imperio cristiano en Occidente."],
+            [843, "843", "Tratado de Verdún", "Se divide el Imperio carolingio entre los nietos de Carlomagno, germen de Francia y Alemania."],
+            [1054, "1054", "Cisma de Oriente", "Se separan definitivamente la Iglesia católica y la ortodoxa."],
+            [1066, "1066", "Batalla de Hastings", "Guillermo el Conquistador se hace con el trono inglés."],
+            { y:1096, yl:"1096", t:"Primera Cruzada", d:"Se inicia la primera expedición cristiana a Tierra Santa.",
+              detail:{
+                range:"1096 – 1291",
+                blurb:"Ocho expediciones militares intentan, con éxito desigual, controlar los Santos Lugares durante casi dos siglos.",
+                events:[
+                  [1096,"1096-1099","Primera Cruzada","Los cruzados conquistan Jerusalén y fundan los estados cruzados de Tierra Santa."],
+                  [1147,"1147-1149","Segunda Cruzada","Responde a la pérdida del condado de Edesa, pero termina en fracaso."],
+                  [1187,"1187","Saladino reconquista Jerusalén","El sultán ayubí recupera la ciudad santa para el islam."],
+                  [1189,"1189-1192","Tercera Cruzada","Ricardo Corazón de León y Saladino pactan una tregua sin recuperar Jerusalén."],
+                  [1204,"1204","Cuarta Cruzada y saqueo de Constantinopla","Los cruzados desvían su rumbo y saquean la capital bizantina."],
+                  [1291,"1291","Caída de Acre","Los musulmanes toman el último gran bastión cruzado en Tierra Santa."]
+                ]
+              } },
+            [1215, "1215", "Carta Magna", "Los nobles ingleses limitan el poder del rey Juan Sin Tierra."]
+          ]
+        },
+        {
+          id: "crisis-baja-edad-media",
+          name: "Crisis de la Baja Edad Media",
+          range: "1300 – 1492",
+          events: [
+            { y:1337, yl:"1337-1453", t:"Guerra de los Cien Años", d:"Enfrenta a Francia e Inglaterra.",
+              detail:{
+                range:"1337 – 1453",
+                blurb:"Más de un siglo de guerra intermitente entre Francia e Inglaterra redefine ambas monarquías y anticipa los estados modernos.",
+                events:[
+                  [1337,"1337","Inicio del conflicto","Eduardo III de Inglaterra reclama el trono francés."],
+                  [1346,"1346","Batalla de Crécy","La infantería y los arqueros ingleses derrotan a la caballería francesa."],
+                  [1356,"1356","Batalla de Poitiers","Nueva victoria inglesa; el rey francés Juan II es capturado."],
+                  [1415,"1415","Batalla de Agincourt","Enrique V de Inglaterra logra otra gran victoria sobre Francia."],
+                  [1429,"1429","Juana de Arco libera Orleans","Su intervención cambia el curso de la guerra a favor de Francia."],
+                  [1453,"1453","Batalla de Castillon","Termina la guerra con la victoria definitiva de Francia."]
+                ]
+              } },
+            [1347, "1347", "Peste Negra", "La epidemia mata a un tercio de la población europea."],
+            [1378, "1378", "Cisma de Occidente", "La Iglesia católica se divide entre dos y hasta tres papas rivales."],
+            [1453, "1453", "Caída de Constantinopla", "Los turcos otomanos toman la capital bizantina: fin del Imperio Bizantino."],
+            [1454, "c. 1454", "Imprenta de Gutenberg", "Revoluciona la difusión de libros e ideas en Europa."],
+            [1492, "1492", "Fin de la Edad Media", "Caída de Granada y llegada de Colón a América."]
+          ]
+        }
       ]
     },
     moderna: {
       range: "1492 – 1789",
       blurb: "Expansión europea por el mundo, Reforma protestante, monarquías absolutas e Ilustración.",
-      events: [
-        [1492, "1492", "Llegada de Colón a América", "Cristóbal Colón alcanza el Caribe buscando una ruta a Asia."],
-        [1494, "1494", "Tratado de Tordesillas", "España y Portugal se reparten los territorios por descubrir."],
-        [1517, "1517", "Reforma protestante", "Martín Lutero publica sus 95 tesis contra la Iglesia católica."],
-        [1519, "1519-1521", "Caída del Imperio azteca", "Hernán Cortés conquista Tenochtitlan."],
-        [1522, "1519-1522", "Primera vuelta al mundo", "La expedición Magallanes-Elcano completa la primera circunnavegación."],
-        [1533, "1533", "Caída del Imperio inca", "Francisco Pizarro conquista el imperio inca."],
-        [1545, "1545-1563", "Concilio de Trento", "La Iglesia católica organiza la Contrarreforma."],
-        [1588, "1588", "Derrota de la Armada Invencible", "La flota española es derrotada frente a Inglaterra."],
-        [1618, "1618-1648", "Guerra de los Treinta Años", "Conflicto religioso y político que asola Europa central."],
-        [1642, "1642-1651", "Guerra Civil inglesa", "Enfrenta a monarquía y Parlamento en Inglaterra."],
-        [1687, "1687", "Newton y la Revolución Científica", "Newton publica los Principia Mathematica."],
-        [1688, "1688", "Revolución Gloriosa", "Se refuerza la monarquía parlamentaria en Inglaterra."],
-        [1751, "1751-1772", "La Enciclopedia", "Diderot y d'Alembert publican la gran obra de la Ilustración francesa."],
-        [1776, "1776", "Independencia de Estados Unidos", "Las Trece Colonias se declaran independientes de Gran Bretaña."],
-        [1789, "1789", "Fin de la Edad Moderna", "Estalla la Revolución Francesa."]
+      subetapas: [
+        {
+          id: "descubrimientos",
+          name: "Descubrimientos y Conquista de América",
+          range: "1492 – 1533",
+          events: [
+            { y:1492, yl:"1492", t:"Llegada de Colón a América", d:"Cristóbal Colón alcanza el Caribe buscando una ruta a Asia.",
+              detail:{
+                range:"1492 – 1522",
+                blurb:"Los viajes de Colón abren un contacto permanente entre Europa y América que cambiará el curso de la historia mundial.",
+                events:[
+                  [1492,"1492-1493","Primer viaje de Colón","Llega a las Bahamas, Cuba y La Española, convencido de haber alcanzado Asia."],
+                  [1493,"1493-1496","Segundo viaje","Explora más islas del Caribe y funda los primeros asentamientos permanentes."],
+                  [1498,"1498-1500","Tercer viaje","Alcanza por primera vez el continente, en las costas de Venezuela."],
+                  [1502,"1502-1504","Cuarto viaje","Explora la costa centroamericana buscando un paso hacia Asia."],
+                  [1513,"1513","Núñez de Balboa descubre el Pacífico","Cruza el istmo de Panamá y avista el océano Pacífico."],
+                  [1519,"1519-1522","Viaje de Magallanes y Elcano","Completan la primera circunnavegación de la Tierra."]
+                ]
+              } },
+            [1494, "1494", "Tratado de Tordesillas", "España y Portugal se reparten los territorios por descubrir."],
+            { y:1519, yl:"1519-1521", t:"Caída del Imperio azteca", d:"Hernán Cortés conquista Tenochtitlan.",
+              detail:{
+                range:"1519 – 1521",
+                blurb:"En apenas dos años, un reducido contingente español, aliado con pueblos indígenas enemigos de los aztecas, derriba el imperio más poderoso de Mesoamérica.",
+                events:[
+                  [1519,"1519","Desembarco de Cortés","Hernán Cortés llega a las costas de México con poco más de 500 hombres."],
+                  [1519,"1519","Alianza con Tlaxcala","Cortés se alía con los tlaxcaltecas, enemigos tradicionales de los aztecas."],
+                  [1519,"nov. 1519","Encuentro con Moctezuma","Los españoles entran pacíficamente en Tenochtitlan y son recibidos por el emperador azteca."],
+                  [1520,"junio 1520","Noche Triste","Los aztecas expulsan a los españoles de la ciudad, que sufren graves pérdidas."],
+                  [1520,"1520","Epidemia de viruela","Una enfermedad traída de Europa diezma a la población indígena y debilita la resistencia azteca."],
+                  [1521,"mayo-agosto 1521","Sitio de Tenochtitlan","Cortés asedia la capital azteca durante meses hasta rendirla."],
+                  [1521,"13 agosto 1521","Caída de Tenochtitlan","Se rinde Cuauhtémoc, último emperador azteca: fin del imperio."]
+                ]
+              } },
+            { y:1533, yl:"1533", t:"Caída del Imperio inca", d:"Francisco Pizarro conquista el imperio inca.",
+              detail:{
+                range:"1527 – 1572",
+                blurb:"Aprovechando una guerra civil interna, un pequeño grupo de españoles al mando de Pizarro derriba el mayor imperio de la América precolombina.",
+                events:[
+                  [1527,"1527-1532","Guerra civil inca","Atahualpa y Huáscar se disputan el trono tras la muerte de su padre, debilitando el imperio."],
+                  [1532,"nov. 1532","Captura de Atahualpa","Pizarro captura al emperador inca en Cajamarca, en una emboscada."],
+                  [1533,"julio 1533","Ejecución de Atahualpa","Los españoles lo ejecutan pese a haber recibido su rescate en oro y plata."],
+                  [1533,"nov. 1533","Toma de Cuzco","Los españoles ocupan la capital del imperio inca."],
+                  [1536,"1536","Rebelión de Manco Inca","Un emperador títere se subleva y asedia Cuzco sin éxito."],
+                  [1572,"1572","Caída de Vilcabamba","Ejecución de Túpac Amaru, último foco de resistencia inca."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "reforma-guerras-religion",
+          name: "Reforma y Guerras de Religión",
+          range: "1517 – 1648",
+          events: [
+            { y:1517, yl:"1517", t:"Reforma protestante", d:"Martín Lutero publica sus 95 tesis contra la Iglesia católica.",
+              detail:{
+                range:"1517 – 1555",
+                blurb:"La crítica de Lutero a la Iglesia católica rompe la unidad religiosa de Europa occidental en apenas una generación.",
+                events:[
+                  [1517,"1517","95 tesis de Lutero","Cuestiona la venta de indulgencias y el papel de la jerarquía eclesiástica."],
+                  [1521,"1521","Dieta de Worms","Carlos V declara hereje a Lutero, que se refugia bajo la protección de un príncipe alemán."],
+                  [1534,"1534","Cisma anglicano","Enrique VIII rompe con Roma y se proclama cabeza de la Iglesia de Inglaterra."],
+                  [1536,"1536","Calvino y la Reforma en Ginebra","Juan Calvino desarrolla una segunda gran rama del protestantismo."],
+                  [1545,"1545-1563","Concilio de Trento","La Iglesia católica organiza la Contrarreforma frente al avance protestante."],
+                  [1555,"1555","Paz de Augsburgo","Cada príncipe alemán puede imponer su religión en su territorio."]
+                ]
+              } },
+            [1588, "1588", "Derrota de la Armada Invencible", "La flota española es derrotada frente a Inglaterra."],
+            { y:1618, yl:"1618-1648", t:"Guerra de los Treinta Años", d:"Conflicto religioso y político que asola Europa central.",
+              detail:{
+                range:"1618 – 1648",
+                blurb:"Lo que empieza como un conflicto religioso en Bohemia acaba convirtiéndose en la gran guerra continental europea del siglo XVII.",
+                events:[
+                  [1618,"1618","Defenestración de Praga","Nobles protestantes bohemios inician la revuelta contra los Habsburgo."],
+                  [1625,"1625-1629","Fase danesa","Dinamarca interviene sin éxito en apoyo de los protestantes alemanes."],
+                  [1630,"1630-1635","Fase sueca","Suecia, con Gustavo Adolfo, entra en guerra a favor del bando protestante."],
+                  [1635,"1635-1648","Fase franco-sueca","Francia entra en guerra contra los Habsburgo pese a ser católica, por razones de Estado."],
+                  [1648,"1648","Paz de Westfalia","Pone fin a la guerra y sienta las bases del sistema de estados europeos moderno."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "absolutismo",
+          name: "Absolutismo y Monarquías",
+          range: "1642 – 1715",
+          events: [
+            { y:1642, yl:"1642-1651", t:"Guerra Civil inglesa", d:"Enfrenta a monarquía y Parlamento en Inglaterra.",
+              detail:{
+                range:"1642 – 1660",
+                blurb:"El enfrentamiento entre el rey y el Parlamento desemboca, por primera vez en Europa, en la ejecución de un monarca.",
+                events:[
+                  [1642,"1642","Estalla la guerra civil","El Parlamento se enfrenta militarmente a Carlos I."],
+                  [1649,"1649","Ejecución de Carlos I","El rey es decapitado; Inglaterra se convierte en república."],
+                  [1653,"1653","Cromwell, Lord Protector","Oliver Cromwell gobierna Inglaterra con poderes casi absolutos."],
+                  [1660,"1660","Restauración de la monarquía","Carlos II regresa al trono tras la muerte de Cromwell."]
+                ]
+              } },
+            [1687, "1687", "Newton y la Revolución Científica", "Newton publica los Principia Mathematica."],
+            [1688, "1688", "Revolución Gloriosa", "Se refuerza la monarquía parlamentaria en Inglaterra."]
+          ]
+        },
+        {
+          id: "ilustracion-revoluciones",
+          name: "Ilustración y Revoluciones Atlánticas",
+          range: "1751 – 1789",
+          events: [
+            [1690, "1690", "Locke y el liberalismo político", "Sienta en 'Dos tratados sobre el gobierno civil' las bases filosóficas del liberalismo."],
+            [1748, "1748", "Montesquieu y la separación de poderes", "'El espíritu de las leyes' formula la teoría de la división de poderes del Estado."],
+            [1751, "1751-1772", "La Enciclopedia", "Diderot y d'Alembert publican la gran obra de la Ilustración francesa."],
+            { y:1776, yl:"1776", t:"Independencia de Estados Unidos", d:"Las Trece Colonias se declaran independientes de Gran Bretaña.",
+              detail:{
+                range:"1765 – 1787",
+                blurb:"De los primeros impuestos impopulares a la primera constitución escrita moderna: nace la primera gran república del mundo contemporáneo.",
+                events:[
+                  [1765,"1765","Ley del Timbre","El primer gran impuesto británico sobre las colonias despierta el rechazo colonial."],
+                  [1773,"1773","Motín del Té de Boston","Los colonos arrojan al mar un cargamento de té en protesta por los impuestos."],
+                  [1775,"1775","Estalla la guerra","Comienzan los enfrentamientos armados contra el Reino Unido."],
+                  [1776,"4 julio 1776","Declaración de Independencia","Las Trece Colonias proclaman su independencia."],
+                  [1777,"1777","Batalla de Saratoga","Victoria decisiva que atrae la ayuda francesa a la causa independentista."],
+                  [1781,"1781","Batalla de Yorktown","La rendición británica sella la victoria de las colonias."],
+                  [1783,"1783","Tratado de Versalles","Gran Bretaña reconoce oficialmente la independencia de Estados Unidos."],
+                  [1787,"1787","Constitución de los Estados Unidos","Se redacta la primera constitución escrita de la era moderna."]
+                ]
+              } },
+            [1789, "1789", "Fin de la Edad Moderna", "Estalla la Revolución Francesa."]
+          ]
+        }
       ]
     },
     contemporanea: {
       range: "1789 – hoy",
       blurb: "Revoluciones, industrialización, guerras mundiales y globalización: el mundo se transforma a un ritmo acelerado.",
-      events: [
-        [1789, "1789", "Revolución Francesa", "Cae el Antiguo Régimen en Francia."],
-        [1804, "1804", "Napoleón, emperador", "Napoleón Bonaparte se corona emperador de los franceses."],
-        [1815, "1815", "Waterloo y Congreso de Viena", "Derrota final de Napoleón y reordenación de Europa."],
-        [1830, "1830-1840", "Revolución Industrial", "Se extiende por Europa la industrialización iniciada en Gran Bretaña."],
-        [1848, "1848", "Primaveras de los pueblos", "Oleada de revoluciones liberales y nacionalistas recorre Europa."],
-        [1861, "1861-1865", "Guerra de Secesión estadounidense", "Concluye con la abolición de la esclavitud en EE. UU."],
-        [1871, "1871", "Unificación de Alemania e Italia", "Ambos países completan su unidad nacional."],
-        [1914, "1914-1918", "Primera Guerra Mundial", "Enfrenta a las grandes potencias europeas."],
-        [1917, "1917", "Revolución Rusa", "Los bolcheviques toman el poder e instauran el primer estado comunista."],
-        [1929, "1929", "Crack del 29", "El crash bursátil desata la Gran Depresión mundial."],
-        [1939, "1939-1945", "Segunda Guerra Mundial", "El conflicto más mortífero de la historia."],
-        [1945, "1945", "Fundación de la ONU", "Se crea para preservar la paz internacional."],
-        [1947, "1947-1991", "Guerra Fría", "Enfrentamiento ideológico entre EE. UU. y la URSS."],
-        [1957, "1957", "Tratado de Roma", "Nace la Comunidad Económica Europea, origen de la UE."],
-        [1969, "1969", "Llegada a la Luna", "El Apolo 11 lleva al ser humano a la Luna."],
-        [1989, "1989", "Caída del Muro de Berlín", "Símbolo del fin de la Guerra Fría."],
-        [1991, "1991", "Disolución de la URSS", "Se desintegra la Unión Soviética."],
-        [2001, "2001", "Atentados del 11-S", "Ataques terroristas en Nueva York y Washington."],
-        [2008, "2008", "Crisis financiera global", "Una crisis bancaria internacional golpea la economía mundial."],
-        [2020, "2020", "Pandemia de COVID-19", "Una pandemia global paraliza gran parte del planeta."]
+      subetapas: [
+        {
+          id: "revoluciones-restauracion",
+          name: "Revoluciones burguesas y Restauración",
+          range: "1789 – 1848",
+          events: [
+            { y:1789, yl:"1789", t:"Revolución Francesa", d:"Cae el Antiguo Régimen en Francia.",
+              detail:{
+                range:"1789 – 1799",
+                blurb:"De los Estados Generales al golpe de Napoleón: la monarquía absoluta cae y Francia ensaya distintas fórmulas revolucionarias.",
+                events:[
+                  [1789,"mayo 1789","Estados Generales","Luis XVI convoca a los tres estamentos ante la crisis financiera del reino."],
+                  [1789,"14 julio 1789","Toma de la Bastilla","El pueblo de París asalta la fortaleza-prisión: estalla la Revolución."],
+                  [1789,"agosto 1789","Abolición del feudalismo y Declaración de Derechos","La Asamblea suprime los privilegios y proclama los derechos del hombre y del ciudadano."],
+                  [1791,"1791","Constitución moderada","Francia se convierte en una monarquía constitucional."],
+                  [1792,"1792","Guerra a las potencias","La Asamblea declara la guerra a Austria y Prusia, temerosas de la Revolución."],
+                  [1793,"1793","Ejecución de Luis XVI y el Terror","Se proclama la Constitución democrática y comienza el régimen del Terror jacobino."],
+                  [1795,"1795","Constitución moderada del Directorio","Un nuevo texto, más conservador, pone fin al Terror."],
+                  [1799,"1799","Golpe de Estado de Napoleón","El 18 de Brumario, Napoleón toma el poder e inicia el Consulado."]
+                ]
+              } },
+            { y:1804, yl:"1804", t:"Napoleón, emperador", d:"Napoleón Bonaparte se corona emperador de los franceses.",
+              detail:{
+                range:"1799 – 1815",
+                blurb:"De cónsul a emperador: Napoleón reorganiza Francia y Europa hasta su derrota final.",
+                events:[
+                  [1802,"1802","Napoleón, cónsul vitalicio","Consolida su poder personal tras el golpe de 1799."],
+                  [1804,"1804","Código Civil y coronación imperial","Se promulga el Código Civil napoleónico y Napoleón se corona emperador."],
+                  [1805,"dic. 1805","Batalla de Austerlitz","Una de las grandes victorias militares de Napoleón, sobre Austria y Rusia."],
+                  [1808,"1808","Invasión de España","Las tropas francesas ocupan la Península: comienza la Guerra de la Independencia."],
+                  [1812,"1812","Campaña de Rusia","La invasión de Rusia termina en catástrofe para el Gran Ejército napoleónico."],
+                  [1814,"marzo 1814","Toma de París","Las potencias aliadas entran en la capital francesa."],
+                  [1814,"abril 1814","Restablecimiento de los Borbones","Luis XVIII regresa al trono francés."],
+                  [1814,"sept. 1814","Apertura del Congreso de Viena","Las potencias europeas se reúnen para reorganizar el continente."],
+                  [1815,"marzo 1815","Los Cien Días","Napoleón regresa del exilio y recupera brevemente el poder."],
+                  [1815,"junio 1815","Batalla de Waterloo","Derrota definitiva de Napoleón ante británicos y prusianos."],
+                  [1815,"sept. 1815","Santa Alianza","Las potencias europeas pactan defender el absolutismo y el orden restaurado."]
+                ]
+              } },
+            { y:1830, yl:"1830-1840", t:"Revolución Industrial", d:"Se extiende por Europa la industrialización iniciada en Gran Bretaña.",
+              detail:{
+                range:"1733 – 1856",
+                blurb:"De la lanzadera volante al acero barato: Gran Bretaña inaugura la primera industrialización, que luego se extiende por Europa.",
+                events:[
+                  [1733,"1733","Lanzadera volante de Kay","Agiliza el tejido manual e impulsa la mecanización textil."],
+                  [1764,"1764","Spinning Jenny","James Hargreaves inventa una hiladora capaz de hilar varios husos a la vez."],
+                  [1769,"1769","Máquina de vapor de Watt","James Watt perfecciona la máquina de vapor, motor de la industrialización."],
+                  [1779,"1779","Telar mecánico de Crompton","La 'mule' combina las ventajas de los hiladores anteriores."],
+                  [1785,"1785","Telar mecánico de Cartwright","Se mecaniza también el tejido, no solo el hilado."],
+                  [1801,"1801","Pila eléctrica de Volta","Sienta las bases del uso futuro de la electricidad."],
+                  [1807,"1807","Primer barco de vapor","Robert Fulton bota el Clermont, pionero de la navegación a vapor."],
+                  [1824,"1824","Segadora mecánica","La mecanización agrícola acompaña a la industrial."],
+                  [1830,"1830","Primera línea de ferrocarril","Se inaugura la línea Liverpool-Manchester, primer ferrocarril interurbano."],
+                  [1833,"1833","Límites al trabajo infantil","El Parlamento británico regula por primera vez el trabajo de los niños en las fábricas."],
+                  [1856,"1856","Convertidor Bessemer","Permite fabricar acero barato a gran escala."]
+                ]
+              } },
+            { y:1848, yl:"1848", t:"Primaveras de los pueblos", d:"Oleada de revoluciones liberales y nacionalistas recorre Europa.",
+              detail:{
+                range:"1846 – 1849",
+                blurb:"Una oleada revolucionaria liberal y nacionalista recorre Europa reclamando constituciones y la unidad nacional.",
+                events:[
+                  [1846,"1846","Crisis agrícola e industrial","Las malas cosechas y la crisis económica alimentan el descontento social."],
+                  [1848,"febrero 1848","Revolución de Febrero en París","Cae Luis Felipe de Orleans y se proclama la Segunda República francesa."],
+                  [1848,"marzo 1848","Revolución de Marzo en Viena y Berlín","Cae Metternich en Austria; estalla la revuelta en Prusia."],
+                  [1848,"1848","Manifiesto Comunista","Marx y Engels publican su análisis de la lucha de clases en plena efervescencia revolucionaria."],
+                  [1848,"mayo 1848","Parlamento de Frankfurt","Representantes alemanes debaten la unidad nacional bajo un régimen liberal."],
+                  [1849,"1849","Restauración del orden","Las potencias conservadoras sofocan las revueltas en toda Europa."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "nacionalismos-imperialismo",
+          name: "Nacionalismos e Imperialismo",
+          range: "1848 – 1914",
+          events: [
+            { y:1861, yl:"1861-1865", t:"Guerra de Secesión estadounidense", d:"Concluye con la abolición de la esclavitud en EE. UU.",
+              detail:{
+                range:"1860 – 1865",
+                blurb:"La disputa sobre la esclavitud y los derechos de los estados desemboca en el conflicto más sangriento de la historia de EE. UU.",
+                events:[
+                  [1860,"1860","Elección de Lincoln","La victoria del republicano Abraham Lincoln precipita la secesión sureña."],
+                  [1861,"febrero 1861","Formación de los Estados Confederados","Once estados esclavistas del Sur se separan de la Unión."],
+                  [1861,"abril 1861","Ataque a Fort Sumter","Comienza la guerra entre la Unión y la Confederación."],
+                  [1863,"enero 1863","Proclama de Emancipación","Lincoln declara libres a los esclavos de los estados rebeldes."],
+                  [1863,"julio 1863","Batalla de Gettysburg","Punto de inflexión militar a favor de la Unión."],
+                  [1865,"abril 1865","Rendición en Appomattox","El general confederado Lee se rinde: fin de la guerra."],
+                  [1865,"abril 1865","Asesinato de Lincoln","John Wilkes Booth asesina al presidente días después del final de la guerra."]
+                ]
+              } },
+            { y:1870, yl:"1870-1914", t:"Segunda Revolución Industrial", d:"Electricidad, petróleo y nuevas industrias transforman la economía mundial.",
+              detail:{
+                range:"1859 – 1914",
+                blurb:"Nuevas fuentes de energía y avances técnicos impulsan una segunda oleada industrializadora, liderada ahora también por Alemania y EE. UU.",
+                events:[
+                  [1859,"1859","Primeros pozos de petróleo","Se perfora el primer pozo petrolífero comercial en Pensilvania."],
+                  [1867,"1867","Invención de la dinamita","Alfred Nobel patenta un explosivo seguro de transportar."],
+                  [1876,"1876","Invención del teléfono","Alexander Graham Bell patenta el primer teléfono funcional."],
+                  [1879,"1879","Bombilla incandescente","Edison desarrolla una bombilla eléctrica duradera y comercial."],
+                  [1864,"1864","Primera Internacional (AIT)","Marx impulsa la primera organización obrera internacional."],
+                  [1885,"1885","Primer automóvil con motor de gasolina","Karl Benz patenta el primer automóvil práctico."],
+                  [1889,"1889","Segunda Internacional","Coordina a los partidos socialistas y sindicatos de todo el mundo."],
+                  [1903,"1903","Primer vuelo de los hermanos Wright","Se realiza el primer vuelo controlado de un aparato más pesado que el aire."],
+                  [1908,"1908","Ford T y producción en serie","Henry Ford introduce la cadena de montaje para el automóvil."],
+                  [1914,"1914","Apertura del Canal de Panamá","Une los océanos Atlántico y Pacífico, clave para el comercio mundial."]
+                ]
+              } },
+            { y:1871, yl:"1871", t:"Unificación de Alemania e Italia", d:"Ambos países completan su unidad nacional.",
+              detail:{
+                range:"1848 – 1871",
+                blurb:"Dos procesos paralelos de construcción nacional en el centro y el sur de Europa.",
+                events:[
+                  [1848,"1848-1849","Zollverein y Parlamento de Frankfurt","La unión aduanera alemana y el fallido Parlamento de Frankfurt preparan el camino hacia la unidad."],
+                  [1852,"1852","Cavour, jefe de gobierno del Piamonte","Impulsa la unificación italiana desde el reino de Piamonte-Cerdeña."],
+                  [1859,"1859-1860","Anexiones de Lombardía, Toscana, Parma y Módena","El Piamonte incorpora los primeros territorios italianos."],
+                  [1861,"1861","Víctor Manuel II, rey de Italia","Se proclama el Reino de Italia."],
+                  [1862,"1862","Bismarck, primer ministro de Prusia","Inicia su política de «sangre y hierro» para unificar Alemania."],
+                  [1864,"1864-1870","Guerras con Dinamarca, Austria y Francia","Prusia derrota sucesivamente a sus vecinos y arrastra consigo a los estados alemanes."],
+                  [1866,"1866","Incorporación del Véneto","Italia suma el Véneto tras la guerra austro-prusiana."],
+                  [1870,"1870","Roma, capital de Italia","Roma se incorpora al Reino de Italia, completando la unidad."],
+                  [1871,"1871","Segundo Reich alemán","Guillermo I es proclamado emperador en Versalles: nace el Imperio alemán."]
+                ]
+              } },
+            { y:1885, yl:"1880-1914", t:"Apogeo del Imperialismo", d:"Las potencias europeas se reparten África y Asia en busca de materias primas, mercados y prestigio.",
+              detail:{
+                range:"1855 – 1905",
+                blurb:"De las exploraciones de Livingstone al reparto colonial de África y Asia entre las potencias europeas.",
+                events:[
+                  [1830,"1830","Ocupación francesa de Argelia","Francia inicia la colonización del norte de África."],
+                  [1855,"1855","Cataratas Victoria","David Livingstone explora el curso del Zambeze en África central."],
+                  [1869,"1869","Apertura del Canal de Suez","Facilita enormemente el acceso europeo a Asia."],
+                  [1877,"1877","Reina Victoria, emperatriz de la India","El Reino Unido consolida su dominio sobre el subcontinente indio."],
+                  [1885,"1885","Conferencia de Berlín","Las potencias europeas fijan las reglas del reparto colonial de África."],
+                  [1898,"1898","Guerra España-EE. UU.","Estados Unidos emerge como potencia colonial en el Caribe y el Pacífico."],
+                  [1899,"1899-1902","Guerra de los Bóers","Gran Bretaña se anexiona las repúblicas bóer de Sudáfrica."],
+                  [1905,"1905","Guerra ruso-japonesa","Japón derrota a Rusia y se confirma como potencia imperialista."],
+                  [1908,"1908","Cesión del Congo a Bélgica","El Estado Libre del Congo, propiedad personal de Leopoldo II, pasa a ser colonia belga."],
+                  [1910,"1910","Anexión japonesa de Corea","Japón se consolida como potencia imperialista en Asia oriental."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "guerras-mundiales",
+          name: "Guerras Mundiales y Entreguerras",
+          range: "1914 – 1945",
+          events: [
+            { y:1914, yl:"1914-1918", t:"Primera Guerra Mundial", d:"Enfrenta a las grandes potencias europeas.",
+              detail:{
+                range:"1914 – 1919",
+                blurb:"De un atentado en Sarajevo a un conflicto mundial de trincheras y millones de muertos.",
+                fases:[
+                  { name:"Guerra de Movimientos", range:"1914", events:[
+                    [1914,"28 junio 1914","Atentado de Sarajevo","Un nacionalista serbio asesina al archiduque Francisco Fernando."],
+                    [1914,"agosto 1914","Estalla la guerra","Las alianzas europeas arrastran al continente al conflicto."],
+                    [1914,"septiembre 1914","Batalla del Marne","La contraofensiva francesa frena el avance alemán sobre París."],
+                    [1914,"sept. 1914","Batalla de los Lagos Masurianos","Alemania derrota a Rusia en el frente oriental."]
+                  ]},
+                  { name:"Guerra de Trincheras", range:"1915 – 1917", events:[
+                    [1915,"abril 1915","Batalla de Galípoli","Fallido desembarco aliado en los Dardanelos contra el Imperio Otomano."],
+                    [1915,"mayo 1915","Italia entra en la guerra","Abandona la Triple Alianza y se une al bando aliado."],
+                    [1916,"febrero-dic. 1916","Batalla de Verdún","Uno de los enfrentamientos más largos y mortíferos de la guerra."],
+                    [1916,"julio-nov. 1916","Batalla del Somme","Ofensiva británica y francesa con enormes bajas y escaso avance."],
+                    [1917,"abril 1917","Entrada de EE. UU. en la guerra","El hundimiento de barcos por submarinos alemanes precipita la intervención estadounidense."]
+                  ]},
+                  { name:"Final de la Guerra", range:"1917 – 1919", events:[
+                    [1918,"marzo 1918","Rusia abandona la guerra","La Rusia bolchevique firma el Tratado de Brest-Litovsk."],
+                    [1918,"11 nov. 1918","Armisticio de Rethondes","Alemania firma el alto el fuego: fin de la guerra."],
+                    [1919,"junio 1919","Tratado de Versalles","Se imponen duras condiciones a Alemania y nace la Sociedad de Naciones."]
+                  ]}
+                ]
+              } },
+            { y:1917, yl:"1917", t:"Revolución Rusa", d:"Los bolcheviques toman el poder e instauran el primer estado comunista.",
+              detail:{
+                range:"1917 – 1941",
+                blurb:"Del hundimiento del zarismo a la consolidación del estalinismo: la construcción del primer estado comunista.",
+                fases:[
+                  { name:"Fin del Zarismo", range:"1905 – 1917", events:[
+                    [1905,"enero 1905","Domingo Sangriento","La represión de una manifestación pacífica en San Petersburgo desata la Revolución de 1905."],
+                    [1917,"febrero 1917","Revolución de Febrero","Abdica el zar Nicolás II y se forma un gobierno provisional."]
+                  ]},
+                  { name:"Revolución y Guerra Civil", range:"1917 – 1922", events:[
+                    [1917,"octubre 1917","Revolución bolchevique","Lenin y los bolcheviques toman el poder en Petrogrado."],
+                    [1918,"marzo 1918","Tratado de Brest-Litovsk","Rusia firma la paz por separado con Alemania."],
+                    [1918,"1918-1920","Guerra Civil rusa","Los bolcheviques ('rojos') derrotan a los ejércitos contrarrevolucionarios ('blancos')."],
+                    [1920,"1920","Guerra polaco-soviética","La Rusia bolchevique fracasa en su intento de expandir la revolución hacia Polonia."],
+                    [1922,"dic. 1922","Nacimiento de la URSS","Se constituye formalmente la Unión de Repúblicas Socialistas Soviéticas."]
+                  ]},
+                  { name:"La URSS de Stalin", range:"1924 – 1941", events:[
+                    [1924,"enero 1924","Muerte de Lenin","Comienza la pugna por el poder que acabará ganando Stalin."],
+                    [1929,"1929","Inicio de la colectivización","Stalin fuerza la colectivización agrícola con el primer Plan Quinquenal."],
+                    [1936,"1936-1938","Grandes Purgas","Los procesos de Moscú eliminan a la vieja guardia bolchevique."],
+                    [1939,"agosto 1939","Pacto germano-soviético","URSS y Alemania firman un pacto de no agresión que Hitler romperá en 1941."],
+                    [1940,"agosto 1940","Asesinato de Trotski","Un agente soviético asesina en México al gran rival de Stalin en el exilio."]
+                  ]}
+                ]
+              } },
+            { y:1929, yl:"1929", t:"Crack del 29", d:"El crash bursátil desata la Gran Depresión mundial.",
+              detail:{
+                range:"1929 – 1939",
+                blurb:"Del Jueves Negro a la Segunda Guerra Mundial: la crisis económica sacude Estados Unidos y arrastra al resto del planeta.",
+                fases:[
+                  { name:"El Crack y la Gran Depresión", range:"1929 – 1932", events:[
+                    [1929,"oct. 1929","Jueves Negro","El desplome de la bolsa de Nueva York inicia la Gran Depresión."],
+                    [1930,"1930","Primera ola de quiebras bancarias","El pánico financiero se extiende por EE. UU."],
+                    [1931,"1931","Gran Bretaña abandona el patrón oro","La crisis financiera se globaliza."],
+                    [1932,"1932","Tarifa Hawley-Smoot y tercera ola de quiebras","El proteccionismo agrava la recesión mundial."]
+                  ]},
+                  { name:"El New Deal en Estados Unidos", range:"1933 – 1936", events:[
+                    [1933,"1933","New Deal","Roosevelt lanza su programa de recuperación económica en EE. UU."],
+                    [1935,"1935","Segundo New Deal","Roosevelt refuerza las políticas sociales y de recuperación."],
+                    [1936,"1936","Ley de Seguridad Social","EE. UU. amplía su red de protección social."]
+                  ]},
+                  { name:"Ascenso del Nazismo en Alemania", range:"1933 – 1938", events:[
+                    [1933,"enero 1933","Hitler, canciller de Alemania","Es nombrado jefe de gobierno con el apoyo de la derecha conservadora."],
+                    [1933,"febrero 1933","Incendio del Reichstag","Sirve de pretexto para suspender las libertades civiles en Alemania."],
+                    [1933,"marzo 1933","Ley Habilitante","Otorga a Hitler poderes plenos para legislar sin el Parlamento."],
+                    [1934,"junio 1934","Noche de los cuchillos largos","Hitler elimina a sus rivales internos y consolida su control absoluto del partido nazi."],
+                    [1935,"1935","Leyes de Núremberg","Privan de derechos y ciudadanía a la población judía alemana."],
+                    [1938,"nov. 1938","Noche de los cristales rotos","Pogromo organizado contra la población judía en toda Alemania."]
+                  ]},
+                  { name:"Camino a la Guerra", range:"1938 – 1939", events:[
+                    [1938,"marzo 1938","Alemania invade Checoslovaquia","El expansionismo nazi se acelera en vísperas de la guerra."],
+                    [1939,"sept. 1939","Alemania invade Polonia","Estalla la Segunda Guerra Mundial."]
+                  ]}
+                ]
+              } },
+            { y:1939, yl:"1939-1945", t:"Segunda Guerra Mundial", d:"El conflicto más mortífero de la historia.",
+              detail:{
+                range:"1936 – 1945",
+                blurb:"Del ensayo general de la Guerra Civil española a la derrota del nazismo: el conflicto más devastador de la historia.",
+                fases:[
+                  { name:"Precedentes", range:"1931 – 1939", events:[
+                    [1931,"1931","Japón invade Manchuria","Uno de los primeros actos expansionistas que anuncian el camino hacia la guerra."],
+                    [1935,"1935","Italia invade Etiopía","Mussolini busca expandir su imperio colonial en África oriental."],
+                    [1936,"1936","Eje Berlín-Roma","Alemania e Italia sellan una alianza que se consolidará durante la guerra."],
+                    [1936,"1936-1939","Guerra Civil española","Sirve como banco de pruebas de las nuevas armas alemanas e italianas."],
+                    [1938,"marzo 1938","Anschluss","Alemania se anexiona Austria."],
+                    [1938,"sept. 1938","Conferencia de Múnich","Francia y Reino Unido ceden ante Hitler para evitar la guerra."]
+                  ]},
+                  { name:"Guerra Relámpago", range:"1939 – 1941", events:[
+                    [1939,"sept. 1939","Invasión de Polonia","Alemania invade Polonia: estalla la Segunda Guerra Mundial."],
+                    [1940,"junio 1940","Caída de Francia","La Wehrmacht ocupa París tras una campaña relámpago."],
+                    [1941,"junio 1941","Invasión de la URSS","La Operación Barbarroja rompe el pacto germano-soviético."],
+                    [1941,"dic. 1941","Ataque a Pearl Harbor","Japón ataca la base naval estadounidense: EE. UU. entra en guerra."]
+                  ]},
+                  { name:"Punto de Inflexión", range:"1942", events:[
+                    [1942,"1942-1943","Batalla de Stalingrado","La derrota alemana marca el punto de inflexión en el frente del Este."],
+                    [1942,"junio 1942","Batalla de Midway","Victoria decisiva de EE. UU. sobre Japón que cambia el rumbo de la guerra del Pacífico."],
+                    [1942,"oct.-nov. 1942","Batalla de El Alamein","Detiene el avance del Afrika Korps alemán en el norte de África."],
+                    [1942,"agosto 1942","Batalla de Guadalcanal","Primera gran ofensiva estadounidense contra Japón en el Pacífico."]
+                  ]},
+                  { name:"Victoria Aliada", range:"1944 – 1945", events:[
+                    [1944,"dic. 1944","Batalla de las Ardenas","Última gran ofensiva alemana en el frente occidental."],
+                    [1944,"6 junio 1944","Desembarco de Normandía","Los aliados abren el frente occidental en Francia."],
+                    [1945,"abril 1945","Caída de Berlín y suicidio de Hitler","El Ejército Rojo toma Berlín; Hitler se suicida en su búnker."],
+                    [1945,"agosto 1945","Bombas atómicas sobre Hiroshima y Nagasaki","EE. UU. lanza las primeras bombas atómicas usadas en una guerra."],
+                    [1945,"sept. 1945","Rendición de Japón","Termina la Segunda Guerra Mundial."]
+                  ]}
+                ]
+              } }
+          ]
+        },
+        {
+          id: "guerra-fria",
+          name: "Guerra Fría y Descolonización",
+          range: "1945 – 1991",
+          events: [
+            { y:1945, yl:"1945", t:"Fundación de la ONU", d:"Se crea para preservar la paz internacional.",
+              detail:{
+                range:"1944 – 1948",
+                blurb:"De la Conferencia de Dumbarton Oaks a la Declaración Universal de los Derechos Humanos.",
+                events:[
+                  [1944,"1944","Conferencia de Dumbarton Oaks","Las potencias aliadas diseñan el esbozo de la futura organización."],
+                  [1945,"abril 1945","Conferencia de San Francisco","Cincuenta países redactan la Carta de las Naciones Unidas."],
+                  [1945,"24 oct. 1945","Entrada en vigor de la Carta","Nace oficialmente la ONU."],
+                  [1946,"1946","Primera Asamblea General","Se celebra en Londres la primera reunión de la organización."],
+                  [1948,"1948","Declaración Universal de los Derechos Humanos","La Asamblea General la proclama como ideal común de la humanidad."]
+                ]
+              } },
+            { y:1947, yl:"1947-1975", t:"Descolonización de Asia y África", d:"Las antiguas colonias asiáticas y africanas conquistan su independencia tras la Segunda Guerra Mundial.",
+              detail:{
+                range:"1945 – 1991",
+                blurb:"De la independencia de la India al fin del apartheid: el mapa colonial desaparece en apenas cuatro décadas.",
+                events:[
+                  [1947,"1947","Independencia de la India","Reino Unido se retira del subcontinente indio, que se divide en India y Pakistán."],
+                  [1948,"1948","Independencia de Israel","Se proclama el Estado de Israel tras la retirada británica de Palestina."],
+                  [1949,"1949","Independencia de Indonesia","Termina el dominio colonial neerlandés."],
+                  [1954,"1954","Fin de la guerra de Indochina","Francia se retira; Vietnam queda dividido."],
+                  [1957,"1957","Independencia de Ghana","Primera colonia africana subsahariana en lograr la independencia."],
+                  [1955,"1955","Conferencia de Bandung","Países afroasiáticos recién independizados impulsan el 'Tercer Mundo' no alineado."],
+                  [1956,"1956","Independencia de Túnez y Marruecos","Francia pone fin a sus protectorados norteafricanos."],
+                  [1960,"1960","'Año de África'","Diecisiete colonias africanas, entre ellas Nigeria y el Congo Belga, logran la independencia."],
+                  [1962,"1962","Independencia de Argelia","Termina una larga y violenta guerra colonial contra Francia."],
+                  [1975,"1975","Independencia de Angola y Mozambique","Portugal se retira de sus últimas colonias africanas."],
+                  [1991,"1991","Fin del apartheid en Sudáfrica","Se derogan las leyes de segregación racial, preludio del fin del régimen."]
+                ]
+              } },
+            { y:1947, yl:"1947-1991", t:"Guerra Fría", d:"Enfrentamiento ideológico entre EE. UU. y la URSS.",
+              detail:{
+                range:"1945 – 1991",
+                blurb:"El enfrentamiento ideológico, militar y tecnológico entre EE. UU. y la URSS marca cuatro décadas de tensión mundial.",
+                fases:[
+                  { name:"Hostilidad Abierta", range:"1945 – 1953", events:[
+                    [1947,"1947","Doctrina Truman y Plan Marshall","EE. UU. se compromete a contener el comunismo y financiar la reconstrucción europea."],
+                    [1948,"1948-1949","Bloqueo de Berlín","La URSS bloquea el acceso a Berlín occidental; los aliados responden con un puente aéreo."],
+                    [1949,"1949","Creación de la OTAN","Las potencias occidentales forman una alianza militar defensiva."],
+                    [1950,"1950-1953","Guerra de Corea","Primer gran conflicto armado directo entre los dos bloques."]
+                  ]},
+                  { name:"Coexistencia Pacífica", range:"1953 – 1962", events:[
+                    [1955,"1955","Creación del Pacto de Varsovia","La URSS y sus aliados responden a la OTAN con su propia alianza."],
+                    [1956,"1956","Crisis de Suez","Reino Unido, Francia e Israel invaden Egipto tras la nacionalización del canal por Nasser."],
+                    [1956,"1956","Revuelta de Hungría","La URSS aplasta militarmente un levantamiento contra el régimen comunista."],
+                    [1959,"1959","Revolución cubana","Fidel Castro derroca a Batista e instaura un régimen comunista aliado de la URSS."],
+                    [1960,"1960","Ruptura URSS-China","Las dos grandes potencias comunistas rompen relaciones por sus diferencias ideológicas."],
+                    [1961,"1961","Construcción del Muro de Berlín","Divide físicamente la ciudad y simboliza la partición de Europa."],
+                    [1962,"1962","Crisis de los misiles de Cuba","El mundo roza la guerra nuclear tras el despliegue de misiles soviéticos en Cuba."]
+                  ]},
+                  { name:"Retorno a la Máxima Tensión", range:"1962 – 1973", events:[
+                    [1965,"1965-1975","Guerra de Vietnam","Estados Unidos interviene para frenar el avance comunista en el sudeste asiático."],
+                    [1968,"mayo 1968","Mayo del 68 en Francia","Revueltas estudiantiles y una huelga general sacuden la Francia gaullista."],
+                    [1972,"1972","Tratados SALT I","EE. UU. y la URSS pactan limitar sus arsenales nucleares."],
+                    [1973,"1973","Golpe de Pinochet en Chile","Un golpe militar derroca al presidente socialista Salvador Allende."],
+                    [1973,"1973","Conferencia de Helsinki","Marca el punto álgido de la distensión entre los dos bloques."]
+                  ]},
+                  { name:"Distensión y Final de la Guerra Fría", range:"1973 – 1991", events:[
+                    [1979,"1979","Revolución iraní","El derrocamiento del sha reconfigura el equilibrio de poder en Oriente Próximo."],
+                    [1979,"1979","Invasión soviética de Afganistán","Reabre la tensión tras la etapa de distensión."],
+                    [1985,"1985","Gorbachov y la Perestroika","Impulsa reformas económicas y de apertura política en la URSS."],
+                    [1989,"junio 1989","Protestas de Tiananmen","China reprime duramente las manifestaciones prodemocráticas."],
+                    [1991,"enero-feb. 1991","Guerra del Golfo","Una coalición internacional libera Kuwait de la ocupación iraquí."],
+                    [1991,"1991","Fin de la Guerra Fría","La disolución de la URSS pone fin al enfrentamiento entre los dos bloques."]
+                  ]}
+                ]
+              } },
+            { y:1957, yl:"1948-2007", t:"Construcción de la Unión Europea", d:"De la CECA a la UE de 27 países: la integración europea avanza en oleadas sucesivas.",
+              detail:{
+                range:"1948 – 2007",
+                blurb:"De la cooperación económica de posguerra a una unión política y monetaria de más de veinticinco países.",
+                events:[
+                  [1948,"1948","Congreso de La Haya","Impulsa la idea de una unión política europea tras la guerra."],
+                  [1951,"1951","Tratado de París","Crea la Comunidad Europea del Carbón y del Acero (CECA)."],
+                  [1957,"1957","Tratado de Roma","Crea la Comunidad Económica Europea (CEE) y el EURATOM."],
+                  [1973,"1973","Primera ampliación","Reino Unido, Irlanda y Dinamarca ingresan en la Comunidad Europea."],
+                  [1986,"1986","Ingreso de España y Portugal","La Comunidad Europea llega a doce países."],
+                  [1992,"1992","Tratado de Maastricht","Nace formalmente la Unión Europea."],
+                  [1995,"1995","Ampliación a Austria, Finlandia y Suecia","La UE alcanza los quince miembros."],
+                  [1999,"1999","Nace el euro","Se introduce la moneda única europea."],
+                  [2004,"2004","Gran ampliación al Este","Diez países, muchos del antiguo bloque soviético, ingresan en la UE."],
+                  [2007,"2007","Tratado de Lisboa","Reforma el funcionamiento de una Unión ya de 27 países."]
+                ]
+              } },
+            { y:1969, yl:"1969", t:"Llegada a la Luna", d:"El Apolo 11 lleva al ser humano a la Luna.",
+              detail:{
+                range:"1957 – 1972",
+                blurb:"La carrera espacial entre EE. UU. y la URSS culmina con la llegada del ser humano a la Luna.",
+                events:[
+                  [1957,"1957","Sputnik 1","La URSS lanza el primer satélite artificial, iniciando la carrera espacial."],
+                  [1961,"abril 1961","Gagarin, primer hombre en el espacio","El cosmonauta soviético completa la primera órbita tripulada."],
+                  [1961,"mayo 1961","Kennedy anuncia el objetivo lunar","El presidente de EE. UU. promete llevar un hombre a la Luna antes de que acabe la década."],
+                  [1966,"1966","Primer alunizaje no tripulado","La sonda soviética Luna 9 se posa suavemente en la superficie lunar."],
+                  [1968,"dic. 1968","Apolo 8","Primera misión tripulada en orbitar la Luna."],
+                  [1969,"20 julio 1969","Alunizaje del Apolo 11","Neil Armstrong y Buzz Aldrin caminan por primera vez sobre la Luna."],
+                  [1972,"1972","Última misión Apolo","El Apolo 17 pone fin, de momento, a las misiones tripuladas a la Luna."]
+                ]
+              } },
+            { y:1989, yl:"1989", t:"Caída del Muro de Berlín", d:"Símbolo del fin de la Guerra Fría.",
+              detail:{
+                range:"1989",
+                blurb:"Una oleada de revoluciones pacíficas derriba, en apenas unos meses, los regímenes comunistas de Europa del Este.",
+                events:[
+                  [1989,"febrero 1989","Mesa redonda en Polonia","El sindicato Solidaridad negocia con el régimen comunista una transición pactada."],
+                  [1989,"junio 1989","Elecciones semilibres en Polonia","Solidaridad logra una victoria aplastante."],
+                  [1989,"sept. 1989","Hungría abre su frontera con Austria","Miles de alemanes orientales huyen a Occidente a través de Hungría."],
+                  [1989,"9 nov. 1989","Caída del Muro de Berlín","Los alemanes orientales cruzan libremente a Berlín Occidental."],
+                  [1989,"nov. 1989","Revolución de Terciopelo en Checoslovaquia","Protestas pacíficas ponen fin al régimen comunista."],
+                  [1989,"dic. 1989","Ejecución de Ceaușescu","Rumanía derroca violentamente a su dictador comunista."],
+                  [1990,"oct. 1990","Reunificación alemana","Las dos Alemanias se reunifican tras 45 años de separación."]
+                ]
+              } },
+            { y:1991, yl:"1991", t:"Disolución de la URSS", d:"Se desintegra la Unión Soviética.",
+              detail:{
+                range:"1985 – 1991",
+                blurb:"Las reformas de Gorbachov, pensadas para salvar el sistema soviético, acaban precipitando su desaparición.",
+                events:[
+                  [1985,"1985","Gorbachov, secretario general","Lanza la Perestroika (reestructuración económica) y la Glásnost (apertura informativa)."],
+                  [1989,"1989","Independencia de facto de los satélites","Los países del Pacto de Varsovia abandonan el comunismo uno tras otro."],
+                  [1990,"1990","Las repúblicas bálticas reclaman la independencia","Lituania, Letonia y Estonia inician su separación de la URSS."],
+                  [1991,"agosto 1991","Golpe de Estado fallido","Sectores conservadores intentan derrocar a Gorbachov; Yeltsin lidera la resistencia."],
+                  [1991,"dic. 1991","Acuerdos de Bielovezha","Rusia, Ucrania y Bielorrusia disuelven la URSS y crean la CEI."],
+                  [1991,"25 dic. 1991","Dimisión de Gorbachov","Se arría la bandera soviética del Kremlin: fin oficial de la URSS."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "globalizacion",
+          name: "Mundo Globalizado",
+          range: "1991 – hoy",
+          events: [
+            { y:2001, yl:"2001", t:"Atentados del 11-S", d:"Ataques terroristas en Nueva York y Washington.",
+              detail:{
+                range:"2001 – 2011",
+                blurb:"Los atentados más mortíferos jamás sufridos en suelo estadounidense desencadenan la 'guerra contra el terrorismo'.",
+                events:[
+                  [2001,"11 sept. 2001","Ataques a las Torres Gemelas y el Pentágono","Al Qaeda estrella aviones secuestrados contra objetivos en Nueva York y Washington."],
+                  [2001,"oct. 2001","Invasión de Afganistán","EE. UU. y sus aliados atacan al régimen talibán, que protegía a Al Qaeda."],
+                  [2002,"2002","Creación del Departamento de Seguridad Nacional","EE. UU. reorganiza su seguridad interior tras los atentados."],
+                  [2003,"marzo 2003","Invasión de Irak","EE. UU. y Reino Unido invaden Irak alegando la posesión de armas de destrucción masiva."],
+                  [2011,"mayo 2011","Muerte de Bin Laden","Un comando estadounidense abate al líder de Al Qaeda en Pakistán."]
+                ]
+              } },
+            { y:2008, yl:"2008", t:"Crisis financiera global", d:"Una crisis bancaria internacional golpea la economía mundial.",
+              detail:{
+                range:"2007 – 2012",
+                blurb:"El estallido de la burbuja hipotecaria estadounidense se convierte en la mayor crisis económica desde 1929.",
+                events:[
+                  [2007,"2007","Crisis de las hipotecas subprime","Empiezan a fallar masivamente los créditos hipotecarios de alto riesgo en EE. UU."],
+                  [2008,"sept. 2008","Quiebra de Lehman Brothers","El colapso del banco de inversión desata el pánico financiero mundial."],
+                  [2008,"2008","Rescates bancarios masivos","Los gobiernos inyectan miles de millones para evitar el colapso del sistema financiero."],
+                  [2009,"2009","Recesión global","La economía mundial se contrae por primera vez desde la Segunda Guerra Mundial."],
+                  [2010,"2010","Crisis de la deuda europea","Grecia, Irlanda y Portugal necesitan rescates para evitar la quiebra."],
+                  [2012,"2012","Políticas de austeridad","Muchos gobiernos europeos recortan el gasto público para reducir su déficit."]
+                ]
+              } },
+            { y:2020, yl:"2020", t:"Pandemia de COVID-19", d:"Una pandemia global paraliza gran parte del planeta.",
+              detail:{
+                range:"2019 – 2023",
+                blurb:"Un nuevo coronavirus paraliza el planeta y transforma la vida cotidiana en cuestión de semanas.",
+                events:[
+                  [2019,"dic. 2019","Primeros casos en Wuhan","Se detecta un nuevo coronavirus en la ciudad china de Wuhan."],
+                  [2020,"11 marzo 2020","La OMS declara la pandemia","La organización reconoce oficialmente la propagación mundial del virus."],
+                  [2020,"marzo 2020","Confinamientos masivos","Buena parte del planeta entra en cuarentena para frenar los contagios."],
+                  [2020,"dic. 2020","Primeras vacunas aprobadas","Se autorizan las primeras vacunas de ARN mensajero contra la COVID-19."],
+                  [2021,"2021","Campañas mundiales de vacunación","Comienza la mayor campaña de vacunación de la historia."],
+                  [2023,"mayo 2023","Fin de la emergencia sanitaria internacional","La OMS declara el fin de la emergencia de salud pública."]
+                ]
+              } }
+          ]
+        }
       ]
     }
   },
@@ -444,107 +1364,647 @@ const DATA = {
     prehistoria: {
       range: "c. 1,2 millones de años – s. VI a.C.",
       blurb: "Los yacimientos más antiguos de Europa, el arte rupestre cantábrico y las primeras colonizaciones del Mediterráneo.",
-      events: [
-        [-1200000, "c. 1,2 millones de años", "Atapuerca", "Los yacimientos de Atapuerca (Burgos) conservan algunos de los restos humanos más antiguos de Europa (Homo antecessor)."],
-        [-35000, "c. 35.000 a.C.", "Arte rupestre de Altamira", "Se pintan los bisontes de la cueva de Altamira (Cantabria), declarada Patrimonio de la Humanidad."],
-        [-5000, "c. 5000 a.C.", "Neolítico peninsular", "Llegan la agricultura y la ganadería; se levantan monumentos megalíticos como dólmenes y menhires."],
-        [-3000, "c. 3000 a.C.", "Cultura de Los Millares", "Se desarrolla en Almería una sociedad calcolítica con poblados fortificados."],
-        [-1100, "c. 1100 a.C.", "Llegada de los fenicios", "Los fenicios fundan Gadir (Cádiz), una de las ciudades más antiguas de Occidente."],
-        [-700, "c. 700 a.C.", "Colonización griega", "Los griegos fundan colonias como Emporion (Ampurias) en la costa catalana."],
-        [-600, "c. 600 a.C.", "Tartessos", "Florece en el suroeste peninsular la legendaria civilización de Tartessos."],
-        [-500, "c. 500 a.C.", "Íberos y celtas", "Los íberos (este y sur) y los celtas (interior y norte) organizan la Península en tribus y ciudades-estado."],
-        [-237, "237 a.C.", "Llegada de los cartagineses", "Amílcar Barca desembarca en Iberia e inicia la expansión cartaginesa."]
+      subetapas: [
+        {
+          id: "paleolitico",
+          name: "Paleolítico",
+          range: "c. 1,2 millones – 5000 a.C.",
+          events: [
+            [-1200000, "c. 1,2 millones de años", "Atapuerca", "Los yacimientos de Atapuerca (Burgos) conservan algunos de los restos humanos más antiguos de Europa (Homo antecessor)."],
+            { y:-35000, yl:"c. 35.000 a.C.", t:"Arte rupestre de Altamira", d:"Se pintan los bisontes de la cueva de Altamira (Cantabria), declarada Patrimonio de la Humanidad.",
+              detail:{
+                range:"c. 35.000 a.C. – 1879",
+                blurb:"Del primer arte parietal cantábrico al reconocimiento mundial de Altamira, siglos más tarde, como obra maestra del Paleolítico.",
+                events:[
+                  [-35000,"c. 35.000 a.C.","Primeras pinturas de Altamira","Se realizan los primeros trazos y grabados en la cueva."],
+                  [-15000,"c. 15.000 a.C.","Techo de los bisontes","Se pinta el célebre techo policromo que hizo famosa la cueva."],
+                  [1868,"1868","Descubrimiento de la cueva","Un cazador local encuentra la entrada, cerrada por un desprendimiento milenario."],
+                  [1879,"1879","Hallazgo de las pinturas","Marcelino Sanz de Sautuola y su hija María documentan por primera vez el techo policromo."],
+                  [1902,"1902","Reconocimiento científico","La comunidad científica internacional acepta finalmente la autenticidad paleolítica de las pinturas."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "neolitico-calcolitico",
+          name: "Neolítico y Calcolítico",
+          range: "5000 – 1100 a.C.",
+          events: [
+            [-5000, "c. 5000 a.C.", "Neolítico peninsular", "Llegan la agricultura y la ganadería; se levantan monumentos megalíticos como dólmenes y menhires."],
+            [-3000, "c. 3000 a.C.", "Cultura de Los Millares", "Se desarrolla en Almería una sociedad calcolítica con poblados fortificados."]
+          ]
+        },
+        {
+          id: "pueblos-colonizadores",
+          name: "Pueblos Colonizadores",
+          range: "1100 – 218 a.C.",
+          events: [
+            { y:-1100, yl:"c. 1100 a.C.", t:"Llegada de los fenicios", d:"Los fenicios fundan Gadir (Cádiz), una de las ciudades más antiguas de Occidente.",
+              detail:{
+                range:"c. 1100 – 500 a.C.",
+                blurb:"Fenicios, griegos y cartagineses establecen colonias comerciales en las costas peninsulares, mientras florece la legendaria Tartessos.",
+                events:[
+                  [-1100,"c. siglo IX a.C.","Fundación de Gadir","Los fenicios fundan la actual Cádiz, una de las ciudades más antiguas de Occidente."],
+                  [-800,"c. siglo VIII a.C.","Colonización griega","Los griegos se establecen en el este peninsular, fundando ciudades como Emporion."],
+                  [-700,"c. siglo VII a.C.","Factorías cartaginesas","Cartago funda factorías comerciales en el sureste peninsular."],
+                  [-650,"c. siglo VI a.C.","Esplendor de Tartessos","La legendaria civilización tartésica alcanza su máximo apogeo comercial y cultural."]
+                ]
+              } },
+            [-700, "c. 700 a.C.", "Colonización griega", "Los griegos fundan colonias como Emporion (Ampurias) en la costa catalana."],
+            [-600, "c. 600 a.C.", "Tartessos", "Florece en el suroeste peninsular la legendaria civilización de Tartessos."],
+            [-500, "c. 500 a.C.", "Íberos y celtas", "Los íberos (este y sur) y los celtas (interior y norte) organizan la Península en tribus y ciudades-estado."],
+            [-237, "237 a.C.", "Llegada de los cartagineses", "Amílcar Barca desembarca en Iberia e inicia la expansión cartaginesa."]
+          ]
+        }
       ]
     },
     antigua: {
       range: "218 a.C. – 711 d.C.",
       blurb: "Hispania romana y, tras la caída de Roma, el reino visigodo de Toledo.",
-      events: [
-        [-218, "218 a.C.", "Desembarco romano en Ampurias", "Comienza la conquista romana de Hispania durante la Segunda Guerra Púnica."],
-        [-133, "133 a.C.", "Caída de Numancia", "Tras un largo asedio, la ciudad celtíbera de Numancia cae ante Roma."],
-        [-19, "19 a.C.", "Fin de la conquista romana", "Augusto somete a cántabros y astures: toda Hispania queda bajo dominio romano."],
-        [74, "74", "Edicto de Vespasiano", "Se concede el derecho latino a las ciudades hispanas."],
-        [98, "98", "Trajano, emperador hispano", "Nacido en Itálica (Sevilla), inaugura la época de mayor esplendor de Hispania romana."],
-        [380, "380", "Teodosio y el cristianismo", "El emperador hispano Teodosio I declara el cristianismo religión oficial del Imperio."],
-        [409, "409", "Invasiones germánicas", "Suevos, vándalos y alanos cruzan los Pirineos y se reparten el territorio."],
-        [507, "507", "Reino visigodo de Toledo", "Tras la derrota de Vouillé, los visigodos trasladan su capital a Toledo."],
-        [589, "589", "Conversión de Recaredo", "El rey visigodo abandona el arrianismo y se convierte al catolicismo."],
-        [654, "654", "Liber Iudiciorum", "Se promulga un código legal único para hispanorromanos y visigodos."],
-        [711, "711", "Batalla de Guadalete", "Las tropas musulmanas derrotan al rey Don Rodrigo: fin del reino visigodo."]
+      subetapas: [
+        {
+          id: "hispania-romana",
+          name: "Hispania Romana",
+          range: "218 a.C. – 409 d.C.",
+          events: [
+            { y:-218, yl:"218 a.C.", t:"Desembarco romano en Ampurias", d:"Comienza la conquista romana de Hispania durante la Segunda Guerra Púnica.",
+              detail:{
+                range:"218 – 19 a.C.",
+                blurb:"Casi dos siglos de guerras sucesivas son necesarios para que Roma someta por completo a los pueblos peninsulares.",
+                events:[
+                  [-218,"218 a.C.","Desembarco en Ampurias","Roma inicia la conquista de Hispania aprovechando la Segunda Guerra Púnica contra Cartago."],
+                  [-206,"206 a.C.","Expulsión de los cartagineses","Roma expulsa definitivamente a Cartago de la Península."],
+                  [-155,"155-139 a.C.","Guerras lusitanas","Viriato lidera la resistencia lusitana contra Roma."],
+                  [-133,"133 a.C.","Caída de Numancia","Tras un largo asedio, la ciudad celtíbera cae ante Roma."],
+                  [-19,"19 a.C.","Fin de la conquista","Augusto somete a cántabros y astures: toda Hispania queda bajo dominio romano."]
+                ]
+              } },
+            [-133, "133 a.C.", "Caída de Numancia", "Tras un largo asedio, la ciudad celtíbera de Numancia cae ante Roma."],
+            [-19, "19 a.C.", "Fin de la conquista romana", "Augusto somete a cántabros y astures: toda Hispania queda bajo dominio romano."],
+            [74, "74", "Edicto de Vespasiano", "Se concede el derecho latino a las ciudades hispanas."],
+            [98, "98", "Trajano, emperador hispano", "Nacido en Itálica (Sevilla), inaugura la época de mayor esplendor de Hispania romana."],
+            [380, "380", "Teodosio y el cristianismo", "El emperador hispano Teodosio I declara el cristianismo religión oficial del Imperio."]
+          ]
+        },
+        {
+          id: "reino-visigodo",
+          name: "Reino Visigodo",
+          range: "409 – 711",
+          events: [
+            [409, "409", "Invasiones germánicas", "Suevos, vándalos y alanos cruzan los Pirineos y se reparten el territorio."],
+            { y:507, yl:"507", t:"Reino visigodo de Toledo", d:"Tras la derrota de Vouillé, los visigodos trasladan su capital a Toledo.",
+              detail:{
+                range:"507 – 711",
+                blurb:"Tras perder su reino en la Galia, los visigodos construyen en Hispania una monarquía que unifica el territorio peninsular por primera vez.",
+                events:[
+                  [507,"507","Derrota de Vouillé","Los francos expulsan a los visigodos de la Galia; el reino se repliega a Hispania."],
+                  [554,"554","Enclave bizantino","El Imperio Bizantino ocupa el sureste peninsular durante unas décadas."],
+                  [568,"568-586","Reinado de Leovigildo","Unifica territorialmente la Península e intenta unificar también la religión."],
+                  [589,"589","Conversión de Recaredo","El rey visigodo abandona el arrianismo y se convierte al catolicismo, con el III Concilio de Toledo."],
+                  [654,"654","Liber Iudiciorum","Se promulga un código legal único para hispanorromanos y visigodos."],
+                  [711,"711","Batalla de Guadalete","Las tropas musulmanas derrotan al rey Don Rodrigo: fin del reino visigodo."]
+                ]
+              } },
+            [589, "589", "Conversión de Recaredo", "El rey visigodo abandona el arrianismo y se convierte al catolicismo."],
+            [654, "654", "Liber Iudiciorum", "Se promulga un código legal único para hispanorromanos y visigodos."]
+          ]
+        }
       ]
     },
     media: {
       range: "711 – 1492",
       blurb: "Al-Ándalus, los reinos cristianos del norte y la larga Reconquista peninsular.",
-      events: [
-        [711, "711", "Conquista musulmana", "Los musulmanes conquistan la mayor parte de la Península en pocos años."],
-        [722, "722", "Batalla de Covadonga", "Inicio simbólico de la Reconquista; nace el reino de Asturias."],
-        [756, "756", "Emirato de Córdoba", "Abderramán I funda el emirato independiente de Córdoba."],
-        [929, "929", "Califato de Córdoba", "Abderramán III se proclama califa: apogeo de Al-Ándalus."],
-        [1031, "1031", "Reinos de taifas", "Se disuelve el califato y Al-Ándalus se fragmenta en pequeños reinos."],
-        [1085, "1085", "Toma de Toledo", "Alfonso VI de Castilla conquista la ciudad."],
-        [1094, "1094", "El Cid conquista Valencia", "Rodrigo Díaz de Vivar toma la ciudad de Valencia."],
-        [1137, "1137", "Unión de Aragón y Cataluña", "Se unen dinásticamente la corona de Aragón y el condado de Barcelona."],
-        [1212, "1212", "Batalla de las Navas de Tolosa", "Gran victoria cristiana que abre el paso a la conquista de Andalucía."],
-        [1236, "1236-1248", "Conquista de Córdoba y Sevilla", "Fernando III de Castilla incorpora ambas ciudades."],
-        [1238, "1238", "Reino nazarí de Granada", "Se funda el último reino musulmán peninsular."],
-        [1348, "1348", "Peste Negra en la Península", "La epidemia causa una gran mortandad en los reinos hispánicos."],
-        [1469, "1469", "Matrimonio de los Reyes Católicos", "Se unen las coronas de Castilla y Aragón."],
-        [1478, "1478", "Inquisición española", "Los Reyes Católicos establecen el Tribunal de la Inquisición."],
-        [1492, "1492", "Fin de la Edad Media española", "Conquista de Granada, expulsión de los judíos y llegada de Colón a América."]
+      subetapas: [
+        {
+          id: "al-andalus",
+          name: "Al-Ándalus",
+          range: "711 – 1492",
+          events: [
+            [711, "711", "Conquista musulmana", "Los musulmanes conquistan la mayor parte de la Península en pocos años."],
+            [756, "756", "Emirato de Córdoba", "Abderramán I funda el emirato independiente de Córdoba."],
+            { y:929, yl:"929", t:"Califato de Córdoba", d:"Abderramán III se proclama califa: apogeo de Al-Ándalus.",
+              detail:{
+                range:"711 – 1492",
+                blurb:"Al-Ándalus recorre casi ocho siglos, del emirato dependiente de Damasco al último reino nazarí de Granada.",
+                events:[
+                  [711,"711","Conquista y emirato dependiente","Los musulmanes conquistan la Península; Al-Ándalus depende primero del califato omeya de Damasco."],
+                  [756,"756","Emirato independiente","Abderramán I funda un emirato ya independiente de Damasco, con capital en Córdoba."],
+                  [929,"929","Proclamación del califato","Abderramán III se proclama califa: Al-Ándalus alcanza su máximo esplendor político y cultural."],
+                  [976,"976","Almansor en el poder","El caudillo militar domina el califato y lanza aceifas devastadoras contra los reinos cristianos."],
+                  [1031,"1031","Reinos de taifas","El califato se disuelve en pequeños reinos independientes y rivales entre sí."],
+                  [1086,"1086","Llegada de los almorávides","Un imperio norteafricano interviene para frenar el avance cristiano."],
+                  [1212,"1212","Batalla de las Navas de Tolosa","Gran derrota almohade que abre el paso a la conquista cristiana de Andalucía."],
+                  [1246,"1246","Reino nazarí de Granada","Se funda el último reino musulmán peninsular, tributario de Castilla."],
+                  [1492,"1492","Conquista de Granada","Los Reyes Católicos ponen fin a Al-Ándalus."]
+                ]
+              } },
+            [1031, "1031", "Reinos de taifas", "Se disuelve el califato y Al-Ándalus se fragmenta en pequeños reinos."]
+          ]
+        },
+        {
+          id: "reinos-cristianos-reconquista",
+          name: "Reinos Cristianos y Reconquista",
+          range: "722 – 1300",
+          events: [
+            { y:722, yl:"722", t:"Batalla de Covadonga", d:"Inicio simbólico de la Reconquista; nace el reino de Asturias.",
+              detail:{
+                range:"722 – 1492",
+                blurb:"Del pequeño reino astur surgido en las montañas cantábricas a la gran Corona de Castilla que protagonizará la conquista de Granada.",
+                events:[
+                  [722,"722","Batalla de Covadonga","Pelayo derrota a un destacamento musulmán: nace el reino de Asturias."],
+                  [910,"910","Reino de León","La capital del reino astur se traslada a León."],
+                  [951,"951","Condado de Castilla","Castilla se consolida como condado con identidad propia dentro del reino leonés."],
+                  [1035,"1035","Reino de Castilla","Castilla se independiza como reino bajo Fernando I."],
+                  [1142,"1142","Independencia de Portugal","El condado portucalense se consolida como reino independiente."],
+                  [1230,"1230","Unión de León y Castilla","Fernando III unifica definitivamente ambos reinos."],
+                  [1348,"1348","Peste Negra","La epidemia causa una gran mortandad también en los reinos hispánicos."],
+                  [1469,"1469","Corona de Castilla consolidada","El matrimonio de los Reyes Católicos vincula Castilla con Aragón."]
+                ]
+              } },
+            [1085, "1085", "Toma de Toledo", "Alfonso VI de Castilla conquista la ciudad."],
+            [1094, "1094", "El Cid conquista Valencia", "Rodrigo Díaz de Vivar toma la ciudad de Valencia."],
+            { y:1137, yl:"1137", t:"Unión de Aragón y Cataluña", d:"Se unen dinásticamente la corona de Aragón y el condado de Barcelona.",
+              detail:{
+                range:"803 – 1458",
+                blurb:"De la Marca Hispánica carolingia a la Corona de Aragón: la lenta formación de los reinos y condados del noreste peninsular.",
+                events:[
+                  [803,"803-820","Marca Hispánica","Los francos organizan una zona fronteriza al sur de los Pirineos frente a Al-Ándalus."],
+                  [874,"874","Guifré el Pilós","Consolida los condados catalanes con cierta autonomía respecto a los francos."],
+                  [922,"922","Unión de Navarra y Aragón","Ambos territorios se unen bajo una misma dinastía."],
+                  [988,"988","Independencia de los condados catalanes","Los condados catalanes dejan de reconocer la autoridad del rey franco."],
+                  [1137,"1137","Unión de Aragón y Cataluña","El matrimonio de Petronila de Aragón y Ramón Berenguer IV crea la Corona de Aragón."],
+                  [1235,"1235-1238","Conquista de Baleares y Valencia","Jaime I incorpora ambos territorios a la Corona de Aragón."],
+                  [1282,"1282","Entrada en Sicilia","La Corona de Aragón inicia su expansión mediterránea."],
+                  [1442,"1442","Alfonso V, rey de Nápoles","La Corona de Aragón alcanza su máxima expansión en el Mediterráneo."]
+                ]
+              } },
+            [1212, "1212", "Batalla de las Navas de Tolosa", "Gran victoria cristiana que abre el paso a la conquista de Andalucía."],
+            [1236, "1236-1248", "Conquista de Córdoba y Sevilla", "Fernando III de Castilla incorpora ambas ciudades."],
+            [1238, "1238", "Reino nazarí de Granada", "Se funda el último reino musulmán peninsular."]
+          ]
+        },
+        {
+          id: "baja-edad-media-union-dinastica",
+          name: "Baja Edad Media y Unión Dinástica",
+          range: "1300 – 1492",
+          events: [
+            [1348, "1348", "Peste Negra en la Península", "La epidemia causa una gran mortandad en los reinos hispánicos."],
+            { y:1469, yl:"1469", t:"Matrimonio de los Reyes Católicos", d:"Se unen las coronas de Castilla y Aragón.",
+              detail:{
+                range:"1469 – 1492",
+                blurb:"El matrimonio de Isabel y Fernando une dinásticamente las dos grandes coronas peninsulares, sin fusionar aún sus instituciones.",
+                events:[
+                  [1469,"1469","Matrimonio de Isabel y Fernando","Se casan en Valladolid, uniendo dinásticamente Castilla y Aragón."],
+                  [1474,"1474","Isabel, reina de Castilla","Isabel accede al trono castellano tras la muerte de Enrique IV."],
+                  [1475,"1475-1479","Guerra de Sucesión castellana","Isabel se impone a Juana la Beltraneja, apoyada por Portugal."],
+                  [1479,"1479","Fernando, rey de Aragón","Fernando hereda la Corona de Aragón: quedan unidas ambas coronas."],
+                  [1492,"1492","Conquista de Granada","Culmina la unificación territorial de la Península bajo los Reyes Católicos."]
+                ]
+              } },
+            [1478, "1478", "Inquisición española", "Los Reyes Católicos establecen el Tribunal de la Inquisición."],
+            { y:1492, yl:"1492", t:"Fin de la Edad Media española", d:"Conquista de Granada, expulsión de los judíos y llegada de Colón a América.",
+              detail:{
+                range:"1482 – 1492",
+                blurb:"Un año decisivo: culmina la Reconquista, se expulsa a la minoría judía y Colón emprende el viaje que cambiará la historia.",
+                events:[
+                  [1482,"1482","Inicio de la guerra de Granada","Los Reyes Católicos comienzan la conquista sistemática del reino nazarí."],
+                  [1491,"1491","Capitulaciones de Santa Fe","Se pactan las condiciones de rendición del reino de Granada."],
+                  [1492,"2 enero 1492","Conquista de Granada","Boabdil entrega la ciudad: fin de Al-Ándalus."],
+                  [1492,"31 marzo 1492","Decreto de la Alhambra","Los Reyes Católicos ordenan la expulsión de los judíos que no se conviertan."],
+                  [1492,"17 abril 1492","Capitulaciones de Santa Fe con Colón","Los Reyes Católicos financian el viaje de Colón hacia Asia por Occidente."],
+                  [1492,"12 octubre 1492","Llegada de Colón a América","Colón alcanza las Bahamas, abriendo la vía europea al Nuevo Mundo."]
+                ]
+              } }
+          ]
+        }
       ]
     },
     moderna: {
       range: "1492 – 1808",
       blurb: "El imperio de los Austrias, el Siglo de Oro y la llegada de los Borbones tras la Guerra de Sucesión.",
-      events: [
-        [1492, "1492", "Fin de la Reconquista", "Toma de Granada y descubrimiento de América."],
-        [1512, "1512", "Incorporación de Navarra", "El reino de Navarra se une a la corona de Castilla."],
-        [1516, "1516", "Carlos I, primer Austria", "Se inicia la dinastía de los Habsburgo en España."],
-        [1519, "1519-1521", "Guerra de las Comunidades", "Revuelta de las ciudades castellanas contra Carlos I."],
-        [1556, "1556", "Felipe II hereda el trono", "Abdicación de Carlos V y reparto de sus territorios."],
-        [1571, "1571", "Batalla de Lepanto", "La flota cristiana vence a los otomanos en el Mediterráneo."],
-        [1580, "1580", "Unión con Portugal", "Felipe II reúne las coronas de España y Portugal (hasta 1640)."],
-        [1588, "1588", "Derrota de la Armada Invencible", "Fracasa la expedición naval contra Inglaterra."],
-        [1609, "1609-1614", "Expulsión de los moriscos", "Cientos de miles de moriscos son expulsados de España."],
-        [1640, "1640", "Sublevación de Cataluña y Portugal", "Ambos territorios se rebelan contra la monarquía hispánica."],
-        [1700, "1700", "Muerte de Carlos II", "Se extingue la dinastía de los Austrias en España."],
-        [1701, "1701-1713", "Guerra de Sucesión española", "Conflicto europeo por el trono entre Borbones y Austrias."],
-        [1713, "1713", "Tratado de Utrecht", "España pierde sus posesiones europeas fuera de la Península."],
-        [1714, "1714", "Decretos de Nueva Planta", "Felipe V centraliza la administración del reino."],
-        [1788, "1759-1788", "Reinado de Carlos III", "Despotismo ilustrado y reformas ilustradas en España."]
+      subetapas: [
+        {
+          id: "austrias-mayores",
+          name: "Los Austrias Mayores",
+          range: "1516 – 1598",
+          events: [
+            [1492, "1492", "Fin de la Reconquista", "Toma de Granada y descubrimiento de América."],
+            [1512, "1512", "Incorporación de Navarra", "El reino de Navarra se une a la corona de Castilla."],
+            { y:1516, yl:"1516", t:"Carlos I, primer Austria", d:"Se inicia la dinastía de los Habsburgo en España.",
+              detail:{
+                range:"1516 – 1556",
+                blurb:"Carlos I hereda un imperio «donde nunca se pone el sol» y lo gobierna en guerra casi permanente contra Francia, los turcos y la Reforma protestante.",
+                events:[
+                  [1516,"1516","Carlos I, rey de España","Hereda las coronas de Castilla y Aragón con solo 16 años."],
+                  [1519,"1519-1521","Guerra de las Comunidades","Las ciudades castellanas se rebelan contra el nuevo rey extranjero."],
+                  [1525,"1525","Batalla de Pavía","Carlos I derrota y captura al rey de Francia, Francisco I."],
+                  [1527,"1527","Saco de Roma","Sus tropas imperiales saquean la capital pontificia."],
+                  [1529,"1529","Los turcos sitian Viena","El Imperio Otomano llega a las puertas de la Europa central."],
+                  [1538,"1538","Anexión del Milanesado","Consolida el dominio español sobre el norte de Italia."],
+                  [1547,"1547","Batalla de Mühlberg","Vence a los príncipes protestantes alemanes de la Liga de Esmalcalda."],
+                  [1555,"1555","Paz de Augsburgo","Reconoce la división religiosa del Imperio, un fracaso para sus planes de unidad católica."],
+                  [1556,"1556","Abdicación de Carlos I","Reparte sus territorios entre su hijo Felipe y su hermano Fernando."]
+                ]
+              } },
+            { y:1519, yl:"1519-1521", t:"Guerra de las Comunidades", d:"Revuelta de las ciudades castellanas contra Carlos I.",
+              detail:{
+                range:"1519 – 1521",
+                blurb:"Las ciudades castellanas se alzan contra un rey extranjero y sus consejeros flamencos, en una revuelta que combina protesta política y tensión social.",
+                events:[
+                  [1519,"1519","Carlos I convoca Cortes","Pide un nuevo impuesto para financiar su elección como emperador, lo que indigna a las ciudades."],
+                  [1520,"mayo 1520","Levantamiento de Toledo","Toledo, liderada por Juan de Padilla, encabeza la revuelta comunera."],
+                  [1520,"agosto 1520","Santa Junta de Ávila","Las ciudades rebeldes forman un gobierno alternativo al del rey."],
+                  [1521,"abril 1521","Batalla de Villalar","Las tropas realistas derrotan decisivamente al ejército comunero."],
+                  [1521,"1521","Ejecución de Padilla, Bravo y Maldonado","Los tres principales líderes comuneros son ejecutados."]
+                ]
+              } },
+            { y:1556, yl:"1556", t:"Felipe II hereda el trono", d:"Abdicación de Carlos V y reparto de sus territorios.",
+              detail:{
+                range:"1556 – 1598",
+                blurb:"Felipe II gobierna desde El Escorial el mayor imperio conocido hasta entonces, defensor del catolicismo frente al avance protestante y otomano.",
+                events:[
+                  [1556,"1556","Felipe II, rey de España","Recibe España, los Países Bajos, Italia y las colonias americanas."],
+                  [1557,"1557","Batalla de San Quintín","Victoria sobre Francia que da origen al monasterio de El Escorial."],
+                  [1566,"1566","Rebelión de los Países Bajos","Comienza la larga guerra de independencia neerlandesa."],
+                  [1571,"1571","Batalla de Lepanto","La flota cristiana vence a los otomanos en el mayor combate naval del siglo."],
+                  [1580,"1580","Felipe II, rey de Portugal","Une las coronas ibéricas tras una crisis sucesoria portuguesa."],
+                  [1588,"1588","Derrota de la Armada Invencible","La flota enviada contra Inglaterra es destruida por tormentas y la armada inglesa."],
+                  [1598,"1598","Muerte de Felipe II","Fallece en El Escorial tras 42 años de reinado."]
+                ]
+              } },
+            [1571, "1571", "Batalla de Lepanto", "La flota cristiana vence a los otomanos en el Mediterráneo."],
+            [1580, "1580", "Unión con Portugal", "Felipe II reúne las coronas de España y Portugal (hasta 1640)."],
+            [1588, "1588", "Derrota de la Armada Invencible", "Fracasa la expedición naval contra Inglaterra."]
+          ]
+        },
+        {
+          id: "austrias-menores",
+          name: "Los Austrias Menores",
+          range: "1598 – 1700",
+          events: [
+            [1609, "1609-1614", "Expulsión de los moriscos", "Cientos de miles de moriscos son expulsados de España."],
+            { y:1640, yl:"1640", t:"Sublevación de Cataluña y Portugal", d:"Ambos territorios se rebelan contra la monarquía hispánica.",
+              detail:{
+                range:"1598 – 1700",
+                blurb:"Bajo Felipe III, Felipe IV y Carlos II, la monarquía hispánica entra en un largo declive militar, económico y demográfico.",
+                events:[
+                  [1609,"1609","Expulsión de los moriscos","Se expulsa a la población morisca, con graves consecuencias económicas en algunas regiones."],
+                  [1618,"1618","Guerra de los Treinta Años","España se implica en el gran conflicto religioso y político europeo."],
+                  [1640,"1640","Sublevación de Cataluña y Portugal","Ambos territorios se rebelan contra la política centralizadora del conde-duque de Olivares."],
+                  [1648,"1648","Paz de Westfalia","España reconoce la independencia de las Provincias Unidas."],
+                  [1659,"1659","Paz de los Pirineos","Pone fin a la guerra con Francia; España cede territorios en la frontera pirenaica."],
+                  [1665,"1665","Carlos II, rey","Accede al trono con solo tres años y una salud extremadamente frágil."],
+                  [1700,"1700","Muerte de Carlos II","Se extingue la dinastía de los Austrias en España sin descendencia."]
+                ]
+              } },
+            [1648, "1648", "Paz de Westfalia", "España reconoce la independencia de las Provincias Unidas."],
+            [1700, "1700", "Muerte de Carlos II", "Se extingue la dinastía de los Austrias en España."]
+          ]
+        },
+        {
+          id: "borbones-siglo-xviii",
+          name: "Los Borbones del Siglo XVIII",
+          range: "1700 – 1808",
+          events: [
+            { y:1701, yl:"1701-1713", t:"Guerra de Sucesión española", d:"Conflicto europeo por el trono entre Borbones y Austrias.",
+              detail:{
+                range:"1700 – 1808",
+                blurb:"Tras una larga guerra europea, los Borbones se consolidan en el trono español y modernizan la administración del Estado durante todo el siglo XVIII.",
+                events:[
+                  [1701,"1701","Comienza la Guerra de Sucesión","Las potencias europeas se dividen entre el candidato borbón y el austriaco."],
+                  [1713,"1713-1714","Tratados de Utrecht y Rastatt","España pierde sus posesiones europeas fuera de la Península."],
+                  [1714,"1714","Decretos de Nueva Planta","Felipe V centraliza la administración y suprime los fueros de los territorios de la Corona de Aragón."],
+                  [1746,"1746","Fernando VI","Su reinado destaca por la neutralidad exterior y las reformas internas."],
+                  [1759,"1759","Carlos III, rey","Inicia el período de mayor despliegue del despotismo ilustrado en España."],
+                  [1766,"1766","Motín de Esquilache","Revuelta popular en Madrid contra las reformas del ministro italiano."],
+                  [1788,"1788","Carlos IV, rey","Su reinado, marcado por la Revolución Francesa, conduce a la crisis final del Antiguo Régimen."],
+                  [1808,"1808","Comienza la Guerra de la Independencia","La invasión napoleónica pone fin a la Edad Moderna española."]
+                ]
+              } },
+            [1713, "1713", "Tratado de Utrecht", "España pierde sus posesiones europeas fuera de la Península."],
+            [1714, "1714", "Decretos de Nueva Planta", "Felipe V centraliza la administración del reino."],
+            { y:1788, yl:"1759-1788", t:"Reinado de Carlos III", d:"Despotismo ilustrado y reformas ilustradas en España.",
+              detail:{
+                range:"1759 – 1788",
+                blurb:"Considerado el mejor «alcalde de Madrid», Carlos III impulsa reformas ilustradas mientras mantiene intactos los pilares del absolutismo.",
+                events:[
+                  [1759,"1759","Carlos III, rey de España","Llega al trono con experiencia previa de gobierno en Nápoles."],
+                  [1766,"1766","Motín de Esquilache","La revuelta popular fuerza la caída de su ministro italiano."],
+                  [1767,"1767","Expulsión de los jesuitas","La Compañía de Jesús es expulsada de España y sus colonias."],
+                  [1785,"1785","Reformas de Floridablanca","Impulsa la modernización de la administración y la economía."],
+                  [1787,"1787","Censo de Floridablanca","Se realiza uno de los primeros censos de población modernos de España."],
+                  [1788,"1788","Muerte de Carlos III","Le sucede su hijo Carlos IV en un contexto europeo cada vez más convulso."]
+                ]
+              } }
+          ]
+        }
       ]
     },
     contemporanea: {
       range: "1808 – hoy",
       blurb: "De la Guerra de la Independencia a la España democrática actual.",
-      events: [
-        [1808, "1808", "Levantamiento del 2 de mayo", "Comienza la Guerra de la Independencia contra la ocupación francesa."],
-        [1812, "1812", "Constitución de Cádiz", "«La Pepa»: primera constitución liberal española."],
-        [1814, "1814", "Vuelta de Fernando VII", "Restauración del absolutismo tras la guerra."],
-        [1833, "1833-1839", "Primera Guerra Carlista", "Enfrenta a isabelinos y carlistas por la sucesión al trono."],
-        [1868, "1868", "La Gloriosa", "Revolución que destrona a Isabel II."],
-        [1873, "1873-1874", "Primera República", "Breve experiencia republicana marcada por la inestabilidad."],
-        [1874, "1874", "Restauración borbónica", "Alfonso XII regresa al trono."],
-        [1898, "1898", "Desastre del 98", "España pierde Cuba, Puerto Rico y Filipinas."],
-        [1923, "1923", "Dictadura de Primo de Rivera", "Golpe de Estado que instaura un régimen autoritario."],
-        [1931, "1931", "Segunda República", "Proclamación de la República tras las elecciones municipales."],
-        [1936, "1936-1939", "Guerra Civil española", "Enfrentamiento entre el bando republicano y el sublevado."],
-        [1939, "1939-1975", "Dictadura franquista", "Francisco Franco gobierna España durante casi cuatro décadas."],
-        [1975, "1975", "Muerte de Franco", "Comienza la Transición hacia la democracia."],
-        [1978, "1978", "Constitución española", "Se aprueba la actual Constitución democrática."],
-        [1981, "1981", "23-F", "Intento fallido de golpe de Estado."],
-        [1986, "1986", "Ingreso en la CEE", "España entra en la actual Unión Europea."],
-        [2004, "2004", "Atentados del 11-M", "Atentados terroristas en trenes de Madrid."],
-        [2008, "2008", "Crisis económica", "Una crisis financiera global golpea con fuerza a España."]
+      subetapas: [
+        {
+          id: "crisis-antiguo-regimen",
+          name: "Crisis del Antiguo Régimen",
+          range: "1808 – 1833",
+          events: [
+            { y:1808, yl:"1808-1814", t:"Guerra de la Independencia", d:"Comienza con el levantamiento del 2 de mayo contra la ocupación francesa.",
+              detail:{
+                range:"1808 – 1814",
+                blurb:"El alzamiento popular de Madrid desencadena una guerra de guerrillas contra la ocupación francesa que desgasta al ejército napoleónico.",
+                events:[
+                  [1808,"2 mayo 1808","Levantamiento del Dos de Mayo","El pueblo de Madrid se subleva contra las tropas francesas; Napoleón responde con dura represión."],
+                  [1808,"mayo 1808","Abdicaciones de Bayona","Carlos IV y Fernando VII ceden la corona a Napoleón, que nombra rey a su hermano José."],
+                  [1808,"julio 1808","Batalla de Bailén","Primera gran derrota de un ejército napoleónico en campo abierto."],
+                  [1809,"1809","Guerra de guerrillas","La resistencia popular desgasta a las tropas francesas por todo el país."],
+                  [1809,"1809","Rendición de Zaragoza","Tras un largo y heroico asedio, la ciudad cae ante las tropas francesas."],
+                  [1810,"1810","Conquista francesa de Andalucía","Napoleón llega a controlar casi toda la Península, salvo Cádiz."],
+                  [1812,"1812","Ofensiva aliada","Wellington y las tropas hispano-británicas ganan terreno a los franceses."],
+                  [1813,"1813","Tratado de Valençay","Napoleón, ya en retirada, reconoce a Fernando VII como rey de España."],
+                  [1814,"1814","Fin de la guerra","Las últimas tropas francesas abandonan territorio español."]
+                ]
+              } },
+            { y:1812, yl:"1812", t:"Constitución de Cádiz", d:"«La Pepa»: primera constitución liberal española.",
+              detail:{
+                range:"1810 – 1814",
+                blurb:"Mientras el país lucha contra la ocupación francesa, las Cortes reunidas en Cádiz redactan la primera constitución liberal española.",
+                events:[
+                  [1810,"sept. 1810","Convocatoria de Cortes","Se reúnen en la Isla de León y después en Cádiz, únicos territorios libres de ocupación."],
+                  [1811,"1811","Soberanía nacional","Las Cortes proclaman que la soberanía reside en la nación, no en el rey."],
+                  [1812,"19 marzo 1812","Promulgación de la Constitución de 1812","«La Pepa» establece una monarquía parlamentaria y limita el poder real."],
+                  [1813,"1813","Abolición de la Inquisición","Las Cortes de Cádiz suprimen el Tribunal del Santo Oficio."],
+                  [1814,"1814","Derogación de la Constitución","Fernando VII, ya restaurado, la anula y persigue a los liberales."]
+                ]
+              } },
+            { y:1814, yl:"1814-1833", t:"Reinado de Fernando VII", d:"Restauración del absolutismo tras la guerra, con un breve paréntesis liberal.",
+              detail:{
+                range:"1814 – 1833",
+                blurb:"Entre la reposición del absolutismo, un paréntesis liberal y la crisis final de la monarquía absoluta.",
+                events:[
+                  [1814,"1814","Reposición del absolutismo","Fernando VII deroga la Constitución de 1812 y persigue a los liberales."],
+                  [1815,"1815","Pronunciamiento de Díaz Porlier","Uno de los primeros intentos militares fallidos de restaurar el liberalismo."],
+                  [1820,"1820","Golpe de Riego","Un pronunciamiento militar obliga al rey a jurar la Constitución: comienza el Trienio Liberal."],
+                  [1823,"1823","Los Cien Mil Hijos de San Luis","Un ejército francés interviene para restaurar el absolutismo: comienza la Década Ominosa."],
+                  [1824,"1824","Batalla de Ayacucho","La derrota realista en Perú certifica la independencia de la América continental española."],
+                  [1830,"1830","Pragmática Sanción","Fernando VII abre la sucesión a su hija Isabel, origen del conflicto carlista."],
+                  [1831,"1831","Fracaso de la revuelta de Torrijos","Un desembarco liberal en Málaga termina con el fusilamiento de sus protagonistas."],
+                  [1833,"1833","Muerte de Fernando VII","Su fallecimiento abre la regencia de María Cristina y la guerra carlista."]
+                ]
+              } },
+            { y:1810, yl:"1810-1825", t:"Independencia de la América española", d:"Las colonias americanas se emancipan de la Corona española.",
+              detail:{
+                range:"1810 – 1828",
+                blurb:"Aprovechando la crisis de la monarquía española, las colonias americanas inician un largo proceso de emancipación que pone fin a tres siglos de dominio español.",
+                events:[
+                  [1810,"1810","Juntas americanas","Estallan juntas de gobierno en México, Argentina y otros territorios: arranca el proceso emancipador."],
+                  [1816,"1816","Independencia de Argentina","El Congreso de Tucumán proclama la independencia de las Provincias Unidas del Río de la Plata."],
+                  [1818,"1818","Independencia de Chile","San Martín y O'Higgins consolidan la independencia chilena."],
+                  [1819,"1819","Independencia de Colombia","Bolívar vence en Boyacá y proclama la Gran Colombia."],
+                  [1821,"1821","Independencia de México","Se consuma tras el Plan de Iguala, pactado entre Iturbide y los insurgentes."],
+                  [1824,"1824","Batalla de Ayacucho","Sella la independencia definitiva de Perú y, con ella, del continente americano."],
+                  [1825,"1825","Independencia de Bolivia","Última gran república surgida del antiguo imperio español en América."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "isabel-ii",
+          name: "Reinado de Isabel II",
+          range: "1833 – 1868",
+          events: [
+            { y:1833, yl:"1833-1868", t:"Reinado de Isabel II", d:"Entre guerras carlistas y el turno de moderados y progresistas, España ensaya el liberalismo monárquico.",
+              detail:{
+                range:"1833 – 1868",
+                blurb:"De la minoría de edad de Isabel II a su destronamiento: regencias, guerra carlista y alternancia de moderados y progresistas.",
+                fases:[
+                  { name:"Las Regencias", range:"1833 – 1843", events:[
+                    [1834,"1834","Estatuto Real","Carta otorgada de corte moderado durante la regencia de María Cristina."],
+                    [1836,"1836","Revueltas progresistas","Motines que fuerzan la vuelta a la Constitución de 1812."],
+                    [1837,"1837","Desamortización de Mendizábal y Constitución progresista","Se venden bienes eclesiásticos y se desmantela el Antiguo Régimen."],
+                    [1840,"1840","Ley de Ayuntamientos","Detona la crisis moderado-progresista y la regencia de Espartero."],
+                    [1842,"1842","Arancel librecambista","Bombardeo de Barcelona y protestas por la política comercial de Espartero."]
+                  ]},
+                  { name:"La Década Moderada", range:"1844 – 1854", events:[
+                    [1844,"1844","Creación de la Guardia Civil","Mayoría de edad de Isabel II y comienzo de la «década moderada»."],
+                    [1845,"1845","Constitución moderada","Sienta las bases del Estado centralista isabelino."],
+                    [1846,"1846-1849","Segunda Guerra Carlista","Nuevo alzamiento carlista, de menor intensidad que el primero, en Cataluña."],
+                    [1848,"1848","Creación del Partido Demócrata","Nace a la izquierda del progresismo."],
+                    [1851,"1851","Concordato con la Santa Sede","Regula las relaciones Iglesia-Estado."]
+                  ]},
+                  { name:"Bienio Progresista y Vuelta Moderada", range:"1854 – 1863", events:[
+                    [1854,"junio 1854","Vicalvarada","Pronunciamiento militar progresista que abre el Bienio Progresista."],
+                    [1855,"1855","Desamortización de Madoz y Ley de Ferrocarriles","Nueva oleada desamortizadora e impulso a las infraestructuras."],
+                    [1857,"1857","Ley Moyano de Instrucción Pública","Organiza el sistema educativo español."]
+                  ]},
+                  { name:"Crisis Final del Reinado", range:"1865 – 1868", events:[
+                    [1865,"1865","Noche de San Daniel","Violenta represión de una manifestación estudiantil en Madrid."],
+                    [1866,"1866","Crisis económica y Sublevación de San Gil","Se agrava la crisis del régimen isabelino."],
+                    [1868,"1868","Caída de Isabel II","«La Gloriosa» pone fin a su reinado."]
+                  ]}
+                ]
+              } }
+          ]
+        },
+        {
+          id: "sexenio-restauracion",
+          name: "Sexenio Democrático y Restauración",
+          range: "1868 – 1923",
+          events: [
+            { y:1868, yl:"1868-1874", t:"Sexenio Democrático", d:"De «La Gloriosa» a la Primera República: España ensaya el sufragio universal y el federalismo.",
+              detail:{
+                range:"1868 – 1874",
+                blurb:"De «La Gloriosa» a la Primera República: España ensaya el sufragio universal, la monarquía democrática y el federalismo, en medio de una enorme inestabilidad.",
+                events:[
+                  [1868,"sept. 1868","La Gloriosa","Una revolución derroca a Isabel II; se convoca sufragio universal masculino."],
+                  [1869,"1869","Constitución democrática de 1869","Proclama la monarquía parlamentaria y una amplia declaración de derechos."],
+                  [1870,"1870","Amadeo de Saboya, rey de España","Las Cortes eligen a un príncipe italiano para el trono vacante."],
+                  [1872,"1872","Insurrecciones federalistas","Republicanos federales se alzan en distintos puntos del país."],
+                  [1873,"febrero 1873","Abdicación de Amadeo I y proclamación de la República","Amadeo I renuncia; las Cortes proclaman la Primera República."],
+                  [1873,"1873","Movimiento cantonalista","Ciudades como Cartagena se declaran cantones independientes."],
+                  [1874,"enero 1874","Golpe de Pavía","El general Pavía disuelve las Cortes y pone fin a la República federal."],
+                  [1874,"dic. 1874","Pronunciamiento de Martínez Campos","Proclama rey a Alfonso XII: comienza la Restauración borbónica."]
+                ]
+              } },
+            { y:1874, yl:"1874", t:"Restauración borbónica", d:"Alfonso XII regresa al trono y se instaura el sistema canovista del turno pacífico.",
+              detail:{
+                range:"1875 – 1890",
+                blurb:"El sistema canovista organiza la alternancia pacífica entre conservadores y liberales en torno a la nueva monarquía.",
+                events:[
+                  [1875,"1875","Vuelta de los Borbones","Alfonso XII es proclamado rey; Cánovas del Castillo diseña el nuevo sistema político."],
+                  [1876,"1876","Constitución de 1876","Marco legal estable que sustenta el «turno pacífico» entre partidos."],
+                  [1879,"1879","Fundación del PSOE","Pablo Iglesias funda el Partido Socialista Obrero Español."],
+                  [1881,"1881","Creación de la FTRE","Primera gran federación anarquista de trabajadores en España."],
+                  [1885,"1885","Muerte de Alfonso XII","Se abre la regencia de María Cristina de Habsburgo."],
+                  [1888,"1888","Fundación de la UGT","Nace el sindicato socialista Unión General de Trabajadores."],
+                  [1890,"1890","Sufragio universal masculino","Se restablece el derecho al voto para todos los varones adultos."]
+                ]
+              } },
+            { y:1898, yl:"1898", t:"Desastre del 98", d:"España pierde Cuba, Puerto Rico y Filipinas.",
+              detail:{
+                range:"1895 – 1902",
+                blurb:"La pérdida de Cuba, Puerto Rico y Filipinas certifica el fin del imperio colonial español y marca profundamente la conciencia nacional.",
+                events:[
+                  [1895,"1895","Grito de Baire","Comienza la guerra de independencia cubana, liderada por José Martí."],
+                  [1896,"1896","Guerra en Filipinas","Estalla también la insurrección independentista filipina."],
+                  [1898,"15 feb. 1898","Hundimiento del Maine","La explosión del acorazado estadounidense en La Habana precipita la guerra con EE. UU."],
+                  [1898,"abril-agosto 1898","Guerra hispano-estadounidense","La flota española es derrotada en Cavite y Santiago de Cuba."],
+                  [1898,"dic. 1898","Tratado de París","España cede Cuba, Puerto Rico, Filipinas y Guam a Estados Unidos."],
+                  [1902,"1902","Regeneracionismo","El «Desastre» impulsa un movimiento intelectual crítico que reclama la regeneración de España."]
+                ]
+              } },
+            { y:1902, yl:"1902-1923", t:"Reinado de Alfonso XIII", d:"La crisis creciente del sistema de la Restauración desemboca en la dictadura de Primo de Rivera.",
+              detail:{
+                range:"1885 – 1923",
+                blurb:"Entre la regencia de María Cristina y la dictadura de Primo de Rivera, la Restauración entra en una crisis cada vez más profunda.",
+                events:[
+                  [1885,"1885","Regencia de María Cristina","Se inicia tras la muerte de Alfonso XII, con Alfonso XIII aún no nacido."],
+                  [1898,"1898","Guerra hispanoamericana","España pierde sus últimas colonias: Cuba, Puerto Rico y Filipinas."],
+                  [1902,"1902","Mayoría de edad de Alfonso XIII","El rey asume personalmente el ejercicio del poder."],
+                  [1906,"1906","Protectorado español en Marruecos","España se hace cargo de una zona del norte de Marruecos."],
+                  [1909,"1909","Semana Trágica de Barcelona","Estalla una violenta revuelta popular contra el envío de tropas a la guerra de Marruecos."],
+                  [1912,"1912","Huelga general revolucionaria","CNT y UGT convocan una huelga de alcance nacional."],
+                  [1917,"1917","Crisis general de 1917","Confluyen una crisis militar, política y social que sacude el sistema de la Restauración."],
+                  [1921,"1921","Desastre de Annual","Una catástrofe militar en el Rif marroquí causa miles de muertos españoles."],
+                  [1923,"1923","Golpe de Estado de Primo de Rivera","Pone fin, de hecho, al sistema político de la Restauración."]
+                ]
+              } }
+          ]
+        },
+        {
+          id: "dictadura-republica-guerra",
+          name: "Dictadura, República y Guerra Civil",
+          range: "1923 – 1939",
+          events: [
+            { y:1923, yl:"1923-1930", t:"Dictadura de Primo de Rivera", d:"Golpe de Estado que instaura un régimen autoritario.",
+              detail:{
+                range:"1923 – 1930",
+                blurb:"Un golpe de Estado instaura una dictadura militar que moderniza el país pero no resuelve sus problemas de fondo.",
+                events:[
+                  [1923,"sept. 1923","Golpe de Estado de Primo de Rivera","El capitán general de Cataluña instaura una dictadura con el visto bueno de Alfonso XIII."],
+                  [1924,"1924","Directorio Militar","Gobierna inicialmente con generales; suprime la Mancomunidad de Cataluña."],
+                  [1925,"sept. 1925","Desembarco de Alhucemas","Acción hispano-francesa que pone fin a la guerra de Marruecos."],
+                  [1925,"1925","Directorio Civil","Primo de Rivera incorpora a políticos civiles a su gobierno."],
+                  [1927,"1927","Asamblea Nacional Consultiva","Sustituye a las Cortes por un órgano designado, sin auténtica representación."],
+                  [1929,"1929","Exposiciones de Barcelona y Sevilla","España se presenta al mundo en plena bonanza económica, previa al Crack del 29."],
+                  [1930,"enero 1930","Caída de Primo de Rivera","Pierde el apoyo del rey y el ejército; dimite."],
+                  [1930,"1930","Pacto de San Sebastián","Republicanos y socialistas preparan el fin de la monarquía."]
+                ]
+              } },
+            { y:1931, yl:"1931-1936", t:"Segunda República", d:"Proclamación de la República tras las elecciones municipales.",
+              detail:{
+                range:"1931 – 1936",
+                blurb:"Un ambicioso proyecto reformista se enfrenta a una polarización creciente que desemboca en el estallido de la Guerra Civil.",
+                events:[
+                  [1931,"abril 1931","Proclamación de la República","Tras unas elecciones municipales favorables a los republicanos, Alfonso XIII abandona España."],
+                  [1931,"dic. 1931","Constitución de 1931","Establece una amplia declaración de derechos, entre ellos el voto femenino."],
+                  [1932,"1932","Reforma agraria y Estatuto de Cataluña","El Bienio Reformista impulsa reformas sociales y de autonomía territorial."],
+                  [1933,"nov. 1933","Triunfo electoral del centro-derecha","Comienza el Bienio Conservador, que frena o revierte las reformas previas."],
+                  [1934,"oct. 1934","Revolución de Asturias","Una insurrección obrera es reprimida duramente por el ejército."],
+                  [1936,"feb. 1936","Triunfo del Frente Popular","La coalición de izquierdas gana las elecciones en un clima de creciente tensión."],
+                  [1936,"julio 1936","Asesinato de Calvo Sotelo","El crimen del líder monárquico precipita la sublevación militar."]
+                ]
+              } },
+            { y:1936, yl:"1936-1939", t:"Guerra Civil española", d:"Enfrentamiento entre el bando republicano y el sublevado.",
+              detail:{
+                range:"1936 – 1939",
+                blurb:"De la sublevación de julio de 1936 a la ocupación de Madrid: el conflicto que parte a España en dos bandos, con intervención internacional.",
+                fases:[
+                  { name:"1936: La Sublevación", range:"1936", events:[
+                    [1936,"18 julio 1936","Sublevación militar","Comienza el alzamiento contra la República."],
+                    [1936,"1 oct. 1936","Franco, Generalísimo y Jefe del Estado","La zona sublevada unifica el mando bajo Franco."],
+                    [1936,"nov. 1936","Defensa de Madrid","La capital resiste el primer gran asalto del bando sublevado."]
+                  ]},
+                  { name:"1937: Guerra en el Norte", range:"1937", events:[
+                    [1937,"marzo 1937","Batalla de Guadalajara","Las tropas italianas son derrotadas al norte de Madrid."],
+                    [1937,"abril 1937","Bombardeo de Guernica","La Legión Cóndor alemana arrasa la villa vasca."],
+                    [1937,"abril 1937","Unificación de FET y de las JONS","Franco funde falangistas y carlistas en un partido único."],
+                    [1937,"24 agosto 1937","Batalla de Belchite","Ofensiva republicana que termina con la toma de esta localidad aragonesa."],
+                    [1937,"oct.-nov. 1937","Ocupación del norte cantábrico","Los sublevados completan la conquista del frente norte."]
+                  ]},
+                  { name:"1938-1939: Derrota Republicana", range:"1938 – 1939", events:[
+                    [1938,"julio-nov. 1938","Batalla del Ebro","La mayor y más sangrienta batalla de la guerra."],
+                    [1939,"enero 1939","Ocupación de Barcelona","Cataluña cae en manos franquistas."],
+                    [1939,"marzo 1939","Golpe de Casado","Un golpe interno republicano precipita la rendición final."],
+                    [1939,"1 abril 1939","Fin de la guerra","Franco firma el último parte de guerra."]
+                  ]}
+                ]
+              } }
+          ]
+        },
+        {
+          id: "franquismo-democracia",
+          name: "Franquismo, Transición y Democracia",
+          range: "1939 – hoy",
+          events: [
+            { y:1939, yl:"1939-1975", t:"Dictadura franquista", d:"Francisco Franco gobierna España durante casi cuatro décadas.",
+              detail:{
+                range:"1939 – 1975",
+                blurb:"Casi cuarenta años de dictadura personal: del aislamiento de posguerra al desarrollismo tecnocrático y la crisis final del régimen.",
+                fases:[
+                  { name:"Primer Franquismo: Autarquía y Aislamiento", range:"1939 – 1952", events:[
+                    [1939,"1939","Posguerra y autarquía","España se aísla internacionalmente y sufre escasez y racionamiento."],
+                    [1940,"oct. 1940","Entrevista de Hendaya","Franco y Hitler se reúnen sin llegar a un acuerdo sobre la entrada de España en la guerra."],
+                    [1941,"1941","División Azul","Voluntarios españoles combaten junto a Alemania en el frente ruso."],
+                    [1945,"1945","Fuero de los Españoles","Una de las Leyes Fundamentales que sustituyen a una constitución."],
+                    [1946,"1946","Condena internacional","La ONU retira embajadores a España por su afinidad con el fascismo derrotado."],
+                    [1952,"1952","Plan Badajoz","Ambicioso plan de desarrollo para una de las regiones más pobres del país."]
+                  ]},
+                  { name:"Apertura Internacional", range:"1953 – 1959", events:[
+                    [1953,"1953","Acuerdos con EE. UU. y el Vaticano","Rompen el aislamiento internacional del régimen en plena Guerra Fría."],
+                    [1955,"1955","Ingreso en la ONU","España es admitida en la organización internacional."],
+                    [1959,"1959","Plan de Estabilización","Abandona la autarquía y abre la economía española al exterior."],
+                    [1959,"1959","Creación de ETA","Nace la organización terrorista nacionalista vasca."]
+                  ]},
+                  { name:"Desarrollismo Tecnocrático", range:"1962 – 1969", events:[
+                    [1962,"1962","«Contubernio» de Múnich","Opositores del interior y del exilio se reúnen, lo que provoca represalias del régimen."],
+                    [1966,"1966","Ley de Prensa e Imprenta","Suaviza, aunque no elimina, la censura previa impuesta por el régimen."],
+                    [1969,"1969","Juan Carlos, sucesor a título de rey","Franco designa a Juan Carlos de Borbón como su sucesor."]
+                  ]},
+                  { name:"Crisis Final del Régimen", range:"1972 – 1975", events:[
+                    [1972,"1972","Oleada de huelgas obreras","Se extienden las protestas laborales, síntoma del creciente desgaste del régimen."],
+                    [1973,"dic. 1973","Atentado y muerte de Carrero Blanco","ETA asesina al presidente del Gobierno, golpeando la estabilidad del régimen."],
+                    [1975,"20 nov. 1975","Muerte de Franco","Fallece el dictador tras casi cuatro décadas en el poder."]
+                  ]}
+                ]
+              } },
+            { y:1975, yl:"1975-2008", t:"Transición y consolidación democrática", d:"De la muerte de Franco a la integración plena de España en Europa.",
+              detail:{
+                range:"1975 – 2008",
+                blurb:"España desmonta el franquismo, se dota de una Constitución democrática y se integra en Europa.",
+                fases:[
+                  { name:"La Transición Política", range:"1975 – 1978", events:[
+                    [1975,"1975","Muerte de Franco","Comienza la Transición, en un contexto de crisis económica internacional."],
+                    [1976,"1976","Ley de Reforma Política","Adolfo Suárez encauza el desmontaje legal del franquismo."],
+                    [1977,"1977","Elecciones Generales y Pactos de la Moncloa","Primeras elecciones democráticas y acuerdos de estabilización económica."],
+                    [1978,"1978","Constitución Española","Se aprueba la actual Constitución democrática."]
+                  ]},
+                  { name:"Consolidación Democrática", range:"1980 – 1986", events:[
+                    [1980,"1980","Moción de censura contra Suárez","Felipe González la presenta sin éxito, síntoma del desgaste del gobierno de UCD."],
+                    [1981,"1981","23-F","Intento fallido de golpe de Estado."],
+                    [1982,"1982","Ingreso en la OTAN y victoria del PSOE","España entra en la OTAN y Felipe González gana las elecciones."],
+                    [1986,"1986","Referéndum de la OTAN e ingreso en la CEE","España confirma su permanencia en la OTAN y entra en la Comunidad Europea."]
+                  ]},
+                  { name:"España en Europa", range:"1992 – 2008", events:[
+                    [1992,"1992","Juegos Olímpicos de Barcelona y Expo de Sevilla","España se presenta al mundo como una democracia consolidada."],
+                    [1996,"1996","Primer gobierno de Aznar (PP)","Alternancia política tras 14 años de gobiernos socialistas."],
+                    [2002,"2002","Implantación del euro","España adopta la moneda única europea."],
+                    [2004,"2004","Atentados del 11-M","Atentados terroristas en trenes de Madrid."],
+                    [2008,"2008","Crisis financiera mundial","La crisis económica global golpea con fuerza a España."]
+                  ]}
+                ]
+              } }
+          ]
+        }
       ]
     }
   }
 };
 
 /* ================= STATE ================= */
-const state = { region: "mundo", era: "contemporanea", layout: "vertical" };
+const state = { region: "mundo", era: "contemporanea", layout: "vertical", zoom: null };
 const customCache = {};
+let cardRegistry = []; // maps rendered card ids -> event objects, rebuilt on every render
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -552,6 +2012,19 @@ function escapeHtml(str){
 function formatYearLabel(n, isBC){
   const s = Math.abs(n).toLocaleString("es-ES");
   return isBC ? `${s} a.C.` : s;
+}
+function slugify(str){
+  return String(str).toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+function normalizeText(str){
+  return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+// The "scope" is what custom class-added facts are keyed against: the era
+// itself when browsing normally, or the specific detailed axis when zoomed in.
+function currentScope(){
+  return state.zoom ? state.zoom.zid : state.era;
 }
 
 async function loadCustom(region, era){
@@ -603,20 +2076,34 @@ function renderEraTabs(){
   }).join("");
 }
 
-function eventCardHtml(ev, i){
+function normalizeEvent(ev){
+  // Accepts either the legacy tuple [y, yl, t, d] or a richer object
+  // { y, yl, t, d, detail } where `detail` describes a zoomable sub-timeline.
+  if (Array.isArray(ev)){
+    const [y, yl, t, d] = ev;
+    return { y, yl, t, d, detail: null, custom: false };
+  }
+  return { y: ev.y, yl: ev.yl, t: ev.t, d: ev.d, detail: ev.detail || null, custom: false };
+}
+
+function eventCardHtml(ev){
+  const id = cardRegistry.length;
+  cardRegistry.push(ev);
+  const zoomable = !!ev.detail;
   return `
-    <div class="event-card">
-      ${ev.custom ? `<button class="del-btn" data-idx="${i}" title="Eliminar este hecho añadido">×</button>` : ""}
+    <div class="event-card${zoomable ? " zoomable" : ""}" data-card-id="${id}"${zoomable ? ' role="button" tabindex="0"' : ""}>
+      ${ev.custom ? `<button class="del-btn" data-del-id="${id}" title="Eliminar este hecho añadido">×</button>` : ""}
       <span class="event-year">${escapeHtml(ev.yl)}</span>
       ${ev.custom ? '<span class="custom-badge">añadido por la clase</span>' : ""}
       <p class="event-title">${escapeHtml(ev.t)}</p>
       <p class="event-desc">${escapeHtml(ev.d)}</p>
+      ${zoomable ? '<span class="zoom-hint">🔍 Ver eje detallado</span>' : ""}
     </div>`;
 }
 
 function renderVerticalHtml(all){
-  return `<ol class="timeline">` + all.map((ev, i) => `
-    <li class="event">${eventCardHtml(ev, i)}</li>
+  return `<ol class="timeline">` + all.map(ev => `
+    <li class="event">${eventCardHtml(ev)}</li>
   `).join("") + `</ol>`;
 }
 
@@ -625,9 +2112,9 @@ function renderHorizontalHtml(all){
     const up = i % 2 === 0; // alternate above/below the line
     return `
       <div class="h-item">
-        <div class="slot slot-top">${up ? eventCardHtml(ev, i) : ""}</div>
+        <div class="slot slot-top">${up ? eventCardHtml(ev) : ""}</div>
         <div class="dot-row"></div>
-        <div class="slot slot-bottom">${!up ? eventCardHtml(ev, i) : ""}</div>
+        <div class="slot slot-bottom">${!up ? eventCardHtml(ev) : ""}</div>
       </div>`;
   }).join("");
   return `
@@ -635,26 +2122,114 @@ function renderHorizontalHtml(all){
     <div class="timeline-h-wrap"><div class="timeline-h">${items}</div></div>`;
 }
 
-function wireDeleteButtons(all){
-  // index maps into the *custom* subset only
-  const customIndexMap = [];
-  all.forEach((ev, i) => { if (ev.custom) customIndexMap.push(i); });
-  eventListEl.querySelectorAll(".del-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const i = parseInt(btn.dataset.idx, 10);
-      const posInCustom = customIndexMap.indexOf(i);
-      if (posInCustom === -1) return;
-      const current = await loadCustom(state.region, state.era);
-      current.splice(posInCustom, 1);
-      await saveCustom(state.region, state.era, current);
-      renderEvents();
-    });
-  });
+function renderLayout(all){
+  return state.layout === "horizontal" ? renderHorizontalHtml(all) : renderVerticalHtml(all);
+}
+
+function showBreadcrumb(pathText){
+  document.getElementById("crumbBar").classList.remove("hidden");
+  document.getElementById("crumbPath").textContent = pathText;
+}
+function hideBreadcrumb(){
+  document.getElementById("crumbBar").classList.add("hidden");
+}
+
+async function renderZoomView(){
+  const z = state.zoom;
+  document.getElementById("eraName").textContent = z.title;
+  document.getElementById("eraRange").textContent = z.detail.range || "";
+  document.getElementById("eraBlurb").textContent = z.detail.blurb || "";
+  showBreadcrumb(`${z.eraName} › ${z.subetapaName ? z.subetapaName + " › " : ""}${z.title}`);
+
+  eventListEl.innerHTML = `<p class="empty">Cargando hechos…</p>`;
+  const custom = await loadCustom(state.region, z.zid);
+  const customNorm = custom.map((ev, idx) => ({ ...ev, detail: null, custom: true, customIdx: idx }));
+
+  if (Array.isArray(z.detail.fases)){
+    renderGroupedZoomEvents(z.detail.fases, customNorm);
+  } else {
+    const base = (z.detail.events || []).map(normalizeEvent);
+    const all = base.concat(customNorm).sort((a,b) => a.y - b.y);
+    eventListEl.innerHTML = all.length ? renderLayout(all) : `<p class="empty">Este eje detallado todavía no tiene hechos.</p>`;
+  }
+}
+
+function renderGroupedZoomEvents(fases, customNorm){
+  const groupsHtml = fases.map(fase => {
+    const events = fase.events.map(normalizeEvent).sort((a,b) => a.y - b.y);
+    return `
+      <section class="subetapa fase" data-fase="${escapeHtml(fase.name)}">
+        <div class="subetapa-head">
+          <h3>${escapeHtml(fase.name)}</h3>
+          <span class="subetapa-range">${escapeHtml(fase.range)}</span>
+        </div>
+        ${renderLayout(events)}
+      </section>`;
+  }).join("");
+
+  let customHtml = "";
+  if (customNorm.length){
+    const sorted = [...customNorm].sort((a,b) => a.y - b.y);
+    customHtml = `
+      <section class="subetapa" data-subetapa="__custom">
+        <div class="subetapa-head"><h3>Añadidos por la clase</h3></div>
+        ${renderLayout(sorted)}
+      </section>`;
+  }
+
+  eventListEl.innerHTML = groupsHtml + customHtml;
+}
+
+function renderGroupedEvents(eraData, customNorm){
+  const groupsHtml = eraData.subetapas.map(sub => {
+    const events = sub.events.map(normalizeEvent).sort((a,b) => a.y - b.y);
+    return `
+      <section class="subetapa" data-subetapa="${sub.id}">
+        <div class="subetapa-head">
+          <h3>${escapeHtml(sub.name)}</h3>
+          <span class="subetapa-range">${escapeHtml(sub.range)}</span>
+        </div>
+        ${renderLayout(events)}
+      </section>`;
+  }).join("");
+
+  let customHtml = "";
+  if (customNorm.length){
+    const sorted = [...customNorm].sort((a,b) => a.y - b.y);
+    customHtml = `
+      <section class="subetapa" data-subetapa="__custom">
+        <div class="subetapa-head"><h3>Añadidos por la clase</h3></div>
+        ${renderLayout(sorted)}
+      </section>`;
+  }
+
+  eventListEl.innerHTML = groupsHtml + customHtml;
+}
+
+function renderFlatEvents(eraData, customNorm){
+  const base = eraData.events.map(normalizeEvent);
+  const all = base.concat(customNorm).sort((a,b) => a.y - b.y);
+
+  if (!all.length){
+    eventListEl.innerHTML = `<p class="empty">Todavía no hay hechos en esta era.</p>`;
+    return;
+  }
+  eventListEl.innerHTML = renderLayout(all);
 }
 
 async function renderEvents(){
+  cardRegistry = [];
+  const addBtn = document.getElementById("toggleForm");
+  addBtn.textContent = state.zoom ? "+ Añadir un hecho a este eje detallado" : "+ Añadir un hecho a esta era";
+
+  if (state.zoom){
+    await renderZoomView();
+    return;
+  }
+
   const eraMeta = ERAS.find(e => e.id === state.era);
   const eraData = DATA[state.region][state.era];
+  hideBreadcrumb();
   document.getElementById("eraName").textContent = eraData ? eraMeta.name : "";
   document.getElementById("eraRange").textContent = eraData.range;
   document.getElementById("eraBlurb").textContent = eraData.blurb;
@@ -662,17 +2237,123 @@ async function renderEvents(){
 
   eventListEl.innerHTML = `<p class="empty">Cargando hechos…</p>`;
   const custom = await loadCustom(state.region, state.era);
+  const customNorm = custom.map((ev, idx) => ({ ...ev, detail: null, custom: true, customIdx: idx }));
 
-  const base = eraData.events.map(([y, yl, t, d]) => ({ y, yl, t, d, custom: false }));
-  const all = base.concat(custom.map(ev => ({ ...ev, custom: true }))).sort((a,b) => a.y - b.y);
+  if (Array.isArray(eraData.subetapas)){
+    renderGroupedEvents(eraData, customNorm);
+  } else {
+    renderFlatEvents(eraData, customNorm);
+  }
+}
 
-  if (!all.length){
-    eventListEl.innerHTML = `<p class="empty">Todavía no hay hechos en esta era.</p>`;
+function enterZoom(ev, subetapaName){
+  const eraMeta = ERAS.find(e => e.id === state.era);
+  const zid = `${state.region}_${state.era}_${slugify(ev.t)}`;
+  state.zoom = { zid, title: ev.t, eraName: eraMeta.name, subetapaName: subetapaName || null, detail: ev.detail };
+  renderEvents();
+  eventListEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function exitZoom(){
+  state.zoom = null;
+  renderEvents();
+}
+
+/* ================= SEARCH ================= */
+function buildSearchIndex(){
+  const idx = [];
+  const collectDetailEvents = (detail) => {
+    if (!detail) return [];
+    if (Array.isArray(detail.fases)) return detail.fases.flatMap(f => f.events);
+    return detail.events || [];
+  };
+  for (const region of Object.keys(DATA)){
+    const regionLabel = region === "mundo" ? "Mundo" : "España";
+    for (const eraId of Object.keys(DATA[region])){
+      const eraData = DATA[region][eraId];
+      const eraMeta = ERAS.find(e => e.id === eraId);
+      const pushEntry = (ev, subetapaName, zoomParentEv) => {
+        const n = normalizeEvent(ev);
+        idx.push({
+          region, eraId, regionLabel, eraName: eraMeta.name,
+          subetapaName: subetapaName || null,
+          zoomParentEv: zoomParentEv || null,
+          title: n.t, desc: n.d, yl: n.yl, y: n.y,
+          hasZoom: !!n.detail
+        });
+      };
+      if (Array.isArray(eraData.subetapas)){
+        eraData.subetapas.forEach(sub => {
+          sub.events.forEach(ev => {
+            pushEntry(ev, sub.name, null);
+            const n = normalizeEvent(ev);
+            if (n.detail){
+              collectDetailEvents(n.detail).forEach(dev => pushEntry(dev, sub.name, ev));
+            }
+          });
+        });
+      } else if (Array.isArray(eraData.events)){
+        eraData.events.forEach(ev => pushEntry(ev, null, null));
+      }
+    }
+  }
+  return idx;
+}
+
+let SEARCH_INDEX = [];
+
+function goToSearchResult(entry){
+  state.region = entry.region;
+  state.era = entry.eraId;
+  if (entry.zoomParentEv){
+    const eraMeta = ERAS.find(e => e.id === entry.eraId);
+    const zid = `${entry.region}_${entry.eraId}_${slugify(entry.zoomParentEv.t)}`;
+    state.zoom = { zid, title: entry.zoomParentEv.t, eraName: eraMeta.name, subetapaName: entry.subetapaName || null, detail: entry.zoomParentEv.detail };
+  } else {
+    state.zoom = null;
+  }
+  closeSearchResults();
+  document.getElementById("searchInput").value = "";
+  render();
+  document.querySelector(".panel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeSearchResults(){
+  const resultsEl = document.getElementById("searchResults");
+  resultsEl.classList.add("hidden");
+  resultsEl.innerHTML = "";
+}
+
+function runSearch(query){
+  const resultsEl = document.getElementById("searchResults");
+  const q = normalizeText(query.trim());
+  if (q.length < 2){
+    closeSearchResults();
+    return;
+  }
+  const matches = SEARCH_INDEX.filter(e =>
+    normalizeText(e.title).includes(q) || normalizeText(e.desc).includes(q)
+  ).slice(0, 25);
+
+  if (!matches.length){
+    resultsEl.innerHTML = `<p class="search-empty">Sin resultados para «${escapeHtml(query)}».</p>`;
+    resultsEl.classList.remove("hidden");
     return;
   }
 
-  eventListEl.innerHTML = state.layout === "horizontal" ? renderHorizontalHtml(all) : renderVerticalHtml(all);
-  wireDeleteButtons(all);
+  resultsEl.innerHTML = matches.map((m, i) => {
+    const path = [m.regionLabel, m.eraName, m.subetapaName, m.zoomParentEv ? m.zoomParentEv.t : null]
+      .filter(Boolean).join(" › ");
+    return `
+      <button type="button" class="search-result" data-result-idx="${i}">
+        <span class="sr-year">${escapeHtml(m.yl)}</span><span class="sr-title">${escapeHtml(m.title)}</span>
+        <span class="sr-path">${escapeHtml(path)}</span>
+      </button>`;
+  }).join("");
+  resultsEl.classList.remove("hidden");
+  resultsEl.querySelectorAll(".search-result").forEach(btn => {
+    btn.addEventListener("click", () => goToSearchResult(matches[parseInt(btn.dataset.resultIdx, 10)]));
+  });
 }
 
 function render(){
@@ -691,6 +2372,7 @@ function render(){
 document.querySelectorAll(".region-tab").forEach(btn => {
   btn.addEventListener("click", () => {
     state.region = btn.dataset.region;
+    state.zoom = null;
     render();
   });
 });
@@ -699,6 +2381,7 @@ strataEl.addEventListener("click", (e) => {
   const btn = e.target.closest(".stratum");
   if (!btn) return;
   state.era = btn.dataset.era;
+  state.zoom = null;
   render();
 });
 
@@ -706,7 +2389,52 @@ eraTabsEl.addEventListener("click", (e) => {
   const btn = e.target.closest(".era-tab");
   if (!btn) return;
   state.era = btn.dataset.era;
+  state.zoom = null;
   render();
+});
+
+document.getElementById("zoomBack").addEventListener("click", exitZoom);
+
+const searchInputEl = document.getElementById("searchInput");
+searchInputEl.addEventListener("input", () => runSearch(searchInputEl.value));
+searchInputEl.addEventListener("focus", () => { if (searchInputEl.value.trim().length >= 2) runSearch(searchInputEl.value); });
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".search-wrap")) closeSearchResults();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeSearchResults();
+});
+
+eventListEl.addEventListener("click", async (e) => {
+  const delBtn = e.target.closest(".del-btn");
+  if (delBtn){
+    const id = parseInt(delBtn.dataset.delId, 10);
+    const ev = cardRegistry[id];
+    if (!ev || !ev.custom) return;
+    const current = await loadCustom(state.region, currentScope());
+    current.splice(ev.customIdx, 1);
+    await saveCustom(state.region, currentScope(), current);
+    renderEvents();
+    return;
+  }
+  const card = e.target.closest(".event-card.zoomable");
+  if (card){
+    const id = parseInt(card.dataset.cardId, 10);
+    const ev = cardRegistry[id];
+    if (ev && ev.detail){
+      const subEl = card.closest(".subetapa");
+      const subName = subEl ? subEl.querySelector(".subetapa-head h3")?.textContent : null;
+      enterZoom(ev, subName);
+    }
+  }
+});
+
+eventListEl.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const card = e.target.closest(".event-card.zoomable");
+  if (!card) return;
+  e.preventDefault();
+  card.click();
 });
 
 document.querySelectorAll(".layout-btn").forEach(btn => {
@@ -740,9 +2468,9 @@ addForm.addEventListener("submit", async (e) => {
   const y = isBC ? -yearVal : yearVal;
   const yl = formatYearLabel(yearVal, isBC);
 
-  const current = await loadCustom(state.region, state.era);
+  const current = await loadCustom(state.region, currentScope());
   current.push({ y, yl, t: title, d: desc });
-  await saveCustom(state.region, state.era, current);
+  await saveCustom(state.region, currentScope(), current);
 
   addForm.reset();
   addForm.classList.add("hidden");
@@ -777,6 +2505,7 @@ document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && fsMode) setFsMode(false);
 });
 
+SEARCH_INDEX = buildSearchIndex();
 render();
 </script>
 </body>

@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Simulador didáctico de la presión atmosférica, los vientos, los frentes y la lectura de mapas del tiempo, para ESO.">
+<title>Altas, bajas y frentes: el mapa del tiempo</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="El tiempo">
+<meta name="theme-color" content="#1E2A3A">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  /* ---- Paleta ---- */
+  --sky:#1E2A3A;
+  --sky-2:#2C3E52;
+  --sky-3:#374F68;
+  --paper:#EEF1EF;
+  --paper-2:#E4E9E5;
+  --card:#FFFFFF;
+  --ink:#1C2430;
+  --ink-soft:#57677A;
+  --line:#D9E0DC;
+
+  --high:#D9A441;
+  --high-2:#F0C877;
+  --high-soft:rgba(217,164,65,0.14);
+
+  --low:#4C5FAE;
+  --low-2:#8091D6;
+  --low-soft:rgba(76,95,174,0.13);
+
+  --cold:#2E6FBE;
+  --warm:#C1443A;
+  --occluded:#7B5AA6;
+
+  --myth:#A6394A;
+  --myth-soft:rgba(166,57,74,0.09);
+  --myth-line:rgba(166,57,74,0.35);
+
+  --radius:16px;
+  --radius-sm:11px;
+  --shadow-sm:0 1px 2px rgba(15,20,35,.06);
+  --shadow-md:0 10px 26px rgba(15,20,35,.10);
+  --shadow-lg:0 22px 48px rgba(10,15,30,.16);
+}
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:'Manrope', system-ui, -apple-system, sans-serif; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+}
+h1,h2,h3{ font-family:'Spectral', Georgia, serif; margin:0; }
+button{ font-family:inherit; }
+.mono{ font-family:'JetBrains Mono', monospace; }
+:focus-visible{ outline:3px solid var(--high-2); outline-offset:2px; border-radius:4px; }
+
+#app{ max-width:1080px; margin:0 auto; padding:0 0 90px; }
+
+/* ================= DECK (cabecera + navegación "mapa de isobaras") ================= */
+.deck{
+  position:relative; background:
+    radial-gradient(720px 420px at 85% -10%, rgba(217,164,65,0.14), transparent 55%),
+    radial-gradient(640px 500px at 4% 100%, rgba(76,95,174,0.18), transparent 50%),
+    linear-gradient(180deg, var(--sky) 0%, var(--sky-2) 100%);
+  color:var(--paper); padding:38px 26px 34px; overflow:hidden;
+}
+.deck-inner{ position:relative; max-width:760px; margin:0 auto; text-align:center; }
+.eyebrow{
+  font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--high-2); display:inline-flex; align-items:center; gap:10px; font-weight:500;
+}
+.eyebrow::before, .eyebrow::after{ content:""; width:20px; height:1px; background:var(--high-2); opacity:.7; }
+.deck h1{
+  font-weight:700; font-size:clamp(26px,4.6vw,42px); line-height:1.08; margin:16px 0 12px; letter-spacing:-.01em;
+}
+.deck .lede{ color:rgba(238,241,239,.8); font-size:15.5px; max-width:58ch; margin:0 auto; }
+
+/* ---- Navegación "mapa de isobaras" (elemento distintivo) ---- */
+.iso-nav{ position:relative; height:300px; margin:30px auto 0; max-width:640px; }
+.iso-nav svg.deco{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.iso-node{
+  position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:none; border:none; cursor:pointer; color:rgba(238,241,239,.72); padding:6px; width:104px;
+}
+.iso-node .dot{
+  width:44px; height:44px; border-radius:50%; background:var(--sky-3); border:1.5px solid rgba(238,241,239,.18);
+  display:flex; align-items:center; justify-content:center; transition:background .2s, border-color .2s, transform .2s, box-shadow .2s;
+}
+.iso-node .dot svg{ width:20px; height:20px; stroke:rgba(238,241,239,.75); transition:stroke .2s; }
+.iso-node .lbl{ font-size:12px; font-weight:700; line-height:1.15; }
+.iso-node:hover .dot{ transform:translateY(-2px); border-color:var(--high-2); }
+.iso-node.active .dot{
+  background:var(--high); border-color:var(--high-2); box-shadow:0 0 0 6px var(--high-soft), 0 6px 16px rgba(0,0,0,.3);
+}
+.iso-node.active .dot svg{ stroke:#241704; }
+.iso-node.active .lbl, .iso-node.active{ color:#fff; }
+
+@media (max-width:720px){
+  .iso-nav{ display:none; }
+  .iso-nav-mobile{ display:grid !important; }
+}
+.iso-nav-mobile{
+  display:none; grid-template-columns:repeat(3,1fr); gap:8px; margin:26px 0 0; padding:0;
+}
+.iso-nav-mobile .iso-node{ position:static; transform:none; width:auto; }
+
+/* ================= PANELES ================= */
+main{ padding:0 18px; }
+.panel{ display:none; }
+.panel.active{ display:block; animation:riseIn .45s ease both; }
+@keyframes riseIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none; } }
+
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-md);
+  padding:24px 26px 26px; margin:22px 0; border-top:3px solid var(--accent,var(--ink));
+}
+.card.acc-high{ --accent:var(--high); } .card.acc-low{ --accent:var(--low); }
+.card.acc-cold{ --accent:var(--cold); } .card.acc-warm{ --accent:var(--warm); }
+.card.acc-occ{ --accent:var(--occluded); }
+
+.card-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+.card-head .badge{
+  flex:none; width:36px; height:36px; border-radius:50%; background:var(--accent,var(--ink)); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--accent,var(--ink)) 14%, transparent);
+}
+.card-head .badge svg{ width:18px; height:18px; stroke:#fff; }
+.card-head h2{ font-size:20px; font-weight:600; margin:3px 0 4px; }
+.card-head p{ margin:0; color:var(--ink-soft); font-size:14.5px; text-align:justify; text-justify:inter-word; }
+
+.grid-2{ display:grid; grid-template-columns:1.1fr .9fr; gap:22px; align-items:start; }
+@media (max-width:820px){ .grid-2{ grid-template-columns:1fr; } }
+
+.diagram{ background:#FAFBF9; border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.caption{ font-size:12.5px; color:var(--ink-soft); margin:8px 2px 0; }
+
+.control{ margin:14px 0; }
+.control label{ display:flex; justify-content:space-between; font-size:13.5px; font-weight:700; margin-bottom:6px; }
+.control label span.val{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent,var(--ink)); }
+.control input[type=range]{ width:100%; }
+.toggle-row{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0; }
+.toggle-btn{
+  border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); font-weight:700; font-size:13px;
+  padding:8px 14px; border-radius:999px; cursor:pointer; transition:all .15s;
+}
+.toggle-btn.on{ background:var(--accent,var(--ink)); border-color:var(--accent,var(--ink)); color:#fff; }
+
+.mito-box{
+  background:var(--myth-soft); border:1px solid var(--myth-line); border-left:4px solid var(--myth);
+  border-radius:var(--radius-sm); padding:16px 18px; margin:22px 0;
+}
+.mito-box .mito-title{
+  font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--myth); font-weight:700; margin-bottom:6px; display:block;
+}
+.mito-box p{ margin:4px 0 0; font-size:14.5px; color:var(--ink); text-align:justify; text-justify:inter-word; }
+.mito-box strong{ color:var(--myth); }
+
+.example-box{
+  background:var(--low-soft); border:1px solid rgba(76,95,174,0.3); border-left:4px solid var(--low);
+  border-radius:var(--radius-sm); padding:16px 18px; margin:22px 0;
+}
+.example-box .example-title{
+  font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--low); font-weight:700; margin-bottom:6px; display:block;
+}
+.example-box p{ margin:4px 0 0; font-size:14.5px; color:var(--ink); text-align:justify; text-justify:inter-word; }
+.example-box strong{ color:var(--low); }
+
+.step-list{ list-style:none; margin:14px 0 0; padding:0; display:grid; gap:10px; }
+.step-list li{ display:flex; gap:12px; align-items:flex-start; }
+.step-num{
+  flex:none; width:24px; height:24px; border-radius:50%; background:var(--accent,var(--ink)); color:#fff;
+  font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px;
+}
+.step-list p{ margin:0; color:var(--ink-soft); font-size:14.5px; text-align:justify; text-justify:inter-word; }
+.step-list strong{ color:var(--ink); }
+
+.fact-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:14px; }
+.fact-card{ background:var(--paper-2); border-radius:var(--radius-sm); padding:12px 14px; }
+.fact-card .k{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; }
+.fact-card .v{ font-family:'Spectral',serif; font-weight:600; font-size:18px; margin-top:2px; }
+
+details.advanced{ margin-top:16px; border:1px dashed var(--line); border-radius:var(--radius-sm); padding:2px 14px; }
+details.advanced summary{ cursor:pointer; font-weight:700; font-size:13.5px; padding:10px 0; color:var(--ink); list-style:none; display:flex; align-items:center; gap:8px; }
+details.advanced summary::-webkit-details-marker{ display:none; }
+details.advanced summary::before{ content:"▸"; color:var(--accent,var(--ink)); transition:transform .15s; }
+details.advanced[open] summary::before{ transform:rotate(90deg); }
+details.advanced .adv-body{ padding:0 0 14px; font-size:14px; color:var(--ink-soft); }
+
+.cards-3{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; margin-top:18px; }
+.mini-card{ background:var(--paper-2); border-radius:var(--radius-sm); padding:16px 18px; }
+.mini-card h3{ font-size:15.5px; font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.mini-card h3 svg{ width:17px; height:17px; stroke:var(--low); flex:none; }
+.mini-card p{ margin:0; font-size:13.8px; color:var(--ink-soft); }
+
+/* ---- Episodios reales (El tiempo en España) ---- */
+.case-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:18px 20px 20px; margin:18px 0; }
+.real-image-box{ margin-top:16px; padding-top:16px; border-top:1px dashed var(--line); }
+.real-image-box .rib-label{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--myth); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.real-image-box img{ max-width:100%; height:auto; border-radius:8px; border:1px solid var(--line); display:block; background:#fff; }
+.real-image-box .rib-caption{ font-size:12px; color:var(--ink-soft); margin-top:6px; }
+.real-image-box .rib-link{ font-size:12.5px; margin-top:8px; display:inline-block; color:var(--low); font-weight:700; text-decoration:none; }
+.real-image-box .rib-link:hover{ text-decoration:underline; }
+.case-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+.case-head h3{ font-size:17px; font-weight:600; }
+.case-date{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#fff; background:var(--accent2,var(--low)); padding:3px 10px; border-radius:999px; font-weight:700; }
+.case-lede{ font-size:13.8px; color:var(--ink-soft); margin:2px 0 12px; }
+.case-grid{ display:grid; grid-template-columns:.85fr 1.15fr; gap:18px; align-items:start; }
+@media (max-width:760px){ .case-grid{ grid-template-columns:1fr; } }
+.case-facts{ display:grid; gap:8px; margin-bottom:10px; }
+.case-fact{ display:flex; gap:8px; font-size:13.8px; }
+.case-fact b{ flex:none; min-width:120px; color:var(--accent2,var(--low)); }
+.case-source{ font-size:12px; color:var(--ink-soft); margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+.case-source a{ color:var(--low); }
+.link-card{ background:var(--paper-2); border-radius:var(--radius-sm); padding:14px 16px; text-decoration:none; color:var(--ink); display:block; transition:background .15s; }
+.link-card:hover{ background:#dfe6e1; }
+.link-card .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; }
+.link-card .v{ font-family:'Spectral',serif; font-weight:600; font-size:15px; margin-top:3px; }
+
+/* ---- Escenarios de mapa del tiempo ---- */
+.scenario-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.scenario-q{ background:var(--paper-2); border-radius:var(--radius-sm); padding:14px 16px; margin-top:12px; }
+.scenario-q .q-text{ font-weight:700; font-size:14.5px; margin-bottom:10px; }
+.scenario-opts{ display:grid; gap:8px; }
+.scenario-opt{
+  text-align:left; border:1.5px solid var(--line); background:#fff; border-radius:9px; padding:9px 13px;
+  font-size:13.5px; cursor:pointer; transition:border-color .15s, background .15s; color:var(--ink); font-weight:600;
+}
+.scenario-opt:hover{ border-color:var(--low-2); }
+.scenario-opt.correct{ background:rgba(76,95,174,0.12); border-color:var(--low); }
+.scenario-opt.wrong{ background:var(--myth-soft); border-color:var(--myth); }
+.scenario-opt:disabled{ cursor:default; }
+.scenario-explain{ margin-top:10px; padding:10px 12px; border-radius:8px; background:#fff; font-size:13px; display:none; border:1px solid var(--line); }
+.scenario-explain.show{ display:block; }
+
+/* ---- Quiz (reutilizado del mismo patrón) ---- */
+.quiz-progress{ display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap; }
+.quiz-progress span{ flex:1; min-width:12px; height:5px; border-radius:3px; background:var(--line); }
+.quiz-progress span.done{ background:var(--low); }
+.quiz-progress span.current{ background:var(--high); }
+.quiz-q{ font-family:'Spectral',serif; font-weight:600; font-size:19px; margin-bottom:16px; }
+.quiz-opts{ display:grid; gap:10px; }
+.quiz-opt{
+  text-align:left; border:1.5px solid var(--line); background:#fff; border-radius:var(--radius-sm); padding:13px 16px;
+  font-size:14.5px; cursor:pointer; transition:border-color .15s, background .15s; color:var(--ink); font-weight:600;
+}
+.quiz-opt:hover{ border-color:var(--low-2); }
+.quiz-opt.correct{ background:rgba(76,95,174,0.12); border-color:var(--low); }
+.quiz-opt.wrong{ background:var(--myth-soft); border-color:var(--myth); }
+.quiz-opt:disabled{ cursor:default; }
+.quiz-explain{ margin-top:16px; padding:14px 16px; border-radius:var(--radius-sm); background:var(--high-soft); font-size:14px; display:none; }
+.quiz-explain.show{ display:block; }
+.quiz-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; }
+.quiz-score{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--ink-soft); }
+.next-btn{
+  background:var(--low); color:#fff; border:none; padding:10px 20px; border-radius:999px; font-weight:700; cursor:pointer;
+  font-size:14px; display:none;
+}
+.next-btn.show{ display:inline-block; }
+.quiz-final{ display:none; text-align:center; padding:20px 0; }
+.quiz-final.show{ display:block; }
+.quiz-final .big{ font-family:'Spectral',serif; font-size:32px; font-weight:700; }
+.restart-btn{
+  margin-top:14px; background:var(--ink); color:#fff; border:none; padding:11px 22px; border-radius:999px; font-weight:700; cursor:pointer;
+}
+
+footer.note{ text-align:center; padding:30px 20px 10px; color:var(--ink-soft); font-size:13px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="deck">
+    <div class="deck-inner">
+      <span class="eyebrow">Observatorio escolar</span>
+      <h1>Altas, bajas y frentes: así se lee el mapa del tiempo</h1>
+      <p class="lede">Por qué se forman los anticiclones y las borrascas, hacia dónde giran los vientos, cómo avanza un frente en 3D y cómo interpretar un mapa meteorológico real.</p>
+
+      <nav class="iso-nav" id="isoNav" aria-label="Secciones">
+        <svg class="deco" viewBox="0 0 640 300" aria-hidden="true">
+          <ellipse cx="220" cy="110" rx="130" ry="70" fill="none" stroke="rgba(238,241,239,0.16)" stroke-width="1.5"/>
+          <ellipse cx="220" cy="110" rx="80" ry="42" fill="none" stroke="rgba(238,241,239,0.13)" stroke-width="1.5"/>
+          <text x="220" y="116" font-size="15" fill="#D9A441" font-family="JetBrains Mono" font-weight="700" text-anchor="middle">A</text>
+          <ellipse cx="440" cy="190" rx="130" ry="70" fill="none" stroke="rgba(238,241,239,0.16)" stroke-width="1.5"/>
+          <ellipse cx="440" cy="190" rx="80" ry="42" fill="none" stroke="rgba(238,241,239,0.13)" stroke-width="1.5"/>
+          <text x="440" y="196" font-size="15" fill="#8091D6" font-family="JetBrains Mono" font-weight="700" text-anchor="middle">B</text>
+        </svg>
+        <!-- nodos posicionados por JS -->
+      </nav>
+      <div class="iso-nav-mobile" id="isoNavMobile"></div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ PANEL 1: PRESIÓN ============ -->
+    <section class="panel" id="panel-presion">
+      <div class="card acc-high">
+        <div class="card-head">
+          <div class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+          </div>
+          <div>
+            <h2>La presión atmosférica: altas y bajas</h2>
+            <p>La presión atmosférica es el peso del aire que hay encima de un punto. Se mide con un barómetro, en milibares (mb); la media a nivel del mar es de <strong>1013 mb</strong>. Por encima, hablamos de anticiclón; por debajo, de borrasca.</p>
+          </div>
+        </div>
+
+        <div class="toggle-row" role="group" aria-label="Tipo de centro de acción">
+          <button class="toggle-btn on" data-center="alta">☀️ Anticiclón (alta presión)</button>
+          <button class="toggle-btn" data-center="baja">🌧️ Borrasca (baja presión)</button>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <div class="diagram"><svg id="pressureColSvg" viewBox="0 0 460 300"></svg></div>
+            <p class="caption" id="pressureColCaption">El aire desciende desde arriba y se reparte por la superficie: tiempo estable y despejado.</p>
+          </div>
+          <div>
+            <div class="diagram"><svg id="isobarSvg" viewBox="0 0 380 300"></svg></div>
+            <p class="caption">Vista desde arriba: las isobaras unen puntos de igual presión. Mueve el control para ver cómo su separación cambia la fuerza del viento.</p>
+            <div class="control">
+              <label>Separación entre isobaras <span class="val" id="isobarVal">media</span></label>
+              <input type="range" id="isobarSlider" min="0" max="100" value="50">
+            </div>
+          </div>
+        </div>
+
+        <div class="fact-grid" id="presionFacts"></div>
+
+        <div class="example-box">
+          <span class="example-title">Ejemplo cotidiano</span>
+          <p>Piensa en una olla exprés: el vapor de dentro tiene más presión que el aire de la cocina, así que en cuanto puede, escapa hacia fuera con fuerza. Con la atmósfera pasa algo parecido: el aire siempre intenta viajar desde donde hay más presión hacia donde hay menos, y ese desplazamiento es, precisamente, el viento.</p>
+        </div>
+
+        <div class="mito-box">
+          <span class="mito-title">Un anticiclón no siempre es "buen tiempo"</span>
+          <p>Un anticiclón trae tiempo <em>estable</em>, no necesariamente agradable. En invierno, un anticiclón puede quedarse varios días seguidos sobre el interior peninsular y provocar nieblas persistentes, heladas y una capa de aire frío y contaminado atrapada cerca del suelo (inversión térmica), sin apenas viento que la limpie. Una borrasca, en cambio, puede traer solo nubes y algo de viento, sin llegar a llover.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PANEL 2: VIENTOS ============ -->
+    <section class="panel" id="panel-vientos">
+      <div class="card acc-low">
+        <div class="card-head">
+          <div class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 16h15a3 3 0 1 1-3 3M3 12h9"/></svg>
+          </div>
+          <div>
+            <h2>Cómo giran los vientos</h2>
+            <p>El viento no viaja en línea recta de una alta a una baja presión: la rotación de la Tierra lo desvía y lo hace girar alrededor de cada centro de acción.</p>
+          </div>
+        </div>
+
+        <div class="toggle-row" role="group" aria-label="Tipo de centro de acción">
+          <button class="toggle-btn on" data-vcenter="alta">Anticiclón</button>
+          <button class="toggle-btn" data-vcenter="baja">Borrasca</button>
+        </div>
+        <div class="toggle-row" role="group" aria-label="Hemisferio">
+          <button class="toggle-btn on" data-hemisferio="norte">Hemisferio Norte</button>
+          <button class="toggle-btn" data-hemisferio="sur">Hemisferio Sur</button>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <div class="diagram"><svg id="windSvg" viewBox="0 0 380 320"></svg></div>
+            <p class="caption" id="windCaption">—</p>
+          </div>
+          <div>
+            <ol class="step-list">
+              <li><span class="step-num">1</span><p>El aire siempre "quiere" ir en línea recta desde la alta hacia la baja presión (la flecha corta del centro hacia fuera).</p></li>
+              <li><span class="step-num">2</span><p>Pero la Tierra gira, y ese giro desvía el viento hacia la derecha en el hemisferio norte (y hacia la izquierda en el sur). Es el <strong>efecto Coriolis</strong>.</p></li>
+              <li><span class="step-num">3</span><p>El resultado final es un viento que gira <strong>alrededor</strong> del centro en vez de ir directo a él: en espiral hacia fuera en un anticiclón, en espiral hacia dentro en una borrasca.</p></li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="example-box">
+          <span class="example-title">Ejemplo cotidiano</span>
+          <p>Es como intentar caminar en línea recta hacia el centro de un tiovivo mientras gira: por mucho que apuntes al centro, tu trayectoria real se curva. Al aire que se mueve sobre la superficie terrestre en rotación le pasa exactamente eso.</p>
+        </div>
+
+        <div class="mito-box">
+          <span class="mito-title">El viento no entra "recto" en una borrasca</span>
+          <p>Es fácil imaginar que el aire se limita a converger hacia el centro de una borrasca en línea recta, como el agua por un desagüe visto desde arriba sin más. En realidad entra en espiral, formando un ángulo con las isobaras de unos 30°: por eso los mapas del tiempo dibujan el giro con flechas curvas, no rectas.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PANEL 3: FRENTES ============ -->
+    <section class="panel" id="panel-frentes">
+      <div class="card acc-cold">
+        <div class="card-head">
+          <div class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 17l6-6 4 4 8-8M3 7h18"/></svg>
+          </div>
+          <div>
+            <h2>Los frentes, en corte transversal</h2>
+            <p>Un frente es la frontera entre dos masas de aire con temperaturas distintas. Mira de perfil cómo una empuja a la otra.</p>
+          </div>
+        </div>
+
+        <div class="toggle-row" role="group" aria-label="Tipo de frente">
+          <button class="toggle-btn on" data-front="frio">Frente frío</button>
+          <button class="toggle-btn" data-front="calido">Frente cálido</button>
+          <button class="toggle-btn" data-front="ocluido">Frente ocluido</button>
+        </div>
+
+        <div class="diagram"><svg id="frontSvg" viewBox="0 0 600 320"></svg></div>
+        <div class="control" id="frontSliderWrap">
+          <label>Posición del frente <span class="val" id="frontVal">—</span></label>
+          <input type="range" id="frontSlider" min="270" max="400" value="330">
+        </div>
+        <p class="caption" id="frontCaption">—</p>
+
+        <div class="diagram" style="margin-top:14px;">
+          <svg id="frontMapSvg" viewBox="0 0 600 90"></svg>
+        </div>
+        <p class="caption">Así se dibuja este mismo frente visto desde arriba, en un mapa del tiempo real.</p>
+
+        <div class="fact-grid" id="frontFacts"></div>
+
+        <div class="example-box">
+          <span class="example-title">Ejemplo cotidiano</span>
+          <p>Un frente frío es como una pala quitanieves de aire: avanza rápido y mete el aire caliente hacia arriba de golpe, por eso provoca tormentas intensas pero cortas. Un frente cálido es como una rampa para patinar: el aire caliente sube despacio y suavemente por encima del frío, así que las nubes y la lluvia se notan mucho antes de que llegue el frente y duran más horas, pero con menos intensidad.</p>
+        </div>
+
+        <div class="mito-box">
+          <span class="mito-title">Las pendientes reales son casi planas</span>
+          <p>En este dibujo se exagera muchísimo la inclinación para que se vea la forma. En la realidad, un frente frío tiene una pendiente aproximada de 1:50 y un frente cálido de 1:150: por cada kilómetro de altura, el frente cálido se extiende ¡150 km! Si lo dibujáramos a escala real, ambas líneas parecerían completamente horizontales.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PANEL 4: MAPA DEL TIEMPO ============ -->
+    <section class="panel" id="panel-mapa">
+      <div class="card acc-low">
+        <div class="card-head">
+          <div class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 3v18M15 3v18M3 8l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/></svg>
+          </div>
+          <div>
+            <h2>Lee un mapa del tiempo real</h2>
+            <p>Tres situaciones típicas de la Península. Interpreta cada mapa igual que tendrías que hacerlo en un examen. Los mapas son esquemáticos: lo importante es reconocer los símbolos, no la forma exacta de la costa.</p>
+          </div>
+        </div>
+
+        <div class="scenario-tabs" id="scenarioTabs"></div>
+        <div class="diagram"><svg id="scenarioSvg" viewBox="0 0 600 420"></svg></div>
+        <div id="scenarioQuestions"></div>
+      </div>
+    </section>
+
+    <!-- ============ PANEL 5: EL TIEMPO EN ESPAÑA ============ -->
+    <section class="panel" id="panel-espana">
+      <div class="card acc-warm">
+        <div class="card-head">
+          <div class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18"/></svg>
+          </div>
+          <div>
+            <h2>El tiempo en España, con datos reales de AEMET</h2>
+            <p>Los mismos protagonistas -altas, bajas y frentes- explican por qué en España hace un verano tan seco y, a veces, un otoño tan violento. Estos tres episodios ocurrieron de verdad: las cifras están tomadas de los informes públicos de la Agencia Estatal de Meteorología (AEMET).</p>
+          </div>
+        </div>
+
+        <div class="mito-box" style="margin-top:0;">
+          <span class="mito-title">Sobre las fuentes de esta pestaña</span>
+          <p>AEMET autoriza expresamente el uso y la reproducción de su información citándola como autora. Los esquemas de abajo son <strong>recreaciones simplificadas</strong> a partir de sus datos e informes (no son capturas de sus mapas), pensadas para leerse en clase. Al final tienes enlaces directos al mapa real de hoy y a los informes originales.</p>
+        </div>
+
+        <div id="realCases"></div>
+
+        <div class="example-box">
+          <span class="example-title">¿Por qué las borrascas tienen nombre?</span>
+          <p>Desde 2017, España, Portugal y Francia bautizan conjuntamente las borrascas que pueden afectar a su territorio con impacto significativo, por orden alfabético cada temporada (por ejemplo, Éowyn y Herminia llegaron seguidas en enero de 2025). No es un capricho: un nombre facilita que los medios y la protección civil se refieran todos a la misma borrasca sin confusión.</p>
+        </div>
+
+        <div class="cards-3">
+          <div class="mini-card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 12h13M12 5l7 7-7 7"/></svg>Viento de Poniente y Levante</h3>
+            <p>En la costa mediterránea, el poniente (del oeste, seco, viene de tierra) suele traer buen tiempo; el levante (del este, húmedo, viene del mar) trae nubes y a veces lluvias persistentes al chocar con las montañas costeras.</p>
+          </div>
+          <div class="mini-card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 20h16M6 20V10l6-6 6 6v10"/></svg>La "España seca" y la "España húmeda"</h3>
+            <p>Las borrascas atlánticas pierden fuerza y humedad al cruzar la Península de oeste a este, y las cordilleras interceptan buena parte de la lluvia que traen. Por eso el interior y el sureste reciben mucha menos precipitación que la cornisa cantábrica o Galicia.</p>
+          </div>
+        </div>
+
+        <div class="fact-grid" style="margin-top:22px;" id="aemetLinks"></div>
+      </div>
+    </section>
+
+    <!-- ============ PANEL 6: QUIZ ============ -->
+    <section class="panel" id="panel-quiz">
+      <div class="card acc-occ">
+        <div class="card-head">
+          <div class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div>
+            <h2>Ponte a prueba</h2>
+            <p>Preguntas pensadas para cazar las confusiones más habituales sobre presión, viento y frentes.</p>
+          </div>
+        </div>
+
+        <div class="quiz-progress" id="quizProgress"></div>
+        <div id="quizBody">
+          <p class="quiz-q" id="quizQ"></p>
+          <div class="quiz-opts" id="quizOpts"></div>
+          <div class="quiz-explain" id="quizExplain"></div>
+          <div class="quiz-foot">
+            <span class="quiz-score">Aciertos: <span id="quizScore">0</span>/<span id="quizTotal">0</span></span>
+            <button class="next-btn" id="nextBtn">Siguiente →</button>
+          </div>
+        </div>
+        <div class="quiz-final" id="quizFinal">
+          <div class="big" id="quizFinalScore"></div>
+          <p id="quizFinalMsg"></p>
+          <button class="restart-btn" id="restartBtn">Repetir el test</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="note">Simulación educativa · las pendientes de los frentes y las escalas están exageradas para que se entiendan, no a proporción real.</footer>
+</div>
+
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+
+<script>
+/* =========================================================================
+   CONSTANTES DE COLOR (coinciden con las variables CSS; se usan tal cual
+   porque los atributos de presentación SVG no siempre resuelven var())
+   ========================================================================= */
+const COL_HIGH='#D9A441', COL_HIGH2='#F0C877';
+const COL_LOW='#4C5FAE', COL_LOW2='#8091D6';
+const COL_COLD='#2E6FBE', COL_WARM='#C1443A', COL_OCC='#7B5AA6';
+const COL_INK='#1C2430', COL_INKSOFT='#57677A';
+
+function arrowMarkup(x1,y1,x2,y2,color,width=3){
+  const angle = Math.atan2(y2-y1,x2-x1);
+  const headLen=10;
+  const hx1 = x2 - headLen*Math.cos(angle-0.4), hy1 = y2 - headLen*Math.sin(angle-0.4);
+  const hx2 = x2 - headLen*Math.cos(angle+0.4), hy2 = y2 - headLen*Math.sin(angle+0.4);
+  return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>
+    <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${hx1.toFixed(1)},${hy1.toFixed(1)} ${hx2.toFixed(1)},${hy2.toFixed(1)}" fill="${color}"/>`;
+}
+function sunIconSvg(cx,cy,r){
+  let rays='';
+  [0,60,120,180,240,300].forEach(a=>{
+    const rad=a*Math.PI/180;
+    const x1=cx+(r+4)*Math.cos(rad), y1=cy+(r+4)*Math.sin(rad);
+    const x2=cx+(r+11)*Math.cos(rad), y2=cy+(r+11)*Math.sin(rad);
+    rays += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${COL_HIGH}" stroke-width="2.5" stroke-linecap="round"/>`;
+  });
+  return `<circle cx="${cx}" cy="${cy}" r="${r+7}" fill="${COL_HIGH}" opacity="0.22"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="${COL_HIGH}"/>${rays}`;
+}
+function cloudRainIconSvg(cx,cy){
+  return `
+    <ellipse cx="${cx-14}" cy="${cy+4}" rx="16" ry="12" fill="#8f9bc2"/>
+    <ellipse cx="${cx+10}" cy="${cy-4}" rx="20" ry="15" fill="#7c88b8"/>
+    <ellipse cx="${cx+28}" cy="${cy+6}" rx="14" ry="11" fill="#8f9bc2"/>
+    <line x1="${cx-8}" y1="${cy+20}" x2="${cx-14}" y2="${cy+34}" stroke="${COL_LOW}" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="${cx+6}" y1="${cy+20}" x2="${cx}" y2="${cy+34}" stroke="${COL_LOW}" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="${cx+20}" y1="${cy+20}" x2="${cx+14}" y2="${cy+34}" stroke="${COL_LOW}" stroke-width="2.5" stroke-linecap="round"/>
+  `;
+}
+
+/* =========================================================================
+   ESTADO GLOBAL
+   ========================================================================= */
+const state = {
+  tab:'presion',
+  center:'alta', isobarSpacing:50,
+  vcenter:'alta', hemisferio:'norte',
+  front:'frio', frontX:330,
+  scenario:0
+};
+
+/* =========================================================================
+   NAVEGACIÓN
+   ========================================================================= */
+const TABS = [
+  { id:'presion', label:'Presión', icon:'<circle cx="12" cy="12" r="6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>' },
+  { id:'vientos', label:'Vientos', icon:'<path d="M3 8h11a3 3 0 1 0-3-3M3 16h15a3 3 0 1 1-3 3M3 12h9"/>' },
+  { id:'frentes', label:'Frentes', icon:'<path d="M3 17l6-6 4 4 8-8M3 7h18"/>' },
+  { id:'mapa', label:'Mapa del tiempo', icon:'<path d="M3 8l6-2 6 2 6-2v11l-6 2-6-2-6 2z"/>' },
+  { id:'espana', label:'El tiempo en España', icon:'<circle cx="12" cy="12" r="5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>' },
+  { id:'quiz', label:'Ponte a prueba', icon:'<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>' }
+];
+
+function buildIsoNav(){
+  const nav = document.getElementById('isoNav');
+  const mob = document.getElementById('isoNavMobile');
+  const cx=320, cy=150, rx=270, ry=105;
+  const angles = [-90,-30,30,90,150,210];
+  TABS.forEach((t,i)=>{
+    const a = angles[i]*Math.PI/180;
+    const x = cx + rx*Math.cos(a), y = cy + ry*Math.sin(a);
+    const btn = document.createElement('button');
+    btn.className = 'iso-node'; btn.dataset.tab = t.id;
+    btn.style.left = (x/640*100)+'%'; btn.style.top = (y/300*100)+'%';
+    btn.innerHTML = `<span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.icon}</svg></span><span class="lbl">${t.label}</span>`;
+    btn.addEventListener('click', ()=> setTab(t.id));
+    nav.appendChild(btn);
+
+    const btn2 = btn.cloneNode(true);
+    btn2.addEventListener('click', ()=> setTab(t.id));
+    mob.appendChild(btn2);
+  });
+}
+function setTab(id){
+  state.tab = id;
+  document.querySelectorAll('.panel').forEach(p=> p.classList.toggle('active', p.id==='panel-'+id));
+  document.querySelectorAll('.iso-node').forEach(n=> n.classList.toggle('active', n.dataset.tab===id));
+  renderAll();
+}
+
+/* =========================================================================
+   PANEL 1: PRESIÓN
+   ========================================================================= */
+function renderPressureTab(){
+  const isAlta = state.center==='alta';
+  const svg1 = document.getElementById('pressureColSvg');
+  const cx=230, groundY=250, topY=40;
+  let c = `
+    <ellipse cx="${cx}" cy="${groundY+14}" rx="150" ry="10" fill="#00000010"/>
+    <line x1="40" y1="${groundY}" x2="420" y2="${groundY}" stroke="${COL_INK}" stroke-width="2"/>
+  `;
+  if(isAlta){
+    c += sunIconSvg(cx,68,22);
+    c += arrowMarkup(cx,98,cx,178,COL_HIGH,5);
+    c += arrowMarkup(cx-8,192,cx-118,230,COL_HIGH,4);
+    c += arrowMarkup(cx+8,192,cx+118,230,COL_HIGH,4);
+    c += `<text x="${cx}" y="128" font-size="11.5" fill="#8a6a1c" font-family="Manrope" font-weight="700" text-anchor="middle">aire que desciende</text>`;
+    c += `<text x="${cx}" y="215" font-size="11.5" fill="#8a6a1c" font-family="Manrope" font-weight="700" text-anchor="middle">se reparte en superficie</text>`;
+  } else {
+    c += cloudRainIconSvg(cx,64);
+    c += arrowMarkup(cx,178,cx,98,COL_LOW,5);
+    c += arrowMarkup(cx-118,230,cx-8,192,COL_LOW,4);
+    c += arrowMarkup(cx+118,230,cx+8,192,COL_LOW,4);
+    c += `<text x="${cx}" y="128" font-size="11.5" fill="#3d4f8f" font-family="Manrope" font-weight="700" text-anchor="middle">aire que asciende</text>`;
+    c += `<text x="${cx}" y="215" font-size="11.5" fill="#3d4f8f" font-family="Manrope" font-weight="700" text-anchor="middle">converge en superficie</text>`;
+  }
+  svg1.innerHTML = c;
+  document.getElementById('pressureColCaption').textContent = isAlta
+    ? 'El aire desciende desde arriba y se reparte por la superficie: tiempo estable y despejado.'
+    : 'El aire converge en superficie y asciende por el centro: se enfría, se condensa y forma nubes.';
+
+  const svg2 = document.getElementById('isobarSvg');
+  const cx2=190, cy2=150;
+  const slider = state.isobarSpacing;
+  const spacingPx = 14 + slider*0.185;
+  const baseMb = isAlta ? 1030 : 990;
+  let rings='';
+  for(let i=1;i<=4;i++){
+    const r = spacingPx*i;
+    const mb = isAlta ? baseMb - i*5 : baseMb + i*5;
+    rings += `<circle cx="${cx2}" cy="${cy2}" r="${r.toFixed(1)}" fill="none" stroke="${isAlta?COL_HIGH:COL_LOW}" stroke-width="1.3" opacity="${(0.95 - i*0.13).toFixed(2)}"/>`;
+    rings += `<text x="${(cx2+r*0.68).toFixed(1)}" y="${(cy2-r*0.68-4).toFixed(1)}" font-size="9.5" fill="${COL_INKSOFT}" font-family="JetBrains Mono">${mb}</text>`;
+  }
+  const rotR = spacingPx*3;
+  const a0 = 200*Math.PI/180, a1 = 340*Math.PI/180;
+  const p0x = cx2+rotR*Math.cos(a0), p0y=cy2+rotR*Math.sin(a0);
+  const p1x = cx2+rotR*Math.cos(a1), p1y=cy2+rotR*Math.sin(a1);
+  const arcPath = isAlta
+    ? `M ${p0x.toFixed(1)} ${p0y.toFixed(1)} A ${rotR.toFixed(1)} ${rotR.toFixed(1)} 0 0 1 ${p1x.toFixed(1)} ${p1y.toFixed(1)}`
+    : `M ${p1x.toFixed(1)} ${p1y.toFixed(1)} A ${rotR.toFixed(1)} ${rotR.toFixed(1)} 0 0 1 ${p0x.toFixed(1)} ${p0y.toFixed(1)}`;
+  svg2.innerHTML = `
+    ${rings}
+    <path d="${arcPath}" fill="none" stroke="${isAlta?'#B98A2E':'#3d4f8f'}" stroke-width="2.4"/>
+    ${arrowMarkup(isAlta?p1x:p0x, isAlta?p1y:p0y, isAlta?p1x+0.01:p0x+0.01, isAlta?p1y+0.01:p0y+0.01, isAlta?'#B98A2E':'#3d4f8f',0.1)}
+    <circle cx="${cx2}" cy="${cy2}" r="17" fill="${isAlta?COL_HIGH:COL_LOW}" stroke="#fff" stroke-width="2"/>
+    <text x="${cx2}" y="${cy2+5}" font-size="15" fill="#fff" font-family="JetBrains Mono" font-weight="700" text-anchor="middle">${isAlta?'A':'B'}</text>
+  `;
+  document.getElementById('isobarVal').textContent = slider<33?'muy juntas → viento fuerte':(slider<66?'media':'muy separadas → viento flojo');
+
+  const facts = document.getElementById('presionFacts');
+  facts.innerHTML = `
+    <div class="fact-card"><div class="k">Tipo</div><div class="v">${isAlta?'Anticiclón':'Borrasca'}</div></div>
+    <div class="fact-card"><div class="k">Presión típica</div><div class="v">${isAlta?'~1025 mb':'~990 mb'}</div></div>
+    <div class="fact-card"><div class="k">Movimiento del aire</div><div class="v">${isAlta?'Desciende y diverge':'Converge y asciende'}</div></div>
+    <div class="fact-card"><div class="k">Tiempo asociado</div><div class="v">${isAlta?'Estable, despejado':'Inestable, nuboso'}</div></div>
+  `;
+}
+
+/* =========================================================================
+   PANEL 2: VIENTOS
+   ========================================================================= */
+function renderWindTab(){
+  const isAlta = state.vcenter==='alta';
+  const isNorte = state.hemisferio==='norte';
+  const clockwise = isAlta ? isNorte : !isNorte;
+  const diverging = isAlta;
+
+  const svg = document.getElementById('windSvg');
+  const cx=190, cy=160, R=95;
+  let arrows = '';
+  [45,135,225,315].forEach(phiDeg=>{
+    const phi = phiDeg*Math.PI/180;
+    const px = cx + R*Math.sin(phi), py = cy - R*Math.cos(phi);
+    let tx = Math.cos(phi), ty = Math.sin(phi);
+    if(!clockwise){ tx=-tx; ty=-ty; }
+    const rx = Math.sin(phi), ry = -Math.cos(phi); // radial unit (centro -> punto)
+    const radialSign = diverging ? 1 : -1;
+    const tailX = px - tx*17 - rx*10*radialSign, tailY = py - ty*17 - ry*10*radialSign;
+    const headX = px + tx*17 + rx*10*radialSign, headY = py + ty*17 + ry*10*radialSign;
+    arrows += arrowMarkup(tailX,tailY,headX,headY, isAlta?COL_HIGH:COL_LOW, 4);
+  });
+
+  svg.innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${COL_LOW2}" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.6"/>
+    ${arrows}
+    <circle cx="${cx}" cy="${cy}" r="18" fill="${isAlta?COL_HIGH:COL_LOW}" stroke="#fff" stroke-width="2"/>
+    <text x="${cx}" y="${cy+5}" font-size="16" fill="#fff" font-family="JetBrains Mono" font-weight="700" text-anchor="middle">${isAlta?'A':'B'}</text>
+    <text x="${cx}" y="${cy+R+26}" font-size="12" fill="${COL_INKSOFT}" font-family="Manrope" text-anchor="middle">${clockwise?'sentido horario':'sentido antihorario'}</text>
+  `;
+
+  document.getElementById('windCaption').textContent =
+    `${isAlta?'Anticiclón':'Borrasca'} en el hemisferio ${isNorte?'norte':'sur'}: el viento gira en sentido ${clockwise?'horario':'antihorario'} y ${diverging?'se aleja del':'converge hacia el'} centro.`;
+}
+
+/* =========================================================================
+   PANEL 3: FRENTES
+   ========================================================================= */
+const FRONT_GEOM = { groundY:270, topY:50, xMin:30, xMax:570, coldAngleDeg:68, warmAngleDeg:35 };
+
+function coldPolygons(frontX){
+  const g = FRONT_GEOM;
+  const dx = -(1/Math.tan(g.coldAngleDeg*Math.PI/180));
+  const maxT = g.groundY - g.topY;
+  const exitX = frontX + dx*maxT;
+  return {
+    cold: [[g.xMin,g.topY],[exitX,g.topY],[frontX,g.groundY],[g.xMin,g.groundY]],
+    warm: [[exitX,g.topY],[g.xMax,g.topY],[g.xMax,g.groundY],[frontX,g.groundY]],
+    boundary: [[frontX,g.groundY],[exitX,g.topY]]
+  };
+}
+function warmPolygons(frontX){
+  const g = FRONT_GEOM;
+  const dx = 1/Math.tan(g.warmAngleDeg*Math.PI/180);
+  let t = g.groundY - g.topY;
+  const tExitRight = (g.xMax - frontX)/dx;
+  if(tExitRight < t) t = tExitRight;
+  const exitX = frontX + dx*t;
+  const exitY = g.groundY - t;
+  return {
+    warm: [[g.xMin,g.topY],[g.xMax,g.topY],[g.xMax,exitY],[frontX,g.groundY],[g.xMin,g.groundY]],
+    cold: [[exitX,exitY],[g.xMax,exitY],[g.xMax,g.groundY],[frontX,g.groundY]],
+    boundary: [[frontX,g.groundY],[exitX,exitY]]
+  };
+}
+function polyStr(pts){ return pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '); }
+
+function renderFrontTab(){
+  const svg = document.getElementById('frontSvg');
+  const g = FRONT_GEOM;
+  const type = state.front;
+  document.getElementById('frontSliderWrap').style.display = (type==='ocluido') ? 'none' : '';
+
+  let coldFill = '#DCE7F5', warmFill = '#FBE7D9';
+  let scene = `<rect x="0" y="0" width="600" height="320" fill="${warmFill}"/>`;
+
+  if(type==='frio' || type==='calido'){
+    const frontX = state.frontX;
+    const P = type==='frio' ? coldPolygons(frontX) : warmPolygons(frontX);
+    scene = `
+      <rect x="0" y="0" width="600" height="320" fill="${warmFill}"/>
+      <polygon points="${polyStr(P.cold)}" fill="${coldFill}"/>
+      <line x1="${P.boundary[0][0].toFixed(1)}" y1="${P.boundary[0][1].toFixed(1)}" x2="${P.boundary[1][0].toFixed(1)}" y2="${P.boundary[1][1].toFixed(1)}" stroke="${type==='frio'?COL_COLD:COL_WARM}" stroke-width="3.5"/>
+    `;
+    // nubes y precipitación
+    if(type==='frio'){
+      scene += cloudCluster(frontX-15, g.topY+35, 1.3, true);
+      scene += rainBand(frontX-45, frontX+5, g.groundY-6, 6);
+      scene += sunIconSvg(g.xMin+55, g.topY+40, 16);
+      scene += `<text x="${g.xMin+55}" y="${g.topY+70}" font-size="10.5" fill="${COL_INKSOFT}" font-family="Manrope" text-anchor="middle">ya ha escampado</text>`;
+    } else {
+      scene += cloudCluster(frontX+90, g.topY+30, 1.8, false);
+      scene += rainBand(frontX+10, frontX+180, g.groundY-6, 10);
+      scene += `<text x="${frontX+95}" y="${g.topY+16}" font-size="10.5" fill="${COL_INKSOFT}" font-family="Manrope" text-anchor="middle">nubes altas y lluvia extensa</text>`;
+    }
+    scene += `<text x="${(g.xMin+frontX)/2}" y="${g.groundY-14}" font-size="12" fill="#2E5FA0" font-family="Manrope" font-weight="700" text-anchor="middle">AIRE FRÍO</text>`;
+    scene += `<text x="${(frontX+g.xMax)/2}" y="${g.topY+18}" font-size="12" fill="#A63A2E" font-family="Manrope" font-weight="700" text-anchor="middle">AIRE CÁLIDO</text>`;
+
+    document.getElementById('frontVal').textContent = frontX;
+    document.getElementById('frontCaption').textContent = type==='frio'
+      ? 'El aire frío avanza como una cuña y empuja al cálido hacia arriba de golpe: nubes verticales, chubascos intensos y cortos, y despeja rápido detrás.'
+      : 'El aire cálido resbala suavemente por encima del frío, que se retira: nubes extensas y lluvia débil pero prolongada mucho antes de que "llegue" el frente.';
+  } else {
+    // Ocluido: escena estática
+    const apex=[300,160], topL=[210,50], topR=[390,50];
+    scene = `
+      <rect x="0" y="0" width="600" height="320" fill="${coldFill}"/>
+      <polygon points="${polyStr([apex,topL,topR])}" fill="${warmFill}"/>
+      <line x1="${apex[0]}" y1="${apex[1]}" x2="${topL[0]}" y2="${topL[1]}" stroke="${COL_COLD}" stroke-width="3"/>
+      <line x1="${apex[0]}" y1="${apex[1]}" x2="${topR[0]}" y2="${topR[1]}" stroke="${COL_WARM}" stroke-width="3"/>
+      ${cloudCluster(300, 110, 1.6, true)}
+      ${rainBand(260,340,g.groundY-6,8)}
+      <text x="150" y="130" font-size="11" fill="#2E5FA0" font-family="Manrope" font-weight="700" text-anchor="middle">antiguo frente frío</text>
+      <text x="450" y="130" font-size="11" fill="#A63A2E" font-family="Manrope" font-weight="700" text-anchor="middle">antiguo frente cálido</text>
+      <text x="300" y="95" font-size="10.5" fill="#5B4A80" font-family="Manrope" font-weight="700" text-anchor="middle">sector cálido, ya sin tocar el suelo</text>
+      <text x="150" y="250" font-size="12" fill="#2E5FA0" font-family="Manrope" font-weight="700" text-anchor="middle">AIRE FRÍO</text>
+      <text x="450" y="250" font-size="12" fill="#2E5FA0" font-family="Manrope" font-weight="700" text-anchor="middle">AIRE FRÍO</text>
+    `;
+    document.getElementById('frontVal').textContent = '—';
+    document.getElementById('frontCaption').textContent = 'El frente frío, más rápido, alcanza al cálido y levanta todo el aire cálido del suelo: es la fase final de una borrasca, cuando empieza a debilitarse.';
+  }
+
+  scene += `<ellipse cx="300" cy="${g.groundY+14}" rx="270" ry="10" fill="#00000010"/>
+    <line x1="${g.xMin}" y1="${g.groundY}" x2="${g.xMax}" y2="${g.groundY}" stroke="${COL_INK}" stroke-width="2.2"/>`;
+  svg.innerHTML = scene;
+
+  renderFrontMap();
+
+  const facts = document.getElementById('frontFacts');
+  const info = {
+    frio:{vel:'rápido (~30-40 km/h)', pendiente:'muy inclinada (≈1:50)', duracion:'corta e intensa', simbolo:'triángulos azules'},
+    calido:{vel:'lento (~15-25 km/h)', pendiente:'muy tendida (≈1:150)', duracion:'larga y suave', simbolo:'semicírculos rojos'},
+    ocluido:{vel:'variable', pendiente:'combinación de ambas', duracion:'nubosidad variable', simbolo:'alterna ambos, en morado'}
+  }[type];
+  facts.innerHTML = `
+    <div class="fact-card"><div class="k">Velocidad típica</div><div class="v">${info.vel}</div></div>
+    <div class="fact-card"><div class="k">Pendiente</div><div class="v">${info.pendiente}</div></div>
+    <div class="fact-card"><div class="k">Precipitación</div><div class="v">${info.duracion}</div></div>
+    <div class="fact-card"><div class="k">Símbolo en el mapa</div><div class="v">${info.simbolo}</div></div>
+  `;
+}
+
+function cloudCluster(cx,cy,scale,tall){
+  const s=scale;
+  let c = `<ellipse cx="${cx-16*s}" cy="${cy+6*s}" rx="${16*s}" ry="${11*s}" fill="#6b7690"/>
+    <ellipse cx="${cx+12*s}" cy="${cy}" rx="${20*s}" ry="${14*s}" fill="#5b6684"/>
+    <ellipse cx="${cx+34*s}" cy="${cy+7*s}" rx="${15*s}" ry="${10*s}" fill="#6b7690"/>`;
+  if(tall){
+    c += `<ellipse cx="${cx+10*s}" cy="${cy-18*s}" rx="${14*s}" ry="${16*s}" fill="#4a5372"/>`;
+  }
+  return c;
+}
+function rainBand(x1,x2,y,n){
+  let d='';
+  for(let i=0;i<n;i++){
+    const x = x1 + (x2-x1)*(i/(n-1));
+    d += `<line x1="${x.toFixed(1)}" y1="${(y-14).toFixed(1)}" x2="${(x-5).toFixed(1)}" y2="${(y+8).toFixed(1)}" stroke="${COL_LOW}" stroke-width="2" stroke-linecap="round" opacity="0.75"/>`;
+  }
+  return d;
+}
+
+function renderFrontMap(){
+  const svg = document.getElementById('frontMapSvg');
+  const type = state.front;
+  const frontX = type==='ocluido' ? 300 : state.frontX;
+  const color = type==='frio' ? COL_COLD : type==='calido' ? COL_WARM : COL_OCC;
+  let symbols = '';
+  const n=5, spacing=28;
+  for(let i=-2;i<=2;i++){
+    const x = frontX + i*spacing;
+    const useCircle = type==='calido' || (type==='ocluido' && i%2===0);
+    if(useCircle){
+      symbols += `<path d="M ${x-9} 45 A 9 9 0 0 1 ${x+9} 45" fill="${color}"/>`;
+    } else {
+      symbols += `<polygon points="${x-9},45 ${x+9},45 ${x},33" fill="${color}"/>`;
+    }
+  }
+  svg.innerHTML = `
+    <line x1="40" y1="45" x2="560" y2="45" stroke="${color}" stroke-width="3"/>
+    ${symbols}
+    ${arrowMarkup(frontX+80,20,frontX+110,20,COL_INKSOFT,2.5)}
+    <text x="${frontX+80}" y="14" font-size="9.5" fill="${COL_INKSOFT}" font-family="Manrope" text-anchor="middle">avance</text>
+  `;
+}
+
+/* =========================================================================
+   PANEL 4: MAPA DEL TIEMPO (escenarios)
+   ========================================================================= */
+// Contorno real (simplificado) de la Península Ibérica, calculado por proyección
+// equirrectangular a partir de coordenadas geográficas reales (capas y ciudades
+// reconocibles), no un rectángulo ni una figura suavizada a mano.
+const IBERIA_PATH = "M 172.0,112.8 L 203.6,88.8 L 282.7,85.6 L 339.4,89.6 L 363.6,94.0 L 395.4,95.2 L 402.5,92.4 L 471.4,118.0 L 543.7,130.8 L 557.8,135.2 L 522.6,172.8 L 494.4,183.2 L 482.1,199.2 L 457.3,228.4 L 444.5,249.2 L 463.5,278.8 L 441.4,294.0 L 425.8,324.0 L 390.2,359.2 L 320.7,359.2 L 284.2,388.0 L 263.1,366.8 L 243.1,337.6 L 228.7,340.8 L 181.2,347.2 L 165.0,276.8 L 190.1,182.0 L 186.1,138.4 Z";
+const CITY_XY = {
+  "Madrid": [342.7, 211.2], "Valencia": [439.2, 254.0], "A Coruña": [201.8, 100.0],
+  "Sevilla": [272.6, 332.4], "Barcelona": [518.9, 172.4], "Bilbao": [366.3, 97.6],
+  "Zaragoza": [429.1, 162.0], "Alicante": [436.2, 294.0]
+};
+const SEA_XY = {
+  "Azores": [57.8, 368.0],
+  "BorrascaAtlantica": [103.7, 40.0],
+  "DANA": [358.0, 394.0],
+  "Filomena": [256.9, 376.0]
+};
+function mapCanvasBase(){
+  return `
+    <rect x="0" y="0" width="600" height="420" fill="#CFE0EC"/>
+    <text x="18" y="28" font-size="11.5" fill="#5B7690" font-family="Manrope" font-style="italic">océano atlántico</text>
+    <text x="582" y="250" font-size="11.5" fill="#5B7690" font-family="Manrope" font-style="italic" text-anchor="end">mar mediterráneo</text>
+    <path d="${IBERIA_PATH}" fill="#EDE7D8" stroke="#B9AF95" stroke-width="1.6"/>
+  `;
+}
+function cityDot(nameOrX,yOrName,maybeName){
+  // admite cityDot("Madrid") usando coordenadas reales, o cityDot(x,y,"Nombre") para casos sueltos
+  let x,y,name;
+  if(typeof nameOrX === 'string' && CITY_XY[nameOrX]){
+    [x,y] = CITY_XY[nameOrX]; name = nameOrX;
+  } else {
+    x = nameOrX; y = yOrName; name = maybeName;
+  }
+  return `<circle cx="${x}" cy="${y}" r="4" fill="${COL_INK}"/><text x="${x+7}" y="${y+4}" font-size="10.5" fill="${COL_INK}" font-family="Manrope" font-weight="700">${name}</text>`;
+}
+function isobarRings(cx,cy,color,n,spacing,baseMb,mbStep){
+  let s='';
+  for(let i=1;i<=n;i++){
+    const r=spacing*i;
+    s += `<ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${(r*0.8).toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.2" opacity="${(0.9-i*0.15).toFixed(2)}"/>`;
+  }
+  return s;
+}
+function actionCenter(cx,cy,letter,color){
+  return `<circle cx="${cx}" cy="${cy}" r="15" fill="${color}" stroke="#fff" stroke-width="2"/>
+    <text x="${cx}" y="${cy+5}" font-size="14" fill="#fff" font-family="JetBrains Mono" font-weight="700" text-anchor="middle">${letter}</text>`;
+}
+
+const SCENARIOS = [
+  {
+    title:'Verano: anticiclón de las Azores',
+    render(){
+      const [ax,ay] = SEA_XY.Azores;
+      let s = mapCanvasBase();
+      s += isobarRings(ax,ay,COL_HIGH,3,55,1025,5);
+      s += actionCenter(ax,ay,'A',COL_HIGH);
+      s += sunIconSvg(380,150,14);
+      s += sunIconSvg(430,280,12);
+      s += cityDot('Madrid');
+      s += cityDot('Valencia');
+      s += cityDot('A Coruña');
+      return s;
+    },
+    questions:[
+      { q:'Con las isobaras tan separadas alrededor del anticiclón, ¿cómo será el viento?', opts:['Muy fuerte','Flojo o casi inexistente','Solo de noche'], correct:1, explain:'Isobaras muy separadas indican poco contraste de presión: apenas hay viento.' },
+      { q:'¿Qué tiempo cabe esperar esta semana en Madrid y Valencia?', opts:['Inestable, con tormentas','Estable, soleado y caluroso','Nevadas'], correct:1, explain:'Bajo un anticiclón el aire desciende y se seca: tiempo estable, despejado y en verano, muy caluroso.' }
+    ]
+  },
+  {
+    title:'Borrasca real: Herminia (enero 2025)',
+    render(){
+      const [bx,by] = SEA_XY.BorrascaAtlantica;
+      const [cx,cy] = CITY_XY['A Coruña'];
+      let s = mapCanvasBase();
+      s += isobarRings(bx,by,COL_LOW,3,32,995,-5);
+      s += actionCenter(bx,by,'B',COL_LOW);
+      // frente frío saliendo de la borrasca hacia Galicia y el interior
+      s += `<line x1="${bx+18}" y1="${by+22}" x2="${cx+140}" y2="${cy+150}" stroke="${COL_COLD}" stroke-width="3"/>`;
+      [0,1,2,3].forEach(i=>{
+        const x=bx+18+i*36, y=by+22+i*38;
+        s += `<polygon points="${x-8},${y-6} ${x+6},${y-10} ${x-2},${y+8}" fill="${COL_COLD}"/>`;
+      });
+      s += cloudRainIconSvg(cx+30,cy+10);
+      s += cityDot('A Coruña');
+      s += cityDot('Madrid');
+      s += cityDot('Valencia');
+      return s;
+    },
+    questions:[
+      { q:'¿Qué tipo de frente se acerca a Galicia?', opts:['Frente cálido','Frente frío','Frente ocluido'], correct:1, explain:'Los triángulos azules son el símbolo estándar del frente frío. En la Herminia real (enero de 2025), AEMET emitió aviso rojo en el litoral gallego por rachas de viento superiores a 120 km/h.' },
+      { q:'¿Qué le espera a A Coruña en las próximas horas?', opts:['Chubascos y viento, luego mejora rápido','Calor seco y viento de poniente','Niebla persistente varios días'], correct:0, explain:'Un frente frío trae chubascos intensos pero cortos: detrás suele despejar con relativa rapidez. Así ocurrió con Herminia, que llegó justo detrás de otra borrasca, Éowyn.' }
+    ]
+  },
+  {
+    title:'DANA real: Valencia, 29-oct-2024',
+    render(){
+      const [dx,dy] = SEA_XY.DANA;
+      let s = mapCanvasBase();
+      s += isobarRings(dx,dy,COL_LOW,3,26,1005,-5);
+      s += actionCenter(dx,dy,'B',COL_LOW);
+      s += cloudRainIconSvg(dx-10,dy-55);
+      s += `<text x="${dx}" y="${dy+22}" font-size="10" fill="#5B7690" font-family="Manrope" text-anchor="middle">mar muy cálido</text>`;
+      s += cityDot('Valencia');
+      s += cityDot('Alicante');
+      s += cityDot('Madrid');
+      return s;
+    },
+    questions:[
+      { q:'Esta borrasca está aislada, sin un frente largo asociado. ¿Por qué fue tan peligrosa cerca de Valencia el 29 de octubre de 2024?', opts:['Porque coincidió con un anticiclón fuerte','Porque el mar estaba muy cálido y chocó con aire frío en altura','Porque siempre trae nieve'], correct:1, explain:'El contraste entre el aire frío en altura (aislado, DANA) y un Mediterráneo anormalmente cálido generó lluvias torrenciales extremas: 771 mm en Turís (Valencia) en unas 12 horas, según el informe de AEMET.' },
+      { q:'¿Es la DANA un fenómeno distinto de la "gota fría"?', opts:['Sí, son cosas totalmente distintas','No, son el mismo fenómeno; AEMET prefiere el término DANA por ser más técnico','La gota fría ya no existe'], correct:1, explain:'Gota fría y DANA describen el mismo fenómeno (una bolsa de aire frío aislada en altura). AEMET recomienda "DANA" desde los años 80 por ser más preciso.' }
+    ]
+  }
+];
+
+function renderScenarioTabs(){
+  const box = document.getElementById('scenarioTabs');
+  box.innerHTML = SCENARIOS.map((sc,i)=>
+    `<button class="toggle-btn ${i===state.scenario?'on':''}" data-scenario="${i}" style="--accent:${COL_LOW}">${sc.title}</button>`
+  ).join('');
+}
+function renderScenarioSvg(){
+  const sc = SCENARIOS[state.scenario];
+  document.getElementById('scenarioSvg').innerHTML = sc.render();
+}
+function renderScenarioQuestions(){
+  const sc = SCENARIOS[state.scenario];
+  const box = document.getElementById('scenarioQuestions');
+  box.innerHTML = sc.questions.map((item,qi)=>`
+    <div class="scenario-q">
+      <div class="q-text">${item.q}</div>
+      <div class="scenario-opts" id="scOpts-${qi}"></div>
+      <div class="scenario-explain" id="scExplain-${qi}"></div>
+    </div>
+  `).join('');
+  sc.questions.forEach((item,qi)=>{
+    const optsBox = document.getElementById(`scOpts-${qi}`);
+    item.opts.forEach((opt,oi)=>{
+      const b = document.createElement('button');
+      b.className='scenario-opt'; b.textContent=opt;
+      b.addEventListener('click', ()=>{
+        const buttons = optsBox.querySelectorAll('.scenario-opt');
+        buttons.forEach((bb,ii)=>{
+          bb.disabled=true;
+          if(ii===item.correct) bb.classList.add('correct');
+          else if(ii===oi) bb.classList.add('wrong');
+        });
+        const ex = document.getElementById(`scExplain-${qi}`);
+        ex.textContent = item.explain;
+        ex.classList.add('show');
+      });
+      optsBox.appendChild(b);
+    });
+  });
+}
+function renderMapTab(){
+  renderScenarioTabs();
+  renderScenarioSvg();
+  renderScenarioQuestions();
+}
+
+/* =========================================================================
+   PANEL 5: EL TIEMPO EN ESPAÑA — episodios reales (datos de AEMET)
+   ========================================================================= */
+const REAL_CASES = [
+  {
+    title:'La DANA de Valencia',
+    date:'29 de octubre de 2024',
+    lede:'El episodio de lluvias torrenciales más grave de las últimas décadas en la Comunitat Valenciana.',
+    render(){
+      const [dx,dy] = SEA_XY.DANA;
+      let s = mapCanvasBase();
+      s += isobarRings(dx,dy,COL_LOW,3,26,1000,-4);
+      s += actionCenter(dx,dy,'B',COL_LOW);
+      s += cloudRainIconSvg(dx-10,dy-55);
+      s += `<circle cx="433.1" cy="254.4" r="5" fill="${COL_WARM}" stroke="#fff" stroke-width="1.5"/>`;
+      s += `<text x="418" y="274" font-size="11" fill="${COL_WARM}" font-family="Manrope" font-weight="700" text-anchor="middle">Turís: 771 mm</text>`;
+      s += cityDot('Madrid');
+      s += cityDot('Valencia');
+      return s;
+    },
+    facts:[
+      ['Causa','Una DANA junto al Estrecho de Gibraltar forzó una baja en superficie que canalizó un flujo muy húmedo del este, desde un Mediterráneo anormalmente cálido.'],
+      ['Lluvia acumulada','771 mm en Turís (Valencia) en unas 12 horas: récord histórico.'],
+      ['Aviso de AEMET','Rojo a las 07:36 por 90 l/m² en una hora en el litoral sur valenciano.'],
+      ['Evolución','La DANA pasó a ser una "borrasca fría aislada" a lo largo del propio día 29.']
+    ],
+    sourceHtml:'Fuente: AEMET, <a href="https://www.aemet.es/documentos/es/conocermas/recursos_en_linea/publicaciones_y_estudios/estudios/informe_episodio_dana_29_oct_2024_.pdf" target="_blank" rel="noopener">informe del episodio (PDF)</a> y <a href="https://www.aemet.es/documentos/es/conocermas/recursos_en_linea/publicaciones_y_estudios/estudios/estudio_28_oct_4_nov_2024.pdf" target="_blank" rel="noopener">estudio 28 oct.–4 nov. 2024 (PDF)</a>.'
+  },
+  {
+    title:'Borrasca Herminia',
+    date:'24–28 de enero de 2025',
+    lede:'Una potente borrasca atlántica que dejó viento huracanado y aviso rojo en Galicia, justo detrás de la borrasca Éowyn.',
+    render(){
+      const [bx,by] = SEA_XY.BorrascaAtlantica;
+      const [cx,cy] = CITY_XY['A Coruña'];
+      let s = mapCanvasBase();
+      s += isobarRings(bx,by,COL_LOW,4,24,980,-5);
+      s += actionCenter(bx,by,'B',COL_LOW);
+      s += `<line x1="${bx+16}" y1="${by+18}" x2="${cx+90}" y2="${cy+110}" stroke="${COL_COLD}" stroke-width="3"/>`;
+      [0,1,2].forEach(i=>{
+        const x=bx+16+i*30, y=by+18+i*36;
+        s += `<polygon points="${x-8},${y-6} ${x+6},${y-10} ${x-2},${y+8}" fill="${COL_COLD}"/>`;
+      });
+      s += arrowMarkup(cx-15,cy-35,cx+20,cy-8,COL_INKSOFT,3);
+      s += `<text x="${cx-10}" y="${cy-42}" font-size="10.5" fill="${COL_INKSOFT}" font-family="Manrope" font-weight="700">ráfagas &gt;165 km/h</text>`;
+      s += cityDot('A Coruña');
+      s += cityDot('Madrid');
+      return s;
+    },
+    facts:[
+      ['Presión mínima','954 hPa el 26 de enero a las 12 UTC (una borrasca muy profunda; recuerda que la media es 1013 hPa).'],
+      ['Viento','Racha máxima de 165 km/h en Valdezcaray (La Rioja); huracanadas (&gt;120 km/h) en 19 estaciones, sobre todo en Galicia.'],
+      ['Lluvia','157,6 mm en 24 h en Beariz (Ourense).'],
+      ['Aviso de AEMET','Rojo por oleaje en la costa de A Coruña y Pontevedra (olas de hasta 11 m).'],
+      ['Evolución','Se formó por una "seclusión": el frente cálido se enrolló alrededor del centro antes de llegar a España.']
+    ],
+    sourceHtml:'Fuente: AEMET, ficha oficial de la borrasca Herminia (temporada 2024-2025).',
+    realImage:{
+      url:'https://www.aemet.es/imagenes_gcd/conocermas/borrascas/2024-2025/estudios_e_impactos/herminia/2025012712.gif',
+      alt:'Análisis de superficie real de AEMET del 27 de enero de 2025 a las 12 UTC, con la borrasca Herminia',
+      caption:'Análisis de superficie real de AEMET, 27 de enero de 2025 a las 12 UTC.',
+      interpret:'Busca la "B" (borrasca) y cuenta cuántas isobaras la rodean en poco espacio: cuantas más líneas juntas, más viento. Sigue el frente frío (línea con triángulos) que en ese momento cruzaba la Península de oeste a este.',
+      pageUrl:'https://www.aemet.es/es/conocermas/borrascas/2024-2025/estudios_e_impactos/herminia'
+    }
+  },
+  {
+    title:'Borrasca Filomena: la gran nevada de Madrid',
+    date:'6–10 de enero de 2021',
+    lede:'La borrasca más famosa de España en décadas: sus frentes cálido y ocluido dejaron nieve donde casi nunca nieva.',
+    render(){
+      const [fx,fy] = SEA_XY.Filomena;
+      let s = mapCanvasBase();
+      s += isobarRings(fx,fy,COL_LOW,3,22,995,-6);
+      s += actionCenter(fx,fy,'B',COL_LOW);
+      // frente cálido (semicírculos rojos) avanzando hacia el NE, sobre el aire polar ya instalado
+      s += `<line x1="${fx-10}" y1="${fy-16}" x2="${fx+150}" y2="${fy-190}" stroke="${COL_WARM}" stroke-width="3"/>`;
+      [0,1,2].forEach(i=>{
+        const x=fx-6+i*48, y=fy-30-i*58;
+        s += `<path d="M ${x-8} ${y+6} A 9 9 0 0 1 ${x+8} ${y-6}" fill="${COL_WARM}"/>`;
+      });
+      s += `<text x="${fx+40}" y="${fy-90}" font-size="10" fill="${COL_WARM}" font-family="Manrope" font-weight="700">frente cálido</text>`;
+      s += `<text x="${CITY_XY['Madrid'][0]}" y="${CITY_XY['Madrid'][1]-16}" font-size="10.5" fill="${COL_COLD}" font-family="Manrope" font-weight="700" text-anchor="middle">aire polar ya instalado</text>`;
+      s += cityDot('Madrid');
+      s += cityDot('Sevilla');
+      return s;
+    },
+    facts:[
+      ['El mecanismo clave','Un aire polar muy frío llevaba dos semanas instalado en la Península; Filomena trajo aire cálido y húmedo por encima: la lluvia se convirtió en nieve.'],
+      ['Nieve en Madrid','Entre 30 y 50 cm en la capital: la nevada más intensa desde 1971.'],
+      ['Ola de frío posterior','Hasta -25,4 °C en Teruel y -13,4 °C (récord) en Toledo, con cielos despejados por el anticiclón que llegó después.'],
+      ['Estructura','Desarrolló frentes frío, cálido y ocluido, el ciclo completo de una borrasca de libro.']
+    ],
+    sourceHtml:'Fuente: AEMET, ficha oficial de la borrasca Filomena (temporada 2020-2021).',
+    realImage:{
+      url:'https://www.aemet.es/imagenes_gcd/conocermas/borrascas/2020-2021/estudios_e_impactos/Filomena/202101091200_NATURAL.png',
+      alt:'Imagen de satélite real de AEMET de la borrasca Filomena centrada sobre el sur peninsular, 9 de enero de 2021',
+      caption:'Imagen de satélite real (RGB natural), 9 de enero de 2021 a las 12 UTC.',
+      interpret:'Filomena está centrada sobre el sur peninsular. Fíjate en la espiral de nubes: así se ve desde el espacio el mismo giro (antihorario) que hemos visto en la pestaña "Vientos".',
+      pageUrl:'https://www.aemet.es/es/conocermas/borrascas/2020-2021/estudios_e_impactos/filomena'
+    }
+  },
+  {
+    title:'El anticiclón de las Azores en verano',
+    date:'Patrón habitual de julio–agosto',
+    lede:'No es un episodio de un solo día, sino el patrón que se repite cada verano y explica la sequía estival española.',
+    render(){
+      const [ax,ay] = SEA_XY.Azores;
+      let s = mapCanvasBase();
+      s += isobarRings(ax,ay,COL_HIGH,3,48,1024,4);
+      s += actionCenter(ax,ay,'A',COL_HIGH);
+      s += sunIconSvg(360,180,16);
+      s += sunIconSvg(440,290,13);
+      s += cityDot('Madrid');
+      s += cityDot('Valencia');
+      s += cityDot('A Coruña');
+      return s;
+    },
+    facts:[
+      ['Posición típica','Sobre el Atlántico, frente a Portugal; en verano se desplaza hacia el norte.'],
+      ['Efecto','Bloquea el paso de borrascas atlánticas hacia la Península.'],
+      ['Isobaras','Muy separadas: viento flojo, cielos despejados.'],
+      ['Consecuencia','Julio y agosto son, climatológicamente, los meses más secos en gran parte de España.']
+    ],
+    sourceHtml:'Fuente: AEMET, climatología estacional (patrón recurrente, no un evento con fecha única).'
+  }
+];
+
+function renderEspanaTab(){
+  const box = document.getElementById('realCases');
+  box.innerHTML = REAL_CASES.map((c,i)=>`
+    <div class="case-card">
+      <div class="case-head">
+        <h3>${c.title}</h3>
+        <span class="case-date">${c.date}</span>
+      </div>
+      <p class="case-lede">${c.lede}</p>
+      <div class="case-grid">
+        <div class="diagram"><svg id="realCaseSvg-${i}" viewBox="0 0 600 420"></svg></div>
+        <div>
+          <div class="case-facts">
+            ${c.facts.map(([k,v])=>`<div class="case-fact"><b>${k}</b><span>${v}</span></div>`).join('')}
+          </div>
+          <div class="case-source">${c.sourceHtml}</div>
+        </div>
+      </div>
+      ${c.realImage ? `
+      <div class="real-image-box">
+        <span class="rib-label">📷 Documento real de AEMET — cómo interpretarlo</span>
+        <img src="${c.realImage.url}" alt="${c.realImage.alt}" loading="lazy">
+        <p class="rib-caption"><strong>${c.realImage.caption}</strong> ${c.realImage.interpret}</p>
+        <a class="rib-link" href="${c.realImage.pageUrl}" target="_blank" rel="noopener">Ver la ficha completa de AEMET sobre este episodio →</a>
+      </div>` : ''}
+    </div>
+  `).join('');
+  REAL_CASES.forEach((c,i)=>{
+    document.getElementById(`realCaseSvg-${i}`).innerHTML = c.render();
+  });
+
+  document.getElementById('aemetLinks').innerHTML = `
+    <a class="link-card" href="https://www.aemet.es/es/eltiempo/prediccion/mapa_frentes" target="_blank" rel="noopener">
+      <div class="k">AEMET · en directo</div><div class="v">Ver el mapa real de hoy →</div>
+    </a>
+    <a class="link-card" href="https://www.aemet.es/documentos/es/eltiempo/prediccion/mapas_frentes/Simbolos_mapas_frentes.pdf" target="_blank" rel="noopener">
+      <div class="k">AEMET · PDF oficial</div><div class="v">Glosario completo de símbolos →</div>
+    </a>
+    <a class="link-card" href="https://www.aemet.es/es/eltiempo/prediccion/mapa_frentes/ayuda" target="_blank" rel="noopener">
+      <div class="k">AEMET · ayuda</div><div class="v">Cómo interpretar estos mapas →</div>
+    </a>
+  `;
+}
+
+/* =========================================================================
+   PANEL 6: QUIZ
+   ========================================================================= */
+const QUIZ = [
+  { q:'¿Qué es, exactamente, la presión atmosférica?', opts:['La velocidad del viento','El peso del aire que hay encima de un punto','La cantidad de nubes en el cielo','La temperatura del aire'], correct:1,
+    explain:'La presión atmosférica es el peso de la columna de aire que hay encima de un punto, medido con un barómetro en milibares (mb).' },
+  { q:'En el hemisferio norte, el aire de un anticiclón gira...', opts:['En sentido horario','En sentido antihorario','No gira, va recto hacia fuera','Depende del país'], correct:0,
+    explain:'En el hemisferio norte, el aire sale de un anticiclón girando en el sentido de las agujas del reloj.' },
+  { q:'En el hemisferio norte, el aire de una borrasca gira...', opts:['En sentido horario','En sentido antihorario','No gira','Solo en invierno'], correct:1,
+    explain:'En el hemisferio norte, el aire converge hacia una borrasca girando en sentido antihorario (contrario a las agujas del reloj).' },
+  { q:'Si esa misma borrasca estuviera en el hemisferio sur, giraría...', opts:['Igual, en sentido antihorario','Al revés, en sentido horario','No se puede saber','Dejaría de ser una borrasca'], correct:1,
+    explain:'El sentido de giro se invierte entre hemisferios: lo que gira en antihorario en el norte, gira en horario en el sur.' },
+  { q:'¿De qué color se dibuja un frente frío en un mapa del tiempo?', opts:['Rojo, con semicírculos','Azul, con triángulos','Morado, alternando símbolos','Verde, con rayas'], correct:1,
+    explain:'El frente frío se representa con una línea azul con triángulos apuntando en la dirección de avance.' },
+  { q:'¿Por qué un frente frío provoca tormentas más intensas pero más cortas que uno cálido?', opts:['Porque tiene más agua','Porque su pendiente es muy inclinada y levanta el aire cálido de golpe','Porque siempre es de noche','Porque no tiene nubes'], correct:1,
+    explain:'La pendiente del frente frío es mucho más inclinada (~1:50): el aire cálido se ve forzado a subir bruscamente, generando nubes verticales y chubascos intensos pero de corta duración.' },
+  { q:'Un frente ocluido se forma cuando...', opts:['Un frente cálido se convierte en frío','Un frente frío alcanza a uno cálido y levanta el aire cálido del suelo','Desaparecen todos los frentes','Se juntan dos anticiclones'], correct:1,
+    explain:'Al ser más rápido, el frente frío acaba alcanzando al cálido que iba por delante, levantando del todo el sector cálido: es la fase final de una borrasca.' },
+  { q:'En un mapa del tiempo, si las isobaras están muy juntas...', opts:['Hay poco viento','Hay mucho viento','Va a nevar seguro','No significa nada en concreto'], correct:1,
+    explain:'Cuanto más juntas están las isobaras, mayor es el contraste de presión en poca distancia, y por tanto más fuerte sopla el viento.' },
+  { q:'¿Qué papel juega el anticiclón de las Azores en el verano español?', opts:['Trae borrascas seguidas','Bloquea el paso de borrascas y trae tiempo seco y estable','Provoca nevadas en la costa','No afecta a la Península'], correct:1,
+    explain:'En verano el anticiclón de las Azores se desplaza hacia el norte y bloquea el paso de borrascas atlánticas, dejando un tiempo muy estable y seco.' },
+  { q:'¿"Gota fría" y "DANA" son...?', opts:['Fenómenos completamente distintos','El mismo fenómeno; DANA es el término que recomienda AEMET','Gota fría es más peligrosa que una DANA','Términos que ya no se usan'], correct:1,
+    explain:'Describen el mismo fenómeno (una bolsa de aire frío aislada en altura). AEMET prefiere "DANA" por ser un término más técnico y preciso.' },
+  { q:'Un anticiclón instalado varios días en invierno sobre el interior peninsular puede provocar...', opts:['Solo buen tiempo sin más','Nieblas persistentes y heladas por inversión térmica','Tormentas tropicales','Un huracán'], correct:1,
+    explain:'Aunque un anticiclón trae tiempo estable, en invierno puede favorecer que el aire frío y húmedo quede atrapado cerca del suelo, con nieblas y heladas que duran días.' },
+  { q:'El viento de levante en la costa mediterránea...', opts:['Viene del oeste y es seco','Viene del mar, es húmedo y puede traer lluvias persistentes','Solo sopla en verano','Es lo mismo que el poniente'], correct:1,
+    explain:'El levante sopla desde el este (desde el mar), es húmedo, y al chocar con las montañas costeras puede dejar nubosidad y lluvias persistentes.' }
+];
+let quizState = { i:0, score:0, answered:false };
+
+function renderQuizProgress(){
+  const box = document.getElementById('quizProgress');
+  box.innerHTML = QUIZ.map((_,i)=> `<span class="${i<quizState.i?'done':i===quizState.i?'current':''}"></span>`).join('');
+  document.getElementById('quizTotal').textContent = QUIZ.length;
+  document.getElementById('quizScore').textContent = quizState.score;
+}
+function renderQuizQuestion(){
+  if(quizState.i >= QUIZ.length){
+    document.getElementById('quizBody').style.display='none';
+    const fin = document.getElementById('quizFinal');
+    fin.classList.add('show');
+    document.getElementById('quizFinalScore').textContent = quizState.score+' / '+QUIZ.length;
+    const pct = quizState.score/QUIZ.length;
+    document.getElementById('quizFinalMsg').textContent = pct===1 ? '¡Perfecto! Dominas la lectura de un mapa del tiempo.' :
+      pct>=0.6 ? 'Muy bien. Repasa las que has fallado antes del examen.' : 'Conviene repasar el tema con calma: revisa sobre todo la pestaña «Los frentes».';
+    return;
+  }
+  document.getElementById('quizBody').style.display='';
+  document.getElementById('quizFinal').classList.remove('show');
+  const item = QUIZ[quizState.i];
+  quizState.answered = false;
+  document.getElementById('quizQ').textContent = item.q;
+  const opts = document.getElementById('quizOpts');
+  opts.innerHTML = '';
+  item.opts.forEach((opt,idx)=>{
+    const b = document.createElement('button');
+    b.className='quiz-opt'; b.textContent = opt;
+    b.addEventListener('click', ()=> answerQuiz(idx));
+    opts.appendChild(b);
+  });
+  document.getElementById('quizExplain').classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+  renderQuizProgress();
+}
+function answerQuiz(idx){
+  if(quizState.answered) return;
+  quizState.answered = true;
+  const item = QUIZ[quizState.i];
+  const opts = document.querySelectorAll('#quizOpts .quiz-opt');
+  opts.forEach((b,i)=>{
+    b.disabled = true;
+    if(i===item.correct) b.classList.add('correct');
+    else if(i===idx) b.classList.add('wrong');
+  });
+  if(idx===item.correct) quizState.score++;
+  document.getElementById('quizExplain').textContent = item.explain;
+  document.getElementById('quizExplain').classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+  renderQuizProgress();
+}
+function initQuiz(){
+  document.getElementById('nextBtn').addEventListener('click', ()=>{ quizState.i++; renderQuizQuestion(); });
+  document.getElementById('restartBtn').addEventListener('click', ()=>{
+    quizState = { i:0, score:0, answered:false };
+    renderQuizQuestion();
+  });
+  renderQuizQuestion();
+}
+
+/* =========================================================================
+   WIRING GENERAL
+   ========================================================================= */
+function renderAll(){
+  if(state.tab==='presion') renderPressureTab();
+  if(state.tab==='vientos') renderWindTab();
+  if(state.tab==='frentes') renderFrontTab();
+  if(state.tab==='mapa') renderMapTab();
+  if(state.tab==='espana') renderEspanaTab();
+}
+
+function init(){
+  buildIsoNav();
+
+  document.querySelectorAll('.toggle-btn[data-center]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.center = b.dataset.center;
+      document.querySelectorAll('.toggle-btn[data-center]').forEach(x=>x.classList.toggle('on', x===b));
+      renderPressureTab();
+    });
+  });
+  document.getElementById('isobarSlider').addEventListener('input', e=>{
+    state.isobarSpacing = parseFloat(e.target.value);
+    renderPressureTab();
+  });
+
+  document.querySelectorAll('.toggle-btn[data-vcenter]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.vcenter = b.dataset.vcenter;
+      document.querySelectorAll('.toggle-btn[data-vcenter]').forEach(x=>x.classList.toggle('on', x===b));
+      renderWindTab();
+    });
+  });
+  document.querySelectorAll('.toggle-btn[data-hemisferio]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.hemisferio = b.dataset.hemisferio;
+      document.querySelectorAll('.toggle-btn[data-hemisferio]').forEach(x=>x.classList.toggle('on', x===b));
+      renderWindTab();
+    });
+  });
+
+  document.querySelectorAll('.toggle-btn[data-front]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.front = b.dataset.front;
+      document.querySelectorAll('.toggle-btn[data-front]').forEach(x=>x.classList.toggle('on', x===b));
+      renderFrontTab();
+    });
+  });
+  document.getElementById('frontSlider').addEventListener('input', e=>{
+    state.frontX = parseFloat(e.target.value);
+    renderFrontTab();
+  });
+
+  document.getElementById('scenarioTabs').addEventListener('click', e=>{
+    const b = e.target.closest('[data-scenario]');
+    if(!b) return;
+    state.scenario = parseInt(b.dataset.scenario,10);
+    renderMapTab();
+  });
+
+  initQuiz();
+  setTab('presion');
+}
+init();
+</script>
+</body>
+</html>
