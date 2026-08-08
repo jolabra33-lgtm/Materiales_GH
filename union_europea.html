@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="La Unión Europea: mapa real de las ampliaciones y estudio detallado de sus instituciones, para ESO y Bachillerato.">
+<title>La Unión Europea: formación e instituciones</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b1c2c">
+<style>
+:root{
+  --navy-deep:#0b1c2c; --navy:#132c42; --navy-light:#1c3c56;
+  --paper:#f6efdc; --paper-dim:#ece1c6; --paper-line:#d8c9a3;
+  --ink:#20261c; --ink-soft:#4a4536;
+  --sienna:#b9502f; --sienna-deep:#7c3520; --ochre:#cf9a44; --teal:#1c6e8c; --teal-deep:#134f65;
+  --no-data:#3d5164;
+  --myth:#8c2f3d; --myth-soft:rgba(140,47,61,0.08); --myth-line:rgba(140,47,61,0.3);
+  --shadow:0 12px 30px -12px rgba(6,14,22,0.55);
+  --radius:12px; --radius-sm:9px;
+  /* colores de oleadas de ampliación (paleta atlas) */
+  --w1957:#7c3520; --w1973:#b9502f; --w1981:#cf9a44; --w1986:#1c6e8c; --w1995:#134f65;
+  --w2004:#3f6b4a; --w2007:#6a8f4e; --w2013:#9a7fa8; --wexit:#7a715c; --wcand:#c9d2da; --wnone:#3d5164;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background: radial-gradient(ellipse at 20% -10%, #1c3c56 0%, transparent 55%), var(--navy-deep);
+  color:var(--paper); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms!important; transition-duration:.001ms!important; } }
+h1,h2,h3{ font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif; margin:0; }
+button{ font-family:inherit; }
+:focus-visible{ outline:3px solid var(--ochre); outline-offset:2px; border-radius:4px; }
+.wrap{ max-width:1120px; margin:0 auto; padding:26px 22px 90px; }
+
+header.masthead{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding-bottom:18px; margin-bottom:20px; border-bottom:1px solid rgba(246,239,220,0.18); flex-wrap:wrap; }
+.masthead-title{ display:flex; align-items:center; gap:16px; }
+.masthead-title svg.stars{ width:56px; height:56px; flex:none; }
+.masthead-title h1{ font-size:1.7rem; color:var(--paper); }
+.masthead-title h1 small{ display:block; font-family:-apple-system,sans-serif; font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ochre); font-weight:700; margin-bottom:4px; }
+.masthead-note{ font-size:.85rem; color:#cdd8e0; max-width:38ch; margin:0; text-align:justify; text-justify:inter-word; }
+
+.tabs{ display:flex; gap:3px; margin-bottom:22px; }
+.tab-btn{ flex:1 1 0; justify-content:center; font-family:Georgia,'Iowan Old Style',serif; font-size:.85rem; font-weight:600; padding:9px 6px; border-radius:8px 8px 0 0; border:1px solid rgba(246,239,220,0.22); border-bottom:3px solid transparent; background:rgba(246,239,220,0.04); color:#cdd8e0; cursor:pointer; transition:all .15s ease; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+@media (min-width:900px){ .tab-btn{ font-size:1rem; padding:10px 8px; } }
+@media (min-width:1024px){ .tab-btn{ font-size:1.15rem; padding:11px 10px; } }
+@media (max-width:760px){
+  .tabs{ flex-wrap:wrap; }
+  .tab-btn{ flex:1 1 calc(33.333% - 3px); white-space:normal; text-align:center; font-size:.78rem; }
+}
+.tab-btn:hover{ background:rgba(246,239,220,0.09); }
+.tab-btn.active{ background:var(--paper); color:var(--navy-deep); border-bottom-color:var(--sienna); }
+.tab-panel{ display:none; }
+.tab-panel.active{ display:block; animation:riseIn .4s ease both; }
+@keyframes riseIn{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:none; } }
+
+.card{ background:var(--paper); color:var(--ink); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px 26px 26px; margin-bottom:20px; border-top:4px solid var(--accent,var(--sienna)); }
+.card-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+.card-head .badge{ flex:none; width:38px; height:38px; border-radius:50%; background:var(--accent,var(--sienna)); color:#fff; display:flex; align-items:center; justify-content:center; }
+.card-head .badge svg{ width:19px; height:19px; stroke:#fff; }
+.card-head h2{ font-size:1.35rem; font-weight:700; margin:2px 0 6px; color:var(--navy-deep); }
+.card-head p{ margin:0; color:var(--ink-soft); font-size:.92rem; text-align:justify; }
+
+.grid-2{ display:grid; grid-template-columns:1.2fr .8fr; gap:22px; align-items:start; }
+@media (max-width:820px){ .grid-2{ grid-template-columns:1fr; } }
+.diagram{ background:#fffdf6; border:1px solid var(--paper-line); border-radius:var(--radius-sm); padding:10px; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.caption{ font-size:.78rem; color:var(--ink-soft); margin:8px 2px 0; text-align:justify; text-justify:inter-word; }
+
+.example-box{ background:rgba(28,110,140,0.08); border:1px solid rgba(28,110,140,0.28); border-left:4px solid var(--teal); border-radius:var(--radius-sm); padding:15px 18px; margin:18px 0; }
+.example-box .et{ font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--teal-deep); font-weight:700; margin-bottom:5px; display:block; }
+.example-box p{ margin:4px 0 0; font-size:.9rem; text-align:justify; }
+.mito-box{ background:var(--myth-soft); border:1px solid var(--myth-line); border-left:4px solid var(--myth); border-radius:var(--radius-sm); padding:15px 18px; margin:18px 0; }
+.mito-box .mt{ font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--myth); font-weight:700; margin-bottom:5px; display:block; }
+.mito-box p{ margin:4px 0 0; font-size:.9rem; text-align:justify; }
+.mito-box strong{ color:var(--myth); }
+
+.fact-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:14px; }
+.fact-card{ background:var(--paper-dim); border-radius:var(--radius-sm); padding:11px 13px; }
+.fact-card .k{ font-size:.66rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:700; }
+.fact-card .v{ font-family:Georgia,serif; font-weight:600; font-size:1.02rem; margin-top:2px; }
+
+details.advanced{ margin-top:14px; border:1px dashed var(--paper-line); border-radius:var(--radius-sm); padding:2px 14px; }
+details.advanced summary{ cursor:pointer; font-weight:700; font-size:.88rem; padding:9px 0; list-style:none; display:flex; gap:8px; }
+details.advanced summary::-webkit-details-marker{ display:none; }
+details.advanced summary::before{ content:"▸"; color:var(--sienna); }
+details.advanced[open] summary::before{ content:"▾"; }
+details.advanced .adv-body{ padding:0 0 12px; font-size:.86rem; color:var(--ink-soft); text-align:justify; text-justify:inter-word; }
+
+.toggle-row{ display:flex; gap:7px; flex-wrap:wrap; margin:10px 0; }
+.toggle-btn{ border:1.5px solid var(--paper-line); background:#fff; color:var(--ink-soft); font-weight:700; font-size:.72rem; padding:6px 11px; border-radius:999px; cursor:pointer; transition:all .15s; }
+.toggle-btn.on{ background:var(--accent2,var(--sienna)); border-color:var(--accent2,var(--sienna)); color:#fff; }
+
+/* ---- Línea del tiempo de ampliaciones ---- */
+.timeline{ position:relative; padding-left:28px; }
+.timeline::before{ content:""; position:absolute; left:9px; top:6px; bottom:6px; width:2px; background:var(--paper-line); }
+.tl-item{ position:relative; margin-bottom:20px; }
+.tl-item:last-child{ margin-bottom:0; }
+.tl-dot{ position:absolute; left:-28px; top:2px; width:18px; height:18px; border-radius:50%; border:3px solid #fffdf6; box-shadow:0 0 0 1.5px var(--paper-line); }
+.tl-year{ font-family:Georgia,serif; font-weight:700; font-size:1rem; color:var(--navy-deep); }
+.tl-title{ font-weight:700; font-size:.85rem; margin:2px 0 4px; color:var(--ink); }
+.tl-text{ font-size:.8rem; color:var(--ink-soft); text-align:justify; text-justify:inter-word; }
+
+/* ---- Visor de imagen (con pantalla completa) ---- */
+.img-viewer{ background:#fffdf6; border:1px solid var(--paper-line); border-radius:var(--radius-sm); padding:12px; height:100%; }
+.img-viewer-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; flex-wrap:wrap; }
+.iv-label{ font-size:.72rem; color:var(--ink-soft); font-weight:700; }
+.iv-fs-btn{ background:var(--teal); color:#fff; border:none; padding:7px 13px; border-radius:999px; font-size:.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background .15s; }
+.iv-fs-btn:hover{ background:var(--teal-deep); }
+.img-viewer-stage{ position:relative; background:#12181f; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.img-viewer-stage img{ width:100%; height:auto; display:block; cursor:zoom-in; }
+.img-viewer-stage:fullscreen{ background:#000; }
+.img-viewer-stage:-webkit-full-screen{ background:#000; }
+.img-viewer-stage:fullscreen img{ width:auto; height:auto; max-width:100vw; max-height:100vh; object-fit:contain; cursor:default; }
+.img-viewer-stage:-webkit-full-screen img{ width:auto; height:auto; max-width:100vw; max-height:100vh; object-fit:contain; cursor:default; }
+.iv-exit-btn{ position:absolute; top:16px; right:16px; background:rgba(11,28,44,.82); color:#fff; border:1px solid rgba(255,255,255,.35); padding:10px 18px; border-radius:999px; font-size:.82rem; font-weight:700; cursor:pointer; display:none; align-items:center; gap:7px; z-index:10; }
+.img-viewer-stage:fullscreen .iv-exit-btn{ display:inline-flex; }
+.img-viewer-stage:-webkit-full-screen .iv-exit-btn{ display:inline-flex; }
+
+/* ---- Jerarquía institucional ---- */
+.hier-wrap{ display:flex; flex-direction:column; gap:10px; align-items:center; margin:16px 0; }
+.hier-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%; }
+.hier-box{ background:var(--paper-dim); border:1.5px solid var(--paper-line); border-radius:9px; padding:10px 14px; text-align:center; font-size:.8rem; font-weight:700; color:var(--navy-deep); flex:1; min-width:140px; }
+.hier-box.top{ background:var(--navy); color:var(--paper); border-color:var(--navy); }
+.hier-arrow{ font-size:1.1rem; color:var(--sienna); }
+.hier-label{ font-size:.66rem; color:var(--ink-soft); text-align:center; max-width:200px; }
+
+/* ---- Institución detallada ---- */
+.inst-card{ background:#fffdf6; border:1px solid var(--paper-line); border-radius:var(--radius-sm); padding:20px 22px 22px; margin:16px 0; }
+.inst-head{ display:flex; align-items:center; gap:12px; margin-bottom:6px; flex-wrap:wrap; }
+.inst-head .ico{ flex:none; width:42px; height:42px; border-radius:10px; background:rgba(28,110,140,0.12); display:flex; align-items:center; justify-content:center; }
+.inst-head .ico svg{ width:22px; height:22px; stroke:var(--teal-deep); }
+.inst-head h3{ font-size:1.15rem; font-weight:700; color:var(--navy-deep); }
+.inst-head .inst-tag{ font-size:.66rem; text-transform:uppercase; letter-spacing:.05em; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px; font-weight:700; }
+.inst-sub{ font-size:.85rem; color:var(--ink-soft); margin:0 0 12px; font-style:italic; }
+.inst-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:12px 0; }
+.inst-item{ background:var(--paper-dim); border-radius:8px; padding:11px 13px; }
+.inst-item .k{ font-size:.66rem; text-transform:uppercase; letter-spacing:.05em; color:var(--sienna-deep); font-weight:700; margin-bottom:4px; }
+.inst-item .v{ font-size:.85rem; color:var(--ink); text-align:justify; text-justify:inter-word; }
+.inst-funcs{ margin:12px 0 0; padding-left:20px; }
+.inst-funcs li{ font-size:.85rem; color:var(--ink); margin-bottom:5px; text-align:justify; text-justify:inter-word; }
+.inst-example{ background:rgba(207,154,68,0.14); border-radius:8px; padding:10px 14px; margin-top:12px; font-size:.85rem; text-align:justify; text-justify:inter-word; }
+.inst-example b{ color:var(--sienna-deep); }
+.seat-table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:.82rem; }
+.seat-table th,.seat-table td{ text-align:left; padding:5px 8px; border-bottom:1px solid var(--paper-line); }
+.seat-table th{ color:var(--ink-soft); font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+
+.cards-3{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:16px; }
+.mini-card{ background:var(--paper-dim); border-radius:var(--radius-sm); padding:14px 16px; }
+.mini-card h3{ font-size:.92rem; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:7px; color:var(--navy-deep); }
+.mini-card h3 svg{ width:15px; height:15px; stroke:var(--teal); flex:none; }
+.mini-card p{ margin:0; font-size:.82rem; color:var(--ink-soft); text-align:justify; text-justify:inter-word; }
+
+.flow-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center; margin:14px 0; }
+.flow-step{ background:var(--paper-dim); border-radius:10px; padding:12px 14px; text-align:center; min-width:130px; flex:1; }
+.flow-step .fnum{ font-size:.62rem; color:var(--sienna); font-weight:700; letter-spacing:.05em; }
+.flow-step .ftitle{ font-weight:700; font-size:.82rem; margin:3px 0 2px; color:var(--navy-deep); }
+.flow-step .fdesc{ font-size:.74rem; color:var(--ink-soft); }
+.flow-arrow{ flex:none; color:var(--sienna); font-size:18px; }
+@media (max-width:700px){ .flow-arrow{ transform:rotate(90deg); } }
+
+.quiz-progress{ display:flex; gap:5px; margin-bottom:16px; flex-wrap:wrap; }
+.quiz-progress span{ flex:1; min-width:10px; height:5px; border-radius:3px; background:var(--paper-line); }
+.quiz-progress span.done{ background:var(--teal); }
+.quiz-progress span.current{ background:var(--sienna); }
+.quiz-q{ font-family:Georgia,serif; font-weight:700; font-size:1.15rem; margin-bottom:14px; color:var(--navy-deep); }
+.quiz-opts{ display:grid; gap:9px; }
+.quiz-opt{ text-align:left; border:1.5px solid var(--paper-line); background:#fff; border-radius:var(--radius-sm); padding:12px 15px; font-size:.88rem; cursor:pointer; transition:all .15s; color:var(--ink); font-weight:600; }
+.quiz-opt:hover{ border-color:var(--teal); }
+.quiz-opt.correct{ background:rgba(28,110,140,.1); border-color:var(--teal); }
+.quiz-opt.wrong{ background:var(--myth-soft); border-color:var(--myth); }
+.quiz-opt:disabled{ cursor:default; }
+.quiz-explain{ margin-top:14px; padding:13px 15px; border-radius:var(--radius-sm); background:rgba(207,154,68,0.16); font-size:.85rem; display:none; }
+.quiz-explain.show{ display:block; }
+.quiz-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
+.quiz-score{ font-weight:700; color:var(--ink-soft); font-size:.85rem; }
+.next-btn{ background:var(--teal); color:#fff; border:none; padding:9px 18px; border-radius:999px; font-weight:700; cursor:pointer; font-size:.85rem; display:none; }
+.next-btn.show{ display:inline-block; }
+.quiz-final{ display:none; text-align:center; padding:18px 0; }
+.quiz-final.show{ display:block; }
+.quiz-final .big{ font-family:Georgia,serif; font-size:1.9rem; font-weight:700; color:var(--navy-deep); }
+.restart-btn{ margin-top:12px; background:var(--navy-deep); color:#fff; border:none; padding:10px 20px; border-radius:999px; font-weight:700; cursor:pointer; }
+
+footer.note{ text-align:center; padding:26px 20px 6px; color:#9fb0bc; font-size:.78rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="masthead-title">
+      <svg class="stars" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="44" fill="none" stroke="var(--ochre)" stroke-width="2"/>
+        <g id="starsRing"></g>
+      </svg>
+      <h1><small>Estudio escolar interactivo</small>La Unión Europea</h1>
+    </div>
+    <p class="masthead-note">Cómo se formó, país a país, y cómo funcionan de verdad sus siete instituciones.</p>
+  </header>
+
+  <div class="tabs" id="tabBar"></div>
+
+  <!-- PANEL: QUÉ ES -->
+  <section class="tab-panel active" id="tab-que-es">
+    <div class="card" style="--accent:var(--sienna);">
+      <div class="card-head">
+        <div class="badge" style="background:var(--sienna);"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18M12 3a9 9 0 0 0 0 18"/></svg></div>
+        <div><h2>¿Qué es la Unión Europea?</h2>
+        <p>Una unión de 27 países europeos que ceden parte de sus decisiones a instituciones comunes para funcionar como un solo mercado, tener las mismas normas básicas y hablar con una sola voz en el mundo, sin dejar de ser países independientes. No es solo un acuerdo comercial: tiene sus propias leyes, su propio tribunal, su propia moneda y su propio Parlamento elegido por la ciudadanía.</p></div>
+      </div>
+      <div class="example-box">
+        <span class="et">Por qué se creó</span>
+        <p>Nació tras la Segunda Guerra Mundial con una idea muy concreta: si Francia y Alemania comparten el control del carbón y el acero (las materias primas de las armas de la época), será mucho más difícil que vuelvan a hacerse la guerra. Esa idea, propuesta por el ministro francés Robert Schuman el 9 de mayo de 1950 (con el apoyo del alemán Konrad Adenauer y el impulso técnico de Jean Monnet), es el origen de todo lo demás. Por eso el 9 de mayo es el "Día de Europa" y por eso, en 2012, la UE recibió el Premio Nobel de la Paz: por seis décadas contribuyendo a la reconciliación, la democracia y los derechos humanos en el continente.</p>
+      </div>
+      <div class="example-box">
+        <span class="et">Las cuatro libertades del mercado único</span>
+        <p>El corazón económico de la UE son cuatro libertades de circulación, en vigor desde 1993: libre circulación de <strong>mercancías</strong> (sin aranceles entre países miembros), de <strong>servicios</strong> (una empresa de un país puede operar en otro), de <strong>capitales</strong> (invertir o mover dinero sin trabas) y de <strong>personas</strong> (vivir, estudiar y trabajar en cualquier país miembro sin necesitar un permiso especial). Es lo que hace posible, por ejemplo, que un estudiante español haga un Erasmus en Italia sin visado, o que una empresa alemana venda coches en Portugal sin pagar aduana.</p>
+      </div>
+      <div class="fact-grid">
+        <div class="fact-card"><div class="k">Miembros actuales</div><div class="v">27 países</div></div>
+        <div class="fact-card"><div class="k">Población</div><div class="v">~450 millones</div></div>
+        <div class="fact-card"><div class="k">Superficie</div><div class="v">~4,2 millones de km²</div></div>
+        <div class="fact-card"><div class="k">Moneda común</div><div class="v">Euro (20 países)</div></div>
+        <div class="fact-card"><div class="k">Lenguas oficiales</div><div class="v">24</div></div>
+        <div class="fact-card"><div class="k">PIB conjunto</div><div class="v">Una de las mayores economías del mundo</div></div>
+        <div class="fact-card"><div class="k">Lema oficial</div><div class="v">"Unida en la diversidad"</div></div>
+        <div class="fact-card"><div class="k">Premio Nobel de la Paz</div><div class="v">2012</div></div>
+      </div>
+      <details class="advanced" open>
+        <summary>Los cinco tratados que hay que conocer</summary>
+        <div class="adv-body">
+          <div class="inst-grid">
+            <div class="inst-item"><div class="k">Tratado de Roma · 1957</div><div class="v">Crea la Comunidad Económica Europea (CEE): el mercado común entre los 6 fundadores.</div></div>
+            <div class="inst-item"><div class="k">Acuerdo de Schengen · 1985</div><div class="v">Elimina los controles de pasaporte en las fronteras interiores entre los países firmantes (en vigor desde 1995).</div></div>
+            <div class="inst-item"><div class="k">Acta Única Europea · 1986</div><div class="v">Pone fecha (1993) a la culminación del mercado único y las cuatro libertades.</div></div>
+            <div class="inst-item"><div class="k">Tratado de Maastricht · 1992</div><div class="v">Convierte la CEE en "Unión Europea", crea la ciudadanía europea y sienta las bases del euro.</div></div>
+            <div class="inst-item"><div class="k">Tratado de Lisboa · 2007</div><div class="v">El tratado vigente: fija cómo funcionan hoy las instituciones que veremos en esta app, y da fuerza legal a la Carta de Derechos Fundamentales.</div></div>
+          </div>
+        </div>
+      </details>
+      <details class="advanced">
+        <summary>Los símbolos de la Unión Europea</summary>
+        <div class="adv-body">
+          <div class="inst-grid">
+            <div class="inst-item"><div class="k">Bandera</div><div class="v">Doce estrellas doradas en círculo sobre fondo azul. El doce no representa a ningún número de países: simboliza la unidad y la perfección (como los 12 meses del año o las 12 horas del reloj), por eso no ha cambiado con las ampliaciones.</div></div>
+            <div class="inst-item"><div class="k">Himno</div><div class="v">La melodía de la "Oda a la Alegría" del último movimiento de la Novena Sinfonía de Beethoven (1823), adoptada en 1985. Se interpreta solo con música, sin letra oficial, precisamente para no privilegiar ningún idioma.</div></div>
+            <div class="inst-item"><div class="k">Día de Europa</div><div class="v">9 de mayo, aniversario de la Declaración Schuman de 1950.</div></div>
+            <div class="inst-item"><div class="k">Moneda</div><div class="v">El euro, en circulación desde 2002, con un lado común y un lado con motivos propios de cada país en las monedas.</div></div>
+          </div>
+        </div>
+      </details>
+      <div class="mito-box">
+        <span class="mt">La UE no es un país</span>
+        <p>No tiene ejército único, ni un presidente que gobierne a todos, ni sustituye a los gobiernos nacionales. Cada país conserva su Constitución, su gobierno, su sistema educativo y sanitario, y decide sobre buena parte de sus impuestos. La UE solo tiene poder en aquello que los propios países han decidido gestionar en común mediante los tratados (comercio, competencia, moneda en la eurozona, fronteras exteriores, medio ambiente, entre otros): es lo que se llama "cesión de soberanía", y es siempre voluntaria y reversible (como demostró el Brexit).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL: CÓMO SE FORMÓ -->
+  <section class="tab-panel" id="tab-mapa">
+    <div class="card" style="--accent:var(--ochre);">
+      <div class="card-head">
+        <div class="badge" style="background:var(--ochre);"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></div>
+        <div><h2>Cómo se formó la Unión Europea</h2>
+        <p>Las nueve etapas de ampliación, de los seis fundadores a los veintisiete de hoy. Junto a la línea del tiempo, el mapa oficial para verlo de un vistazo.</p></div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="timeline" id="euTimeline"></div>
+        </div>
+        <div>
+          <div class="img-viewer">
+            <div class="img-viewer-toolbar">
+              <span class="iv-label">La incorporación de los Estados a la UE</span>
+              <button class="iv-fs-btn" id="ivFsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                Pantalla completa
+              </button>
+            </div>
+            <div class="img-viewer-stage" id="ivStage">
+              <img src="mapa_ampliaciones_ue.jpg" alt="Mapa de la incorporación de los Estados a la Unión Europea, con las ampliaciones coloreadas por fecha" id="ivImg">
+              <button class="iv-exit-btn" id="ivExitBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M8 3v3a2 2 0 0 1-2 2H3M16 3v3a2 2 0 0 0 2 2h3M8 21v-3a2 2 0 0 0-2-2H3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+                Salir de pantalla completa
+              </button>
+            </div>
+            <p class="caption">Fuente: Unión Europea, 2021. Pulsa la imagen o el botón para verla a pantalla completa.</p>
+          </div>
+        </div>
+      </div>
+      <div class="mito-box">
+        <span class="mt">"Europa" y "Unión Europea" no son sinónimos</span>
+        <p>Hay países europeos que nunca han sido ni quieren ser miembros de la UE (Noruega, Suiza, Reino Unido desde 2020...) y usan otras fórmulas de relación (mercado único sin voto, acuerdos bilaterales). Pertenecer a Europa como continente no significa pertenecer a la Unión Europea como organización.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL: INSTITUCIONES -->
+  <section class="tab-panel" id="tab-instituciones">
+    <div class="card" style="--accent:var(--teal);">
+      <div class="card-head">
+        <div class="badge" style="background:var(--teal);"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 21h18M4 21V9l8-6 8 6v12M9 21v-6h6v6"/></svg></div>
+        <div><h2>Las siete instituciones, a fondo</h2>
+        <p>Ninguna institución puede actuar sola: el poder está repartido a propósito, para que sea muy difícil que la UE se convierta en un "superestado" centralizado.</p></div>
+      </div>
+
+      <h3 style="font-size:1rem;margin:6px 0 4px;color:var(--navy-deep);">¿Quién nombra a quién?</h3>
+      <div class="diagram"><div class="hier-wrap" id="hierDiagram"></div></div>
+      <p class="caption">Sigue las flechas: la ciudadanía y los gobiernos nacionales son el origen de todo el poder de la UE.</p>
+
+      <div class="example-box">
+        <span class="et">Los grupos políticos del Parlamento</span>
+        <p>Aunque cada eurodiputado se elige en su propio país, en Estrasburgo no se sientan por nacionalidad, sino por ideología: conservadores, socialdemócratas, liberales, verdes, izquierda, y varias familias de la derecha y la extrema derecha forman sus propios grupos políticos europeos, agrupando a partidos afines de distintos países. Para formar un grupo hacen falta al menos 23 eurodiputados de al menos una cuarta parte de los países (7 de 27).</p>
+      </div>
+      <div class="fact-grid">
+        <div class="fact-card"><div class="k">Presupuesto anual UE</div><div class="v">Alrededor de un 1% de la renta conjunta de los 27</div></div>
+        <div class="fact-card"><div class="k">Personal de la Comisión</div><div class="v">Más de 32.000 funcionarios</div></div>
+        <div class="fact-card"><div class="k">Lenguas de trabajo</div><div class="v">24 lenguas oficiales, traducción simultánea en el pleno</div></div>
+      </div>
+
+      <div id="institutionsList"></div>
+    </div>
+  </section>
+
+  <!-- PANEL: CÓMO SE HACE UNA LEY -->
+  <section class="tab-panel" id="tab-ley">
+    <div class="card" style="--accent:var(--ochre);">
+      <div class="card-head">
+        <div class="badge" style="background:var(--ochre);"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg></div>
+        <div><h2>Cómo se aprueba una ley europea</h2>
+        <p>Un reglamento o una directiva europea no los aprueba una sola institución: tienen que ponerse de acuerdo dos cámaras distintas, a partir de una propuesta que solo puede presentar la Comisión. Es el llamado "procedimiento legislativo ordinario", y con él se aprueba la inmensa mayoría de la legislación europea.</p></div>
+      </div>
+      <div class="flow-row" id="lawFlow"></div>
+      <p class="caption">En la práctica, Parlamento y Consejo suelen negociar directamente con la Comisión en reuniones informales llamadas "trílogos", para llegar a un acuerdo ya en primera lectura y ahorrar tiempo. Aun así, el proceso completo suele tardar entre 1 y 2 años desde que se propone hasta que entra en vigor.</p>
+      <div class="example-box">
+        <span class="et">Ejemplo real: la directiva de los plásticos de un solo uso</span>
+        <p>En 2018 la Comisión propuso prohibir pajitas, bastoncillos y cubiertos de plástico de un solo uso. El Parlamento y el Consejo negociaron el texto durante meses, lo modificaron y finalmente lo aprobaron en 2019. Desde entonces, cada país ha ido retirando estos productos de sus tiendas: así es como una decisión en Bruselas y Estrasburgo acaba notándose en un supermercado de cualquier pueblo.</p>
+      </div>
+      <div class="example-box">
+        <span class="et">Segundo ejemplo: el "roaming" gratuito</span>
+        <p>Hasta 2017, usar el móvil en otro país de la UE tenía recargos. Tras años de reducciones progresivas aprobadas por Parlamento y Consejo, el reglamento "Roam like at home" (2017) eliminó del todo esos recargos: hoy puedes usar tus datos, llamadas y SMS en cualquier país de la UE pagando lo mismo que en casa. A diferencia de una directiva, al ser un <strong>reglamento</strong>, entró en vigor exactamente igual y el mismo día en los 27 países, sin que cada uno tuviera que aprobar su propia ley.</p>
+      </div>
+      <div class="fact-grid">
+        <div class="fact-card"><div class="k">Reglamento</div><div class="v">Obligatorio y directo, igual en los 27 países, sin necesidad de ley nacional</div></div>
+        <div class="fact-card"><div class="k">Directiva</div><div class="v">Fija un objetivo; cada país aprueba su propia ley para lograrlo, con un plazo (normalmente 2 años)</div></div>
+        <div class="fact-card"><div class="k">Decisión</div><div class="v">Obligatoria, pero solo para quien va dirigida (un país, una empresa...)</div></div>
+        <div class="fact-card"><div class="k">Mayoría cualificada</div><div class="v">55% de los países + 65% de la población, en el Consejo de la UE</div></div>
+      </div>
+      <details class="advanced">
+        <summary>¿Y si el tema es muy delicado? Los procedimientos especiales</summary>
+        <div class="adv-body">
+          <p>No todo se aprueba igual. En materias muy sensibles para la soberanía nacional —política exterior, fiscalidad común, ampliar la UE con un país nuevo, o el propio presupuesto plurianual— se usan "procedimientos legislativos especiales": normalmente el Consejo decide por <strong>unanimidad</strong> (los 27 de acuerdo) y el Parlamento solo puede dar su visto bueno o vetar, sin poder de enmienda. Es una manera de mantener el control nacional en los asuntos más delicados, al precio de que sea mucho más difícil llegar a un acuerdo (basta con que un solo país diga no).</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- PANEL: ESPAÑA -->
+  <section class="tab-panel" id="tab-espana-ue">
+    <div class="card" style="--accent:var(--myth);">
+      <div class="card-head">
+        <div class="badge" style="background:var(--myth);"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18"/></svg></div>
+        <div><h2>España en la Unión Europea</h2>
+        <p>España entró en la CEE el 1 de enero de 1986, junto con Portugal, tras 8 años de negociaciones. Cuatro décadas después, es uno de los países con más peso político e institucional de la Unión.</p></div>
+      </div>
+      <div class="example-box">
+        <span class="et">Un camino de casi una década</span>
+        <p>España solicitó formalmente la adhesión el 28 de julio de 1977, apenas dos años después de la muerte de Franco: entrar en la entonces CEE era, sobre todo, una forma de anclar la joven democracia española a Europa. Las negociaciones fueron largas y difíciles (sobre todo por la pesca y la agricultura, que competían con Francia e Italia). El Tratado de Adhesión se firmó el 12 de junio de 1985 en el Palacio Real de Madrid, y entró en vigor el 1 de enero de 1986.</p>
+      </div>
+      <div class="fact-grid" id="spainFacts"></div>
+      <div class="cards-3" id="spainCards"></div>
+      <details class="advanced">
+        <summary>¿Cuánto dinero mueve España con la UE?</summary>
+        <div class="adv-body">
+          <p>Desde su entrada, España ha sido durante décadas uno de los grandes receptores netos de fondos europeos (recibía más de lo que aportaba), gracias sobre todo a los fondos de cohesión y a la Política Agraria Común (PAC), claves para modernizar carreteras, regadíos y zonas rurales. Con el tiempo, y a medida que otros países más pobres se han ido incorporando, España se ha ido acercando al equilibrio entre lo que aporta y lo que recibe. El golpe de la pandemia cambió otra vez la balanza: con el fondo Next Generation EU, España es de los países que más ayudas recibe en términos absolutos, más de 160.000 millones de euros entre transferencias directas y préstamos, destinados a digitalización, transición energética y reformas estructurales.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- PANEL: QUIZ -->
+  <section class="tab-panel" id="tab-quiz">
+    <div class="card" style="--accent:var(--navy);">
+      <div class="card-head">
+        <div class="badge" style="background:var(--navy);"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <div><h2>Ponte a prueba</h2><p>Preguntas sobre la formación de la UE, sus instituciones y cómo funciona de verdad.</p></div>
+      </div>
+      <div class="quiz-progress" id="quizProgress"></div>
+      <div id="quizBody">
+        <p class="quiz-q" id="quizQ"></p>
+        <div class="quiz-opts" id="quizOpts"></div>
+        <div class="quiz-explain" id="quizExplain"></div>
+        <div class="quiz-foot">
+          <span class="quiz-score">Aciertos: <span id="quizScore">0</span>/<span id="quizTotal">0</span></span>
+          <button class="next-btn" id="nextBtn">Siguiente →</button>
+        </div>
+      </div>
+      <div class="quiz-final" id="quizFinal">
+        <div class="big" id="quizFinalScore"></div>
+        <p id="quizFinalMsg"></p>
+        <button class="restart-btn" id="restartBtn">Repetir el test</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="note">Simulación educativa · el mapa usa fronteras reales; la posición de las etiquetas es aproximada.</footer>
+</div>
+
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+
+<script>
+const WAVES = [
+  { year:1957, label:'Europa de los Seis', sub:'1958', color:'var(--w1957)', title:'Los seis fundadores', text:'Bélgica, Francia, (la entonces Alemania Occidental), Italia, Luxemburgo y los Países Bajos firman el Tratado de Roma el 25 de marzo de 1957, que entra en vigor el 1 de enero de 1958: nace la Comunidad Económica Europea (CEE), con un mercado común y una unión aduanera como objetivo inicial. Un año antes, en 1952, esos mismos seis países ya habían creado la Comunidad Europea del Carbón y del Acero (CECA), el germen de todo el proyecto.' },
+  { year:1973, label:'Europa de los Nueve', sub:'1973', color:'var(--w1973)', title:'Primera ampliación', text:'Dinamarca, Irlanda y Reino Unido se incorporan el 1 de enero de 1973. Noruega también negoció su entrada, pero un referéndum la rechazó (y volvería a rechazarla en 1994). Es la primera vez que la Comunidad crece más allá de los seis fundadores, demostrando que el proyecto podía ampliarse. (Reino Unido abandonó la UE el 31 de enero de 2020: es, hasta hoy, el único país que se ha ido.)' },
+  { year:1981, label:'Europa de los Diez', sub:'1981', color:'var(--w1981)', title:'Grecia', text:'Grecia entra el 1 de enero de 1981, cinco años después de recuperar la democracia tras la dictadura de los coroneles (1967-1974). Marca el inicio de un patrón que se repetirá: la Comunidad como "ancla" democrática para países que acaban de salir de un régimen autoritario.' },
+  { year:1986, label:'Europa de los Doce', sub:'1986', color:'var(--w1986)', title:'España y Portugal', text:'Los dos países ibéricos entran juntos el 1 de enero de 1986, también tras dejar atrás dictaduras (franquismo y salazarismo/Estado Novo). Para España, tras casi una década de negociación, supuso el definitivo reconocimiento internacional de su democracia y el inicio de una modernización económica acelerada.' },
+  { year:1995, label:'Europa de los Quince', sub:'1995', color:'var(--w1995)', title:'Austria, Finlandia y Suecia', text:'Tres países tradicionalmente neutrales (dos de ellos vecinos de la antigua URSS) se suman el 1 de enero de 1995, ya con el nombre de "Unión Europea" (desde el Tratado de Maastricht, 1992). Noruega negoció de nuevo su entrada, y de nuevo la rechazó en referéndum.' },
+  { year:2004, label:'Europa de los Veinticinco', sub:'2004', color:'var(--w2004)', title:'La "gran ampliación"', text:'El 1 de mayo de 2004, diez países se incorporan a la vez —la mayor ampliación de la historia de la UE—, la mayoría del antiguo bloque comunista tras la caída del Telón de Acero: Chipre, Eslovaquia, Eslovenia, Estonia, Hungría, Letonia, Lituania, Malta, Polonia y Chequia. Simboliza la reunificación del continente tras décadas de división en la Guerra Fría.' },
+  { year:2007, label:'Europa de los Veintisiete', sub:'2007', color:'var(--w2007)', title:'Bulgaria y Rumanía', text:'El 1 de enero de 2007 completan la "gran ampliación" hacia el este de Europa, tras un periodo de seguimiento especial de la UE sobre la reforma de su justicia y la lucha contra la corrupción, que se prolongaría varios años más tras su entrada.' },
+  { year:2013, label:'Europa de los Veintiocho', sub:'2013', color:'var(--w2013)', title:'Croacia', text:'El 1 de julio de 2013, Croacia se convierte en el país más joven en unirse hasta ahora, tras el proceso de paz en los Balcanes de los años 90 que puso fin a la guerra de la antigua Yugoslavia. (Hoy, sin Reino Unido, la UE vuelve a tener 27 miembros.)' },
+  { year:'cand', label:'Países candidatos', sub:'hoy', color:'var(--wcand)', title:'Países candidatos hoy', text:'Turquía (candidata desde 2004, con las negociaciones prácticamente paralizadas), Macedonia del Norte, Montenegro, Serbia, Albania, Bosnia y Herzegovina, Ucrania, Moldavia y Georgia negocian su entrada, cada uno en una fase distinta del proceso. En julio de 2026, Albania, Montenegro, Moldavia y Ucrania avanzaron a la vez en sus negociaciones: la mayor aceleración del proceso de ampliación en 20 años, impulsada en parte por el contexto de la guerra en Ucrania.' }
+];
+
+/* =========================================================================
+   NAVEGACIÓN POR PESTAÑAS
+   ========================================================================= */
+const TABS = [
+  { id:'que-es', label:'Qué es', icon:'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18M12 3a9 9 0 0 0 0 18"/>' },
+  { id:'mapa', label:'Cómo se formó', icon:'<path d="M9 3v18M15 3v18M3 8l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/>' },
+  { id:'instituciones', label:'Instituciones', icon:'<path d="M3 21h18M4 21V9l8-6 8 6v12M9 21v-6h6v6"/>' },
+  { id:'ley', label:'Cómo se hace una ley', icon:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/>' },
+  { id:'espana-ue', label:'España en la UE', icon:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18"/>' },
+  { id:'quiz', label:'Ponte a prueba', icon:'<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>' }
+];
+const state = { tab:'que-es' };
+
+function buildTabs(){
+  const bar = document.getElementById('tabBar');
+  bar.innerHTML = TABS.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" data-tab="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex:none;">${t.icon}</svg> ${t.label}</button>`).join('');
+  bar.addEventListener('click', e=>{
+    const b = e.target.closest('[data-tab]'); if(!b) return;
+    setTab(b.dataset.tab);
+  });
+  // anillo de estrellas del logotipo (12 estrellas, como la bandera europea)
+  const ring = document.getElementById('starsRing');
+  let stars = '';
+  for(let i=0;i<12;i++){
+    const a = (i/12)*2*Math.PI - Math.PI/2;
+    const x = 50 + 34*Math.cos(a), y = 50 + 34*Math.sin(a);
+    stars += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#f6efdc"/>`;
+  }
+  ring.innerHTML = stars;
+}
+function setTab(id){
+  state.tab = id;
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+id));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+  renderAll();
+}
+
+/* =========================================================================
+   LÍNEA DEL TIEMPO DE AMPLIACIONES
+   ========================================================================= */
+function renderTimeline(){
+  const box = document.getElementById('euTimeline');
+  box.innerHTML = WAVES.map(w => `
+    <div class="tl-item">
+      <span class="tl-dot" style="background:${w.color};"></span>
+      <div class="tl-year">${w.sub==='hoy' ? 'Hoy' : w.sub}${w.year!=='cand' ? ' — '+w.label : ''}</div>
+      <div class="tl-title">${w.title}</div>
+      <div class="tl-text">${w.text}</div>
+    </div>
+  `).join('');
+}
+
+/* =========================================================================
+   VISOR DE IMAGEN (con pantalla completa)
+   ========================================================================= */
+function initImageViewer(){
+  const stage = document.getElementById('ivStage');
+  const fsBtn = document.getElementById('ivFsBtn');
+  const exitBtn = document.getElementById('ivExitBtn');
+  const img = document.getElementById('ivImg');
+  if(!stage) return;
+
+  function enterFullscreen(){
+    const req = stage.requestFullscreen || stage.webkitRequestFullscreen || stage.msRequestFullscreen;
+    if(req) req.call(stage);
+  }
+  function exitFullscreen(){
+    const ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+    if(ex) ex.call(document);
+  }
+  fsBtn.addEventListener('click', enterFullscreen);
+  img.addEventListener('click', enterFullscreen);
+  exitBtn.addEventListener('click', exitFullscreen);
+}
+
+/* =========================================================================
+   JERARQUÍA INSTITUCIONAL
+   ========================================================================= */
+function renderHierarchy(){
+  const box = document.getElementById('hierDiagram');
+  box.innerHTML = `
+    <div class="hier-row">
+      <div class="hier-box top">👥 Ciudadanía de la UE<br><span style="font-weight:400;font-size:.72rem;">(vota cada 5 años)</span></div>
+      <div class="hier-box top">🏛️ Gobiernos de los 27 países<br><span style="font-weight:400;font-size:.72rem;">(elegidos en cada país)</span></div>
+    </div>
+    <div class="hier-arrow">↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓ ↓</div>
+    <div class="hier-row">
+      <div class="hier-box">Parlamento Europeo</div>
+      <div class="hier-box">Consejo Europeo</div>
+      <div class="hier-box">Consejo de la UE</div>
+    </div>
+    <div class="hier-label">El Consejo Europeo propone a la presidencia de la Comisión; el Parlamento la elige; cada gobierno propone a su comisario.</div>
+    <div class="hier-arrow">↓</div>
+    <div class="hier-row"><div class="hier-box" style="background:var(--ochre);color:#3a2c02;">Comisión Europea</div></div>
+    <div class="hier-label">La Comisión propone las leyes; el Parlamento y el Consejo de la UE las aprueban juntos.</div>
+    <div class="hier-arrow">↓</div>
+    <div class="hier-row">
+      <div class="hier-box" style="background:var(--teal);color:#fff;">Tribunal de Justicia</div>
+      <div class="hier-box" style="background:var(--teal);color:#fff;">Banco Central Europeo</div>
+      <div class="hier-box" style="background:var(--teal);color:#fff;">Tribunal de Cuentas</div>
+    </div>
+    <div class="hier-label">Vigilan que las leyes se cumplan, que el euro funcione y que el dinero se gaste bien — de forma independiente de las demás.</div>
+  `;
+}
+
+/* =========================================================================
+   INSTITUCIONES DETALLADAS
+   ========================================================================= */
+const INSTITUTIONS = [
+  { name:'Parlamento Europeo', tag:'Legislativo', sede:'Estrasburgo (pleno) y Bruselas (comisiones)',
+    icon:'<path d="M3 21h18M4 21V9l8-6 8 6v12M9 21v-6h6v6"/>',
+    composicion:'720 escaños repartidos entre los 27 países por "proporcionalidad decreciente": cuanto más población tiene un país, más escaños recibe, pero proporcionalmente menos por habitante que los países pequeños. Ningún país puede tener menos de 6 escaños ni más de 96.',
+    eleccionDetalle:'Elección directa por sufragio universal cada 5 años. Cada país organiza sus propias listas y reparte sus escaños según sus votos; luego, en Estrasburgo, los eurodiputados se agrupan por ideología política (no por país) en grupos parlamentarios europeos.',
+    funciones:[
+      'Aprueba las leyes europeas junto con el Consejo de la UE (procedimiento legislativo ordinario).',
+      'Aprueba (o rechaza) el presupuesto anual de la UE junto con el Consejo.',
+      'Elige a la presidencia de la Comisión Europea y aprueba (o no) al Colegio de Comisarios completo.',
+      'Puede destituir a toda la Comisión con una "moción de censura" (mayoría de dos tercios).',
+      'Supervisa al resto de instituciones y puede abrir comisiones de investigación.'
+    ],
+    seatTable:[['Alemania','96'],['Francia','81'],['Italia','76'],['España','61'],['Polonia','53'],['Rumanía','33'],['Malta / Luxemburgo / Chipre','6 (mínimo)']],
+    ejemplo:'Roberta Metsola (Malta, Partido Popular Europeo) es su presidenta desde enero de 2022.',
+    curioso:'Es el único parlamento del mundo que sesiona oficialmente en dos ciudades distintas (Estrasburgo y Bruselas): el llamado "circo itinerante", que supone más de 100 millones de euros al año solo en desplazamientos y montaje.' },
+  { name:'Consejo Europeo', tag:'Dirección política', sede:'Bruselas (cumbres, normalmente 4 veces al año)',
+    icon:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>',
+    composicion:'Los 27 jefes de Estado o de Gobierno de cada país, más su propio presidente (que no representa a ningún país) y la presidenta de la Comisión, que también asiste.',
+    eleccionDetalle:'No hay "elección" en el sentido habitual: cada miembro llega a la mesa porque ha ganado las elecciones de su propio país. Su presidente lo eligen los propios líderes por mayoría cualificada, para un mandato de 2 años y medio renovable una vez.',
+    funciones:[
+      'Fija las grandes prioridades políticas y la orientación general de la UE (no aprueba leyes).',
+      'Gestiona las crisis internacionales importantes (guerras, pandemias, relaciones con otras potencias).',
+      'Nombra al candidato a presidir la Comisión, que después debe aprobar el Parlamento.',
+      'Decide por consenso casi siempre; en temas muy señalados, por unanimidad.'
+    ],
+    ejemplo:'António Costa (expresidente de Portugal) es su presidente desde diciembre de 2024.',
+    curioso:'No debe confundirse con el "Consejo de Europa", una organización totalmente distinta (47 países, defensa de los derechos humanos, con su propio Tribunal Europeo de Derechos Humanos) que ni siquiera es una institución de la UE.' },
+  { name:'Consejo de la Unión Europea', tag:'Legislativo', sede:'Bruselas (y Luxemburgo algunos meses)',
+    icon:'<path d="M3 9h18M3 15h18M6 4v16M18 4v16"/>',
+    composicion:'Un ministro de cada uno de los 27 países, pero cambia según el tema: los ministros de Agricultura se reúnen para temas agrícolas, los de Economía para temas económicos, etc. (10 configuraciones distintas).',
+    eleccionDetalle:'Cada gobierno nacional decide qué ministro envía. La presidencia rota entre los 27 países cada 6 meses (España la ejerció en 2023). Para aprobar la mayoría de las leyes se usa la "mayoría cualificada": hacen falta al menos 15 de los 27 países, que además sumen al menos el 65% de la población total de la UE.',
+    funciones:[
+      'Aprueba las leyes europeas junto con el Parlamento.',
+      'Aprueba el presupuesto junto con el Parlamento.',
+      'Coordina las políticas económicas de los países miembros.',
+      'Firma acuerdos internacionales en nombre de la UE.',
+      'Decide sobre política exterior y de seguridad común (aquí, por unanimidad).'
+    ],
+    ejemplo:'España ejerció la presidencia rotatoria del Consejo en el segundo semestre de 2023.',
+    curioso:'Se le suele llamar informalmente "el Consejo" a secas, lo que genera confusión con el Consejo Europeo: la clave está en fijarse en quién se reúne. ¿Jefes de Estado o de Gobierno? Consejo Europeo. ¿Ministros? Consejo de la UE.' },
+  { name:'Comisión Europea', tag:'Ejecutivo', sede:'Bruselas',
+    icon:'<rect x="4" y="8" width="16" height="12" rx="1"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/>',
+    composicion:'27 comisarios, uno por país, organizados en un "Colegio" presidido por su presidenta. Desde 2019 se agrupan en torno a varias vicepresidencias ejecutivas, cada una coordinando varias carteras relacionadas (competitividad, transición ecológica, etc.).',
+    eleccionDetalle:'El Consejo Europeo propone a la presidencia (según el resultado de las elecciones europeas); el Parlamento la elige por mayoría absoluta. Después, cada país propone a su comisario; la presidenta asigna las carteras; el Parlamento entrevista a cada candidato uno a uno y vota al Colegio completo. Solo entonces toma posesión.',
+    funciones:[
+      'Es la única institución que puede proponer una ley nueva (monopolio de la iniciativa legislativa).',
+      'Vigila que los 27 países cumplan los tratados: puede llevar a un país al Tribunal de Justicia si no cumple.',
+      'Gestiona el presupuesto y los grandes programas de ayuda (fondos de cohesión, PAC, Next Generation EU...).',
+      'Negocia acuerdos comerciales internacionales en nombre de toda la UE.',
+      'Vigila la competencia: puede multar a empresas grandes por prácticas ilegales (monopolios, ayudas de Estado ilegales).'
+    ],
+    ejemplo:'Presidenta: Ursula von der Leyen (Alemania), desde 2019, reelegida en 2024. La comisaria española, Teresa Ribera, es primera vicepresidenta ejecutiva (Transición Limpia, Justa y Competitiva) y comisaria de Competencia.',
+    curioso:'Tiene más de 32.000 funcionarios trabajando para ella, repartidos en más de 30 "Direcciones Generales" (una especie de ministerios), cada una especializada en un área: comercio, medio ambiente, competencia...' },
+  { name:'Tribunal de Justicia de la Unión Europea', tag:'Judicial', sede:'Luxemburgo',
+    icon:'<path d="M12 3v18M5 8l-3 6h6zM19 8l-3 6h6z"/><path d="M5 8h14M3 21h18"/>',
+    composicion:'En realidad son dos tribunales: el Tribunal de Justicia (un juez por país + 11 abogados generales) y el Tribunal General (dos jueces por país, 54 en total), que ve los casos de primera instancia.',
+    eleccionDetalle:'Los jueces los nombran de común acuerdo los 27 gobiernos, para un mandato de 6 años renovable. No los elige ni el Parlamento ni la ciudadanía: se busca que sean juristas independientes de prestigio.',
+    funciones:[
+      'Interpreta el derecho europeo para que se aplique igual en los 27 países.',
+      'Resuelve conflictos entre instituciones de la UE, o entre un país y la UE.',
+      'Responde a las "cuestiones prejudiciales": si un juez nacional tiene dudas sobre cómo aplicar una ley europea, le pregunta a este tribunal.',
+      'Sus sentencias son vinculantes y obligan a los países, aunque no les guste el resultado.'
+    ],
+    ejemplo:'Obligó a las compañías aéreas a indemnizar a los pasajeros por vuelos cancelados o con gran retraso, interpretando un reglamento que las aerolíneas entendían de forma más favorable a ellas.',
+    curioso:'No debe confundirse con el Tribunal Europeo de Derechos Humanos: ese es un tribunal del Consejo de Europa (con sede también en Estrasburgo), completamente distinto de la UE.' },
+  { name:'Banco Central Europeo (BCE)', tag:'Monetario', sede:'Fráncfort (Alemania)',
+    icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+    composicion:'Un Comité Ejecutivo de 6 personas + los gobernadores de los 20 bancos centrales nacionales de los países que usan el euro (Consejo de Gobierno).',
+    eleccionDetalle:'La presidencia la nombran de común acuerdo los gobiernos de la eurozona, con consulta al Parlamento, para un mandato de 8 años no renovable. Es, por diseño, independiente: ni gobiernos ni instituciones de la UE pueden darle instrucciones.',
+    funciones:[
+      'Fija los tipos de interés del euro y controla la inflación (objetivo: en torno al 2% anual).',
+      'Emite los billetes de euro.',
+      'Supervisa a los grandes bancos de la eurozona para evitar otra crisis financiera como la de 2008.',
+      'Actúa como prestamista de último recurso del sistema bancario europeo.'
+    ],
+    ejemplo:'Subió los tipos de interés varias veces en 2022-2023 para frenar la inflación disparada tras la guerra en Ucrania, encareciendo hipotecas y préstamos en toda la eurozona.',
+    curioso:'Su sede en Fráncfort, inaugurada en 2014, son dos torres entrelazadas de 185 metros de altura: uno de los rascacielos más altos de Alemania.' },
+  { name:'Tribunal de Cuentas Europeo', tag:'Fiscalización', sede:'Luxemburgo',
+    icon:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12h8M8 8h8M8 16h5"/>',
+    composicion:'Un miembro por país (27 en total).',
+    eleccionDetalle:'Los nombra el Consejo de la UE, tras consultar al Parlamento Europeo, para un mandato de 6 años renovable.',
+    funciones:[
+      'Audita todas las cuentas de la UE: comprueba que el dinero de los presupuestos europeos se ha gastado de forma legal y eficiente.',
+      'Publica un informe anual con sus conclusiones, que se debate en el Parlamento.',
+      'No tiene poder judicial: si detecta fraude, lo remite a la Fiscalía Europea o a la justicia de cada país.'
+    ],
+    ejemplo:'Sus informes anuales suelen señalar errores o irregularidades puntuales en partidas concretas del presupuesto (no necesariamente fraude), que la Comisión está obligada a corregir.',
+    curioso:'A pesar de su nombre, no se parece en nada a un tribunal de justicia: no juzga a nadie, es más bien un gran equipo de auditores e inspectores de cuentas.' }
+];
+function renderInstitutions(){
+  document.getElementById('institutionsList').innerHTML = INSTITUTIONS.map(i=>`
+    <div class="inst-card">
+      <div class="inst-head">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${i.icon}</svg></div>
+        <h3>${i.name}</h3><span class="inst-tag">${i.tag}</span>
+      </div>
+      <p class="inst-sub">Sede: ${i.sede}</p>
+      <div class="inst-grid">
+        <div class="inst-item"><div class="k">Composición actual</div><div class="v">${i.composicion}</div></div>
+        <div class="inst-item"><div class="k">Cómo se elige</div><div class="v">${i.eleccionDetalle}</div></div>
+      </div>
+      <div class="k" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sienna-deep);font-weight:700;margin-top:12px;">Funciones</div>
+      <ul class="inst-funcs">${i.funciones.map(f=>`<li>${f}</li>`).join('')}</ul>
+      ${i.seatTable ? `
+        <div class="k" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sienna-deep);font-weight:700;margin-top:12px;">Reparto de escaños (ejemplos, 2024-2029)</div>
+        <table class="seat-table"><thead><tr><th>País</th><th>Escaños</th></tr></thead><tbody>
+          ${i.seatTable.map(([c,n])=>`<tr><td>${c}</td><td>${n}</td></tr>`).join('')}
+        </tbody></table>` : ''}
+      <div class="inst-example"><b>Ejemplo real:</b> ${i.ejemplo}</div>
+      ${i.curioso ? `<div class="inst-example" style="background:rgba(28,110,140,0.1);"><b style="color:var(--teal-deep);">Dato curioso:</b> ${i.curioso}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+/* =========================================================================
+   CÓMO SE HACE UNA LEY
+   ========================================================================= */
+function renderLawFlow(){
+  const steps = [
+    { n:'1', t:'La Comisión propone', d:'Es la única institución que puede presentar un proyecto de ley.' },
+    { n:'2', t:'El Parlamento opina', d:'Los eurodiputados debaten, modifican y votan el texto.' },
+    { n:'3', t:'El Consejo opina', d:'Los ministros de cada país hacen lo mismo, en paralelo.' },
+    { n:'4', t:'Se negocia', d:'Si no coinciden, negocian hasta encontrar un texto común.' },
+    { n:'5', t:'Se aprueba', d:'Con el acuerdo de ambos, la ley entra en vigor en los 27 países.' }
+  ];
+  document.getElementById('lawFlow').innerHTML = steps.map((s,i)=>
+    `<div class="flow-step"><div class="fnum">PASO ${s.n}</div><div class="ftitle">${s.t}</div><div class="fdesc">${s.d}</div></div>` +
+    (i<steps.length-1 ? '<div class="flow-arrow">→</div>' : '')
+  ).join('');
+}
+
+/* =========================================================================
+   ESPAÑA EN LA UE
+   ========================================================================= */
+function renderSpain(){
+  document.getElementById('spainFacts').innerHTML = `
+    <div class="fact-card"><div class="k">Entrada</div><div class="v">1 de enero de 1986</div></div>
+    <div class="fact-card"><div class="k">Eurodiputados</div><div class="v">61 de 720</div></div>
+    <div class="fact-card"><div class="k">Comisaria</div><div class="v">Teresa Ribera</div></div>
+    <div class="fact-card"><div class="k">Euro</div><div class="v">Desde 1999 (billetes en 2002)</div></div>
+    <div class="fact-card"><div class="k">Población</div><div class="v">4.º país más poblado de la UE</div></div>
+    <div class="fact-card"><div class="k">Idioma oficial UE</div><div class="v">Español, desde 1986</div></div>
+  `;
+  document.getElementById('spainCards').innerHTML = `
+    <div class="mini-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>Fondos europeos</h3><p>España ha sido durante décadas uno de los grandes receptores de fondos de cohesión y de la Política Agraria Común (PAC). Con Next Generation EU, recibe más de 160.000 millones de euros entre ayudas y préstamos (ver detalle abajo).</p></div>
+    <div class="mini-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 12h18M12 3v18"/></svg>Espacio Schengen</h3><p>Desde 1995, España forma parte del espacio Schengen: se puede viajar a la mayoría de países de la UE sin pasar control de pasaporte en la frontera, como si fueran uno solo.</p></div>
+    <div class="mini-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Presidencias rotatorias</h3><p>Cada país ejerce la presidencia del Consejo de la UE por turnos de 6 meses. España la ha ejercido en 1989, 1995, 2002, 2010 y 2023, coordinando la agenda legislativa de los 27 durante ese semestre.</p></div>
+    <div class="mini-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M3 9v6l9 5 9-5V9"/></svg>Erasmus+</h3><p>España es, año tras año, uno de los destinos favoritos y uno de los países que más estudiantes envía del programa Erasmus+, que permite cursar parte de la carrera en universidades de otros países de la UE.</p></div>
+    <div class="mini-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 20h16M6 20V10l6-6 6 6v10"/></svg>La PAC y el campo español</h3><p>La Política Agraria Común ha sido determinante para modernizar la agricultura y la ganadería españolas, con ayudas directas a agricultores y ganaderos que representan una parte muy importante de su renta en muchas regiones.</p></div>
+    <div class="mini-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>El camino hacia el euro</h3><p>Para adoptar el euro, España tuvo que cumplir los "criterios de convergencia de Maastricht": déficit público controlado, deuda limitada, inflación baja y estabilidad del tipo de cambio. Lo logró a tiempo para entrar en el grupo fundador de la moneda única en 1999.</p></div>
+  `;
+}
+
+/* =========================================================================
+   QUIZ
+   ========================================================================= */
+const QUIZ = [
+  { q:'¿En qué año se firmó el Tratado de Roma, origen de la actual UE?', opts:['1945','1957','1986','1992'], correct:1, explain:'El Tratado de Roma (1957) creó la Comunidad Económica Europea con seis países fundadores.' },
+  { q:'¿Qué evento se conmemora el 9 de mayo, "Día de Europa"?', opts:['La firma del Tratado de Roma','La caída del Muro de Berlín','La Declaración Schuman de 1950','La entrada del euro'], correct:2, explain:'La Declaración Schuman (9 de mayo de 1950) propuso poner en común el carbón y el acero franco-alemanes.' },
+  { q:'¿En qué año entraron España y Portugal?', opts:['1973','1981','1986','1995'], correct:2, explain:'España y Portugal entraron juntos el 1 de enero de 1986.' },
+  { q:'¿Qué país ha sido el único en abandonar la Unión Europea?', opts:['Noruega','Reino Unido','Suiza','Grecia'], correct:1, explain:'Reino Unido salió el 31 de enero de 2020 (Brexit). Noruega y Suiza nunca han sido miembros.' },
+  { q:'¿Quién es la única institución que puede proponer una ley europea nueva?', opts:['El Parlamento Europeo','El Consejo Europeo','La Comisión Europea','El Tribunal de Justicia'], correct:2, explain:'La Comisión tiene el monopolio de la iniciativa legislativa.' },
+  { q:'¿Cómo se eligen los eurodiputados del Parlamento Europeo?', opts:['Los designan los gobiernos','Voto directo de la ciudadanía','Los elige la Comisión','Por sorteo'], correct:1, explain:'Es la única institución de la UE elegida directamente por la ciudadanía, cada 5 años.' },
+  { q:'¿Qué diferencia hay entre el Consejo Europeo y el Consejo de la UE?', opts:['Son lo mismo','El Consejo Europeo reúne a los jefes de Estado; el Consejo de la UE, a los ministros de cada área','El Consejo de la UE es solo para economía','El Consejo Europeo ya no existe'], correct:1, explain:'El Consejo Europeo marca prioridades políticas (jefes de Estado/Gobierno); el Consejo de la UE aprueba leyes (ministros).' },
+  { q:'Para aprobar la mayoría de las leyes en el Consejo de la UE hace falta...', opts:['Unanimidad de los 27','Mayoría cualificada: 55% de los países + 65% de la población','Solo la mitad más uno de los países','El voto de Alemania y Francia'], correct:1, explain:'La "doble mayoría" evita que un bloque de países pequeños o uno de grandes imponga su criterio en solitario.' },
+  { q:'¿Cuántos comisarios tiene la Comisión Europea?', opts:['Uno para toda la UE','27, uno por país','61, como los eurodiputados españoles','9, uno por tratado'], correct:1, explain:'Cada país propone un comisario; el equipo completo debe ser aprobado por el Parlamento.' },
+  { q:'El Tribunal de Justicia de la UE está formado, en realidad, por...', opts:['Un único tribunal con un juez de cada país','Dos tribunales: el Tribunal de Justicia y el Tribunal General','Solo jueces alemanes y franceses','Un tribunal que depende de la ONU'], correct:1, explain:'El Tribunal de Justicia (un juez por país) y el Tribunal General (dos por país) resuelven casos distintos.' },
+  { q:'Los países candidatos actuales incluyen a Ucrania y Moldavia, que solicitaron la adhesión...', opts:['En 1995','Justo después de la invasión rusa de 2022','En 2004','Todavía no lo han solicitado'], correct:1, explain:'Ucrania y Moldavia solicitaron la adhesión pocos días después de la invasión rusa de febrero de 2022.' },
+  { q:'¿Qué institución controla el valor del euro y la inflación, de forma independiente de los gobiernos?', opts:['La Comisión Europea','El Banco Central Europeo','El Tribunal de Cuentas','El Consejo Europeo'], correct:1, explain:'El BCE, con sede en Fráncfort, es independiente y fija la política monetaria de la eurozona.' },
+  { q:'¿Cuáles son las "cuatro libertades" del mercado único europeo?', opts:['Prensa, religión, voto y expresión','Mercancías, servicios, capitales y personas','Comercio, turismo, estudios y sanidad','Entrada, salida, tránsito y residencia'], correct:1, explain:'Desde 1993, mercancías, servicios, capitales y personas pueden circular libremente entre los países miembros, sin aranceles ni trabas.' },
+  { q:'¿En qué año recibió la Unión Europea el Premio Nobel de la Paz?', opts:['1957','1992','2012','2020'], correct:2, explain:'En 2012, "por contribuir durante seis décadas al avance de la paz, la reconciliación, la democracia y los derechos humanos en Europa".' },
+  { q:'El Acuerdo de Schengen permite...', opts:['Usar el euro en cualquier país','Viajar sin control de pasaporte entre los países firmantes','Votar en las elecciones de otro país de la UE','Estudiar gratis en cualquier universidad europea'], correct:1, explain:'Firmado en 1985 y en vigor desde 1995, elimina los controles fronterizos interiores entre los países del espacio Schengen.' },
+  { q:'¿Cuándo solicitó España formalmente su entrada en la entonces CEE?', opts:['En 1975, con Franco todavía vivo','El 28 de julio de 1977','El mismo día de su entrada, en 1986','En 1992, con el Tratado de Maastricht'], correct:1, explain:'España solicitó la adhesión en julio de 1977, apenas dos años después de la muerte de Franco, como forma de anclar su joven democracia a Europa.' },
+  { q:'Un reglamento europeo, a diferencia de una directiva...', opts:['No es obligatorio para nadie','Entra en vigor igual y el mismo día en los 27 países, sin necesitar una ley nacional','Solo se aplica si el Parlamento nacional lo aprueba también','Únicamente afecta a la Comisión Europea'], correct:1, explain:'El reglamento se aplica de forma directa e idéntica en todos los países; la directiva, en cambio, fija un objetivo que cada país debe transponer a su propia legislación.' },
+  { q:'¿Para qué se usan los "trílogos" en el proceso legislativo europeo?', opts:['Para elegir a la presidencia de la Comisión','Para que Parlamento, Consejo y Comisión negocien informalmente y lleguen antes a un acuerdo','Para votar el presupuesto cada tres años','Para resolver conflictos en el Tribunal de Justicia'], correct:1, explain:'Son reuniones informales entre las tres instituciones que agilizan la negociación de una ley, evitando rondas de lectura más largas.' },
+  { q:'¿Cuántas lenguas oficiales tiene la Unión Europea?', opts:['1, el inglés','9, una por cada tratado','24','27, una por cada país exactamente'], correct:2, explain:'La UE tiene 24 lenguas oficiales (algunos países comparten idioma, y alguno tiene más de una lengua oficial).' },
+  { q:'¿Qué representan las doce estrellas de la bandera europea?', opts:['Los seis países fundadores multiplicados por dos','El número de idiomas oficiales en 1986','Nada relacionado con un número de países: símbolo de unidad y perfección','Los doce meses que tardó en aprobarse el Tratado de Roma'], correct:2, explain:'El círculo de doce estrellas doradas simboliza unidad y perfección (como los 12 meses o las 12 horas del reloj), no un número de países, por eso nunca ha cambiado con las ampliaciones.' },
+  { q:'Para poder aprobar leyes muy delicadas (como la fiscalidad común o la entrada de un país nuevo), el Consejo de la UE debe decidir...', opts:['Por mayoría simple','Por mayoría cualificada, igual que siempre','Por unanimidad: los 27 de acuerdo','Lo decide solo la Comisión'], correct:2, explain:'En los procedimientos legislativos especiales para materias más sensibles, se exige unanimidad, lo que da a cada país un poder de veto.' }
+];
+let quizState = { i:0, score:0, answered:false };
+function renderQuizProgress(){
+  document.getElementById('quizProgress').innerHTML = QUIZ.map((_,i)=>`<span class="${i<quizState.i?'done':i===quizState.i?'current':''}"></span>`).join('');
+  document.getElementById('quizTotal').textContent = QUIZ.length;
+  document.getElementById('quizScore').textContent = quizState.score;
+}
+function renderQuizQuestion(){
+  if(quizState.i >= QUIZ.length){
+    document.getElementById('quizBody').style.display='none';
+    document.getElementById('quizFinal').classList.add('show');
+    document.getElementById('quizFinalScore').textContent = quizState.score+' / '+QUIZ.length;
+    const pct = quizState.score/QUIZ.length;
+    document.getElementById('quizFinalMsg').textContent = pct===1?'¡Perfecto! Dominas cómo funciona la UE.':pct>=0.6?'Muy bien. Repasa las que has fallado.':'Conviene repasar con calma la pestaña de instituciones.';
+    return;
+  }
+  document.getElementById('quizBody').style.display='';
+  document.getElementById('quizFinal').classList.remove('show');
+  const item = QUIZ[quizState.i];
+  quizState.answered = false;
+  document.getElementById('quizQ').textContent = item.q;
+  const opts = document.getElementById('quizOpts'); opts.innerHTML='';
+  item.opts.forEach((opt,idx)=>{
+    const b = document.createElement('button'); b.className='quiz-opt'; b.textContent=opt;
+    b.addEventListener('click', ()=>answerQuiz(idx));
+    opts.appendChild(b);
+  });
+  document.getElementById('quizExplain').classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+  renderQuizProgress();
+}
+function answerQuiz(idx){
+  if(quizState.answered) return;
+  quizState.answered = true;
+  const item = QUIZ[quizState.i];
+  document.querySelectorAll('#quizOpts .quiz-opt').forEach((b,i)=>{
+    b.disabled=true;
+    if(i===item.correct) b.classList.add('correct'); else if(i===idx) b.classList.add('wrong');
+  });
+  if(idx===item.correct) quizState.score++;
+  document.getElementById('quizExplain').textContent = item.explain;
+  document.getElementById('quizExplain').classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+  renderQuizProgress();
+}
+function initQuiz(){
+  document.getElementById('nextBtn').addEventListener('click', ()=>{ quizState.i++; renderQuizQuestion(); });
+  document.getElementById('restartBtn').addEventListener('click', ()=>{ quizState={i:0,score:0,answered:false}; renderQuizQuestion(); });
+  renderQuizQuestion();
+}
+
+/* =========================================================================
+   WIRING
+   ========================================================================= */
+function renderAll(){
+  if(state.tab==='mapa') renderTimeline();
+  if(state.tab==='instituciones'){ renderHierarchy(); renderInstitutions(); }
+  if(state.tab==='ley') renderLawFlow();
+  if(state.tab==='espana-ue') renderSpain();
+}
+function init(){
+  buildTabs();
+  initImageViewer();
+  initQuiz();
+  renderAll();
+}
+init();
+
+</script>
+</body>
+</html>
