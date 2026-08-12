@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paisajes de la Tierra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f5;
+    --panel:#ffffff;
+    --ink:#14201c;
+    --dim:#5b6b64;
+    --line:#dde3e0;
+    --line-strong:#c3ccc8;
+    --shadow: 0 1px 2px rgba(20,32,28,0.04), 0 8px 24px -12px rgba(20,32,28,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+
+  /* Fondo con textura topográfica muy sutil */
+  .topo-bg{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.35;
+    background-image:
+      repeating-radial-gradient(circle at 15% 20%, transparent 0, transparent 38px, rgba(20,32,28,0.028) 39px, transparent 40px),
+      repeating-radial-gradient(circle at 85% 75%, transparent 0, transparent 52px, rgba(20,32,28,0.022) 53px, transparent 54px);
+  }
+
+  .wrap{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:0 24px 72px;}
+
+  header.masthead{
+    position:sticky; top:0; z-index:20;
+    background:rgba(244,246,245,0.92); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:20px 0 16px;
+  }
+  .masthead-inner{max-width:1180px; margin:0 auto; padding:0 24px;}
+  .masthead-top{display:flex; align-items:baseline; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:16px;}
+  h1.title{
+    font-size:clamp(1.35rem, 1.05rem + 1.1vw, 1.9rem); font-weight:700; margin:0; letter-spacing:-0.01em;
+  }
+  h1.title .accent-dot{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--group-accent,#1f8a52); margin-right:10px; vertical-align:middle;}
+  .group-toggle{display:flex; gap:6px; background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px;}
+  .group-btn{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.85rem;
+    border:none; background:transparent; color:var(--dim); padding:8px 18px; border-radius:999px; cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .group-btn.active{background:var(--ink); color:var(--bg);}
+
+  .pill-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill{
+    display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:7px 12px 7px 8px; cursor:pointer; font-size:0.82rem; font-weight:500; color:var(--ink);
+    transition:all .15s ease;
+  }
+  .pill:hover{border-color:var(--line-strong); transform:translateY(-1px);}
+  .pill.active{background:var(--pill-accent,#1f8a52); border-color:var(--pill-accent,#1f8a52); color:#fff;}
+  .pill .glyph-mini{width:34px; height:18px; flex:0 0 auto; display:block;}
+
+  main{padding-top:32px;}
+
+  .plate{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .plate-hero{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:24px;
+    padding:36px 40px 28px; border-bottom:1px solid var(--line);
+  }
+  .plate-eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:600; letter-spacing:1.6px; text-transform:uppercase;
+    color:var(--plate-accent,#1f8a52); margin:0 0 10px;
+  }
+  .plate-title{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(1.7rem, 1.3rem + 1.6vw, 2.5rem);
+    margin:0 0 12px; letter-spacing:-0.015em; line-height:1.05;
+  }
+  .plate-localizacion{font-size:1rem; color:var(--dim); max-width:52ch; margin:0; line-height:1.5;}
+  .plate-glyph-big{width:150px; height:64px; flex:0 0 auto; margin-top:6px;}
+
+  .plate-body{display:grid; grid-template-columns:1fr; }
+  @media(min-width:820px){ .plate-body{grid-template-columns:1fr 1fr;} }
+
+  .col{padding:32px 40px;}
+  .col + .col{border-top:1px solid var(--line);}
+  @media(min-width:820px){
+    .col + .col{border-top:none; border-left:1px solid var(--line);}
+  }
+
+  .col-head{display:flex; align-items:center; gap:9px; margin-bottom:22px;}
+  .col-head .dot{width:9px; height:9px; border-radius:50%; background:var(--plate-accent,#1f8a52); flex:0 0 auto;}
+  .col-head h2{
+    font-family:'Space Grotesk',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase;
+    margin:0; color:var(--ink);
+  }
+
+  .field{margin-bottom:22px;}
+  .field:last-child{margin-bottom:0;}
+  .field .k{
+    font-family:'IBM Plex Mono',monospace; font-size:0.68rem; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+    color:var(--dim); display:block; margin-bottom:5px;
+  }
+  .field .v{font-size:0.96rem; line-height:1.62; margin:0; color:var(--ink);}
+
+  /* --- Datos reales: climograma e hidrograma --- */
+  .plate-datos{border-top:1px solid var(--line); display:grid; grid-template-columns:1fr;}
+  @media(min-width:820px){ .plate-datos{grid-template-columns:1fr 1fr;} }
+  .dato-col{padding:28px 40px;}
+  .dato-col + .dato-col{border-top:1px solid var(--line);}
+  @media(min-width:820px){ .dato-col + .dato-col{border-top:none; border-left:1px solid var(--line);} }
+  .dato-head{display:flex; align-items:center; gap:9px; margin-bottom:4px;}
+  .dato-head .dot{width:9px; height:9px; border-radius:50%; background:var(--plate-accent,#1f8a52); flex:0 0 auto;}
+  .dato-head h2{font-family:'Space Grotesk',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; margin:0;}
+  .dato-title{font-family:'Space Grotesk',sans-serif; font-size:1.02rem; font-weight:600; margin:2px 0 10px;}
+  .dato-chart-wrap{margin:6px 0 8px; line-height:0; max-width:320px;}
+  .dato-chart-wrap svg{width:100%; height:auto; display:block;}
+  .dato-stats{font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--dim); display:flex; gap:16px; flex-wrap:wrap; margin:2px 0 10px;}
+  .dato-legend{display:flex; gap:14px; font-size:0.72rem; color:var(--dim); margin-bottom:6px;}
+  .dato-legend span{display:inline-flex; align-items:center; gap:5px;}
+  .dato-legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+  .dato-legend-clima{justify-content:space-between; max-width:320px;}
+  .dato-nota{font-size:0.76rem; color:var(--dim); line-height:1.55; margin-top:8px;}
+  .dato-dry{font-size:0.78rem; color:#8a5a10; line-height:1.5; margin:6px 0 0; padding:6px 10px; background:rgba(180,121,15,0.10); border-radius:6px; display:inline-block;}
+  .fs-btn{
+    display:inline-flex; align-items:center; gap:6px; margin-top:10px;
+    font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:600; letter-spacing:0.3px;
+    background:transparent; border:1px solid var(--line-strong); color:var(--dim);
+    padding:6px 12px; border-radius:7px; cursor:pointer; transition:all .15s ease;
+  }
+  .fs-btn:hover{border-color:var(--ink); color:var(--ink);}
+
+  .fs-overlay{
+    position:fixed; inset:0; z-index:1000; background:var(--panel);
+    display:none;
+  }
+  .fs-overlay.open{display:block;}
+  .fs-panel{
+    position:absolute; inset:0; width:100%; height:100%; margin:0;
+    border-radius:0; box-shadow:none; background:var(--panel);
+    padding:20px 28px 24px; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .fs-toolbar{display:flex; align-items:center; gap:8px; justify-content:flex-end; flex:0 0 auto; margin-bottom:10px;}
+  .fs-tool-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.82rem;
+    background:var(--panel); color:var(--dim); border:1px solid var(--line-strong);
+    padding:9px 14px; border-radius:9px; cursor:pointer; transition:all .15s ease;
+  }
+  .fs-tool-btn:hover{border-color:var(--ink); color:var(--ink);}
+  .fs-tool-btn.active{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+  .fs-close{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.82rem;
+    background:var(--ink); color:var(--bg); border:none; border-radius:9px;
+    padding:9px 16px; cursor:pointer; margin-left:6px;
+  }
+  #fsContent{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; position:relative; overflow:auto;}
+  .fs-panel .dato-title{font-size:1.4rem; flex:0 0 auto;}
+  .fs-panel .dato-legend{font-size:0.9rem; flex:0 0 auto;}
+  .fs-panel .dato-legend-clima{max-width:none;}
+  .fs-panel .dato-chart-wrap{flex:1 1 auto; min-height:0; max-width:100%; display:flex; align-items:center; justify-content:center; margin:10px 0;}
+  .fs-panel .dato-chart-wrap svg{width:100%; height:100%; max-height:100%;}
+  .fs-panel .dato-stats{font-size:0.92rem; flex:0 0 auto;}
+  .fs-panel .dato-nota, .fs-panel .dato-dry{font-size:0.92rem; flex:0 0 auto;}
+  #fsDrawCanvas{position:absolute; pointer-events:none; touch-action:none; z-index:5;}
+  #fsLaserDot{
+    position:fixed; width:22px; height:22px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,40,40,0.95) 0%, rgba(255,40,40,0.55) 55%, rgba(255,40,40,0) 75%);
+    box-shadow:0 0 16px 4px rgba(255,40,40,0.6);
+    pointer-events:none; transform:translate(-50%,-50%); z-index:1100; display:none;
+  }
+  .dato-empty{font-style:italic; color:var(--dim); font-size:0.87rem; line-height:1.55; padding:16px; background:var(--bg); border-radius:9px; border:1px dashed var(--line-strong); margin-top:4px;}
+
+  /* --- Visor de mapas (mismo esquema que visor_mapas.html) --- */
+  .mapa-body{padding:0 40px 32px;}
+  .mapa-toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:10px 0;}
+  .mapa-tgroup{display:flex; align-items:center; gap:2px; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:3px;}
+  .mapa-tbtn{
+    font-family:'Space Grotesk',sans-serif; font-size:0.8rem; font-weight:600; padding:7px 11px; border:none;
+    background:transparent; color:var(--dim); border-radius:6px; cursor:pointer; transition:all .15s ease;
+  }
+  .mapa-tbtn:hover{background:rgba(20,32,28,0.06); color:var(--ink);}
+  .mapa-zoom-label{font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--dim); min-width:38px; text-align:center;}
+  .mapa-stage{
+    position:relative; width:100%; height:460px; overflow:hidden; touch-action:none; cursor:grab;
+    background:var(--bg); border-radius:10px; border:1px solid var(--line);
+  }
+  .mapa-stage.dragging{cursor:grabbing;}
+  .mapa-wrap{position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform;}
+  .mapa-wrap img{display:block; user-select:none; -webkit-user-drag:none;}
+  .mapa-hint{
+    position:absolute; left:10px; bottom:10px; background:rgba(255,255,255,0.9); border:1px solid var(--line);
+    border-radius:7px; padding:5px 10px; font-size:0.68rem; color:var(--dim); pointer-events:none;
+  }
+  .fs-panel .mapa-body{padding:0; flex:1 1 auto; min-height:0; display:flex; flex-direction:column;}
+  .fs-panel .mapa-stage{flex:1 1 auto; height:auto; min-height:0;}
+
+  footer.note{
+    margin-top:28px; font-size:0.78rem; color:var(--dim); line-height:1.6; text-align:center;
+    padding-top:18px;
+  }
+
+  /* Transición al cambiar de ficha */
+  .plate{animation:fadeIn .22s ease;}
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+</style>
+</head>
+<body>
+<div class="topo-bg"></div>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-top">
+      <h1 class="title"><span class="accent-dot" id="titleDot"></span>Paisajes de la Tierra</h1>
+      <div class="group-toggle" id="groupToggle">
+        <button class="group-btn active" data-group="mundo">Mundo</button>
+        <button class="group-btn" data-group="espana">España</button>
+      </div>
+    </div>
+    <div class="pill-row" id="pillRow"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+    <div id="plateHost"></div>
+    <footer class="note">
+      Contenido basado en los cuadros de clase del profesor. Cada ficha resume rasgos generales del paisaje: dentro de una misma categoría existen variaciones locales. El glifo de cada ficha es un esquema ilustrativo del patrón de lluvias (o de los pisos de vegetación en montaña), no una serie de datos reales mes a mes.
+    </footer>
+  </main>
+</div>
+
+<div class="fs-overlay" id="fsOverlay">
+  <div class="fs-panel" id="fsPanel">
+    <div class="fs-toolbar">
+      <button class="fs-tool-btn" id="fsPenBtn">🖊️ Lápiz</button>
+      <button class="fs-tool-btn" id="fsLaserBtn">🔴 Láser</button>
+      <button class="fs-close" id="fsCloseBtn">✕ Volver a pantalla normal</button>
+    </div>
+    <div id="fsContent"></div>
+    <canvas id="fsDrawCanvas"></canvas>
+    <div id="fsLaserDot"></div>
+  </div>
+</div>
+
+<script>
+/**
+ * PAISAJES DE LA TIERRA — datos
+ * -----------------------------------------------------------------
+ * Contenido extraído y limpiado (erratas de OCR corregidas) de los
+ * cuadros del profesor. Cada ficha lleva:
+ *   - accent: color distintivo de esa ficha (mismo color en Mundo
+ *     y España cuando el paisaje se repite: Oceánico, Mediterráneo,
+ *     Montaña — para reforzar que es el mismo tipo de clima).
+ *   - firma: datos para el glifo climático (la "firma" visual de la
+ *     ficha). Dos tipos:
+ *       { tipo:"meses", valores:[12 nº 0-9] } -> barras de
+ *         precipitación mensual esquemáticas (no datos reales mes a
+ *         mes, sino una pauta ilustrativa del patrón de lluvias).
+ *       { tipo:"altitud" } -> glifo de pisos bioclimáticos en altura,
+ *         para los paisajes de montaña, donde el factor determinante
+ *         no es el mes sino la altitud.
+ * -----------------------------------------------------------------
+ */
+
+const MUNDO = [
+  {
+    id: "ecuatorial",
+    nombre: "Paisaje Ecuatorial",
+    accent: "#1f8a52",
+    firma: { tipo: "meses", valores: [8,8,9,8,9,8,8,9,8,9,8,8] },
+    localizacion: "Regiones situadas alrededor del ecuador, con clima ecuatorial (aproximadamente entre 0° y 10° norte y sur).",
+    clima: "Temperaturas siempre altas (27 °C de media anual). Precipitaciones muy abundantes y regulares, superiores a 2.000 mm al año.",
+    rios: "Muy caudalosos y regulares, gracias a las abundantes lluvias durante todo el año.",
+    vegetacion: "Bosque muy denso (selva o jungla) con una diversidad de plantas y animales enorme. La vegetación se escalona en altura según sus necesidades de luz.",
+    fauna: "Aves vistosas, simios, reptiles y numerosos insectos.",
+    poblamiento: "Escaso, por el calor y la humedad constantes. Se concentra en la costa, los altiplanos y las montañas, donde el clima es más fresco, la vegetación menos densa y el suelo más fértil. Perviven sociedades tradicionales como los pueblos indígenas amazónicos o los pigmeos.",
+    actividadesHumanas: "Caza, pesca y recolección tradicional; agricultura rudimentaria; agricultura de plantación; explotación de los bosques, con el grave problema añadido de la deforestación.",
+    climograma: { disponible:true, ciudad:"Manaos", pais:"Brasil",
+      T:[26,26,25.9,26,26.2,26.3,26.5,27.2,27.5,27.5,27.1,26.6],
+      P:[263,262,297.9,282.7,203.7,103.1,66.9,45.6,63,111.1,161,219.8],
+      nota:"Mismo dato que el ejemplo de Manaos en tu Taller de Climogramas." },
+    hidrograma: { disponible:true, rio:"Congo en Kinshasa",
+      caudal:[55000,45000,36000,42000,48000,38000,27000,30000,34000,43000,54000,60000],
+      nota:"Reconstruido a partir del patrón estacional y las magnitudes documentadas para la estación de Kinshasa (caudal medio anual ≈41.000 m³/s, mínimo en julio-agosto, máximo a final de año, con un segundo máximo más suave en mayo): es el ejemplo de manual de régimen ecuatorial, con muy poca variación estacional pese a los dos máximos y mínimos." }
+  },
+  {
+    id: "tropical",
+    nombre: "Paisaje Tropical",
+    accent: "#b8862c",
+    firma: { tipo: "meses", valores: [2,2,3,4,7,9,9,8,7,5,3,2] },
+    localizacion: "Regiones situadas al norte y al sur de la zona ecuatorial, cerca de los trópicos.",
+    clima: "Temperaturas elevadas, aunque algo menores que en el clima ecuatorial. Precipitaciones abundantes (entre 500 y 2.000 mm) pero irregulares, con una estación húmeda y otra seca marcadas; según su reparto se habla de tropical húmedo o tropical seco.",
+    rios: "Menos caudalosos que los ecuatoriales, con un caudal irregular que varía según las lluvias.",
+    vegetacion: "Sabana: enorme llanura de herbáceas de gran altura salpicada de árboles como acacias y baobabs. Bosque de galería en las riberas de los ríos. Bosque tropical, más próximo al ecuador y parecido al ecuatorial pero menos denso y con menos especies. Estepa en las zonas próximas al desierto, con hierbas y arbustos espinosos.",
+    fauna: "Aves, grandes herbívoros (elefantes, antílopes...), grandes carnívoros (león, leopardo...), insectos y reptiles.",
+    poblamiento: "Concentrado en la costa y junto a los ríos, donde se sitúan las principales ciudades; predomina la población rural. Perviven comunidades tribales, como los masáis o los kikuyus.",
+    actividadesHumanas: "Caza, pesca y recolección tradicional por parte de las comunidades tribales; agricultura rudimentaria (roza y sedentaria de secano); agricultura de plantación; riesgo de desertificación en los márgenes más secos.",
+    climograma: { disponible:true, ciudad:"Chennai (Madrás)", pais:"India",
+      T:[24.6,25.7,27.6,29.9,32.1,32.1,30.6,29.9,29.4,28,26,24.8],
+      P:[29.4,9.4,9.3,16.7,43.9,52.3,99.2,123.7,124.7,284.9,345.4,137.7],
+      nota:"Mismo dato que el ejemplo de Chennai en tu Taller de Climogramas." },
+    hidrograma: { disponible:true, rio:"Níger en Niamey",
+      caudal:[1850,1400,850,400,180,130,220,420,520,480,750,1750],
+      nota:"Reconstruido a partir del patrón estacional documentado en Niamey: la 'crue rouge' (crecida local de agosto-septiembre, por lluvias cercanas) y la mucho mayor 'crue noire' o crecida guineana, que tarda meses en llegar desde la cabecera y provoca la máxima crecida en pleno invierno (diciembre-febrero); caudal medio, mínimo y máximo aproximados a los valores medidos en la estación." }
+  },
+  {
+    id: "desertico",
+    nombre: "Paisaje Desértico",
+    accent: "#c96a2e",
+    firma: { tipo: "meses", valores: [1,1,1,1,1,1,1,1,1,1,1,1] },
+    localizacion: "Desiertos cálidos, en torno a los trópicos; desiertos con estación fría, en zonas templadas de interior.",
+    clima: "En los desiertos cálidos, temperaturas diurnas muy elevadas (hasta 50 °C) con un descenso brusco por la noche. En los desiertos con estación fría, temperaturas diurnas también muy altas pero con un invierno largo y muy frío (hasta -10 °C).",
+    rios: "Inexistentes, salvo wadis: cursos que solo llevan agua en época de lluvias.",
+    vegetacion: "Desiertos de arena, con dunas que pueden superar los 300 m; desiertos pedregosos. Especies adaptadas a la aridez, como arbustos espinosos, y oasis en las zonas más húmedas.",
+    fauna: "Escasa y muy adaptada a la sequía: dromedario, chacal, reptiles, aves rapaces, insectos.",
+    poblamiento: "Prácticamente deshabitado. Comunidades tradicionales mayormente nómadas (bosquimanos, tuaregs, beduinos, mongoles...); algunas ciudades surgen en zonas ricas en petróleo y gas natural.",
+    actividadesHumanas: "Caza y pastoreo en el desierto, y agricultura sedentaria en los oasis; extracción de minerales, petróleo y gas.",
+    climograma: { disponible:true, ciudad:"El Cairo", pais:"Egipto",
+      T:[13.8,15.2,17.4,21.4,24.7,27.3,27.9,27.9,26.3,23.7,19.1,15.1],
+      P:[5.1,3.8,3.7,1.5,1,0.2,0,0,0,1,2.5,5.7],
+      nota:"Mismo dato que el ejemplo de El Cairo en tu Taller de Climogramas." },
+    hidrograma: { disponible:false,
+      nota:"Coherente con el propio paisaje: en el desierto no hay ríos permanentes, solo wadis que llevan agua tras tormentas puntuales." }
+  },
+  {
+    id: "mediterraneo",
+    nombre: "Paisaje Mediterráneo",
+    accent: "#7c8a2e",
+    firma: { tipo: "meses", valores: [7,6,5,4,3,1,1,1,3,5,6,7] },
+    localizacion: "Alrededor del mar Mediterráneo, y en otras zonas del planeta con clima similar (partes de Australia, Sudáfrica, California, Chile central...).",
+    clima: "Temperaturas elevadas en verano y suaves en invierno. Precipitaciones escasas o moderadas e irregulares, concentradas en primavera y otoño (a veces torrenciales, en forma de gota fría), con sequía marcada en verano.",
+    rios: "Caudal irregular, con estiaje en verano y posibilidad de crecidas con las lluvias torrenciales.",
+    vegetacion: "Vegetación adaptada a la sequía (tronco grueso, hojas pequeñas, copa ancha). Bosque mediterráneo de hoja perenne (encina, alcornoque, pino mediterráneo) y matorral espinoso y aromático (romero, espliego, tomillo).",
+    fauna: "Mamíferos (conejos, zorros, ciervos...), reptiles (serpientes, lagartos...), aves rapaces e insectos.",
+    poblamiento: "Regiones muy pobladas desde la Antigüedad —el paisaje original está muy transformado—, con la población concentrada en los territorios favorables a la agricultura y en las grandes ciudades.",
+    actividadesHumanas: "En el interior, tala del bosque para cultivar trigo, vid y olivo, junto con la ganadería; en el litoral, paisaje de huerta con frutales y hortalizas regadas por acequias; además, turismo y servicios en las grandes ciudades.",
+    climograma: { disponible:true, ciudad:"Valencia", pais:"España",
+      T:[11.5,12.3,13.6,15.3,18.2,21.7,24.6,25,22.9,19,14.6,12],
+      P:[32,30,34,40,33,23,9,21,47,94,57,45],
+      nota:"Mismo dato que el ejemplo de Valencia en tu Taller de Climogramas." },
+    hidrograma: { disponible:true, rio:"Segura",
+      caudal:[23.1,18.8,15.9,21.7,14.5,5.1,2.2,1.4,7.2,27.5,24.6,18.1],
+      nota:"Mismo dato que el ejemplo del Segura (régimen mediterráneo levantino) en tu Taller de Regímenes Fluviales." }
+  },
+  {
+    id: "oceanico",
+    nombre: "Paisaje Oceánico o Atlántico",
+    accent: "#1f7690",
+    firma: { tipo: "meses", valores: [7,7,6,6,5,5,5,5,6,7,7,7] },
+    localizacion: "Costa occidental de las zonas templadas, aproximadamente entre los paralelos 40° y 60° norte y sur.",
+    clima: "Temperaturas suaves todo el año por la influencia del mar: inviernos suaves, veranos frescos, escasa amplitud térmica. Precipitaciones abundantes y regulares.",
+    rios: "De caudal abundante y regular, a causa del régimen de precipitaciones.",
+    vegetacion: "En la costa y zonas montañosas, prados extensos aptos para la ganadería. En altitud media, bosque de hoja caduca (robles, hayas, castaños). En suelos poco fértiles, landa de matorral y arbustos.",
+    fauna: "Mamíferos (lobo, oso, ciervos...), reptiles (serpientes, lagartos...), aves rapaces e insectos.",
+    poblamiento: "Regiones muy pobladas desde la Antigüedad por sus condiciones favorables; el paisaje original está muy transformado.",
+    actividadesHumanas: "Zonas densamente pobladas, con grandes ciudades (paisaje urbano e industrial); actividades tradicionales como la agricultura y la ganadería, y modernas como el turismo y los servicios ligados a las grandes ciudades.",
+    climograma: { disponible:true, ciudad:"Dublín", pais:"Irlanda",
+      T:[5,5,6.4,8,10.6,13.5,15.2,14.9,13.2,10.6,7.1,5.9],
+      P:[63.7,50.6,51.7,49.3,56.4,55.1,65.2,76.5,62.3,73.4,68.8,58.5],
+      nota:"Mismo dato que el ejemplo de Dublín en tu Taller de Climogramas." },
+    hidrograma: { disponible:true, rio:"Miño en Orense",
+      caudal:[337.8,337.8,315.2,281.5,236.4,168.9,123.8,112.6,135.1,213.9,304.0,349.0],
+      nota:"Mismo dato que el ejemplo del Miño (régimen pluvial oceánico) en tu Taller de Regímenes Fluviales." }
+  },
+  {
+    id: "continental",
+    nombre: "Paisaje Continental",
+    accent: "#4f5f80",
+    firma: { tipo: "meses", valores: [3,3,4,4,5,6,7,6,5,4,3,3] },
+    localizacion: "Interior de los continentes del hemisferio norte.",
+    clima: "Temperaturas muy contrastadas (elevada amplitud térmica): inviernos largos y fríos, veranos cortos y calurosos. Precipitaciones no muy abundantes, con un máximo en verano.",
+    rios: "Se congelan en invierno y sufren crecidas con el deshielo y las lluvias de verano.",
+    vegetacion: "Bosque boreal o taiga en las regiones del norte, formado por coníferas (pinos, abetos). Praderas de hierbas altas y densas más al sur y en el interior, en zonas menos frías. Estepa de hierbas bajas en las zonas más cálidas y secas.",
+    fauna: "Mamíferos (lobo, oso, ciervos...), reptiles (serpientes, lagartos...), aves migratorias e insectos.",
+    poblamiento: "Escaso, concentrado en las zonas costeras y en los valles fluviales.",
+    actividadesHumanas: "En las praderas, explotaciones ganaderas y extensos campos de monocultivo (como en el interior de Estados Unidos); en la taiga, actividades tradicionales como la caza y la pesca.",
+    climograma: { disponible:true, ciudad:"Moscú", pais:"Rusia",
+      T:[-10.3,-9.1,-4.1,4.4,12.2,16.3,18.5,16.7,10.9,4.2,-2,-7.5],
+      P:[34.4,29,32.7,38.2,51,65.6,81.5,71.8,57.7,50.4,44.1,42.4],
+      nota:"Mismo dato que el ejemplo de Moscú en tu Taller de Climogramas." },
+    hidrograma: { disponible:true, rio:"Ebro en Logroño",
+      caudal:[147.5,142.7,152.2,161.7,128.4,71.3,34.2,32.3,44.7,80.9,118.9,147.5],
+      nota:"Es el ejemplo más parecido de tu Taller de Regímenes Fluviales (régimen mixto nivo-pluvial), aunque en España no hay ríos que lleguen a congelarse como los del interior de Rusia." }
+  },
+  {
+    id: "polar",
+    nombre: "Paisajes Fríos (Polar)",
+    accent: "#4a91ab",
+    firma: { tipo: "meses", valores: [1,1,1,1,2,2,2,2,1,1,1,1] },
+    localizacion: "Ártico y Antártida.",
+    clima: "Temperaturas extremas: inviernos entre -20 °C y -50 °C, veranos casi inexistentes. Precipitaciones muy escasas (en torno a 300 mm) y en forma de nieve.",
+    rios: "Muy escasos, presentes solo en las zonas de tundra.",
+    vegetacion: "Ausencia de vegetación en casi todas las zonas por el frío extremo; tundra (musgos y líquenes) en las zonas más cercanas a las regiones templadas.",
+    fauna: "Adaptada a condiciones extremas: oso polar, focas, pingüinos, algunas aves.",
+    poblamiento: "Pueblos esquimales en el Ártico; bases científicas en la Antártida.",
+    actividadesHumanas: "Caza y pesca tradicional en el Ártico (focas, entre otras especies); investigaciones científicas en la Antártida.",
+    climograma: { disponible:true, ciudad:"Estación Nord", pais:"Groenlandia",
+      T:[-29.5,-30.3,-30.6,-23.7,-10.5,-0.2,3.3,1.5,-8.6,-19.1,-24.7,-27.1],
+      P:[11.5,10.7,11.4,13.5,8.2,9.2,20,19.8,23.3,16.1,18.2,14.1],
+      nota:"Mismo dato que el ejemplo de la Estación Nord en tu Taller de Climogramas." },
+    hidrograma: { disponible:false,
+      nota:"Coherente con el propio paisaje: los ríos son escasos y permanecen helados buena parte del año." }
+  },
+  {
+    id: "alta_montana",
+    nombre: "Paisaje de Alta Montaña",
+    accent: "#6f5f88",
+    firma: { tipo: "altitud" },
+    localizacion: "Zonas altas de las grandes cordilleras del planeta.",
+    clima: "Temperaturas muy bajas en invierno y veranos frescos. Precipitaciones abundantes todo el año, en forma de nieve durante el invierno. A mayor altitud, bajan las temperaturas y aumentan las precipitaciones.",
+    rios: "Cursos altos de los grandes ríos, que aumentan su caudal con el deshielo.",
+    vegetacion: "Se escalona según la altitud (pisos bioclimáticos): bosques en las zonas más bajas; arbustos, matorral y prados en las zonas altas; ausencia de vegetación en las cumbres más altas.",
+    fauna: "Adaptada a la altitud: oso, lobo, cabra montés, aves rapaces.",
+    poblamiento: "En las montañas de zonas cálidas, bastante poblado, por las mejores condiciones climáticas que en el llano; en las de zonas templadas, poco habitado y concentrado en los valles.",
+    actividadesHumanas: "Actividades tradicionales como la tala y la ganadería; en las últimas décadas, un fuerte desarrollo del turismo.",
+    climograma: { disponible:true, ciudad:"Lhasa", pais:"Tíbet, China",
+      T:[-1.6,1.2,4.8,8.4,12.4,16,15.5,14.7,13.1,8.5,2.6,-1.1],
+      P:[0.3,2.5,3.5,5.8,23.7,71.8,132.1,127.5,58,8.9,1.4,0.5],
+      nota:"Mismo dato que el ejemplo de Lhasa en tu Taller de Climogramas." },
+    hidrograma: { disponible:true, rio:"Alto Ésera (Pirineo)",
+      caudal:[4.1,3.1,4.1,10.2,44.8,61.1,46.9,20.4,8.2,5.1,4.1,4.1],
+      nota:"Mismo dato que el ejemplo del Alto Ésera (régimen nival) en tu Taller de Regímenes Fluviales." }
+  }
+];
+
+const ESPANA = [
+  {
+    id: "es_oceanico",
+    nombre: "Paisaje Oceánico",
+    accent: "#1f7690",
+    firma: { tipo: "meses", valores: [7,7,6,6,5,4,4,4,5,6,7,7] },
+    localizacion: "Norte peninsular.",
+    clima: "Temperaturas suaves todo el año. Precipitaciones abundantes y regulares, descendiendo algo en verano.",
+    rios: "Cortos, caudalosos y de régimen regular.",
+    vegetacion: "Bosque atlántico de hoja caduca (hayas, robles, castaños), denso, aunque en retroceso frente a repoblaciones de pino y eucalipto; algunas especies de hoja perenne como el acebo; en suelos pobres, landa de tojos, brezos, retamas y piornos; parte de la vegetación se ha sustituido por prados ganaderos.",
+    fauna: "Mamíferos (lobo, oso, ciervos...), reptiles (serpientes, lagartos...), aves rapaces e insectos.",
+    poblamiento: "Antiguo, tradicionalmente numeroso y disperso por el territorio; tendencia actual a concentrarse en los principales núcleos urbanos.",
+    actividadesHumanas: "Actividades tradicionales como agricultura, ganadería, explotación forestal y pesca. Actividades modernas: agricultura de forraje y huerta, ganadería de carne y leche, repoblación forestal de crecimiento rápido, industria agroalimentaria, metalúrgica y de maquinaria, y servicios en las principales ciudades.",
+    climograma: { disponible:true, ciudad:"A Coruña", pais:"España",
+      T:[10.8,11.1,12.4,13.0,15.0,17.4,19.0,19.6,18.6,16.1,13.3,11.5],
+      P:[112,88,75,88,74,44,34,35,64,130,138,131],
+      nota:"Datos oficiales de AEMET, valores normales 1981-2010, estación de A Coruña (indicativo 1387)." },
+    hidrograma: { disponible:true, rio:"Miño en Orense",
+      caudal:[337.8,337.8,315.2,281.5,236.4,168.9,123.8,112.6,135.1,213.9,304.0,349.0],
+      nota:"Mismo dato que el ejemplo del Miño (régimen pluvial oceánico) en tu Taller de Regímenes Fluviales." }
+  },
+  {
+    id: "es_mediterraneo",
+    nombre: "Paisaje Mediterráneo",
+    accent: "#7c8a2e",
+    firma: { tipo: "meses", valores: [6,6,5,4,3,1,1,1,3,5,6,6] },
+    localizacion: "Este, sur e interior de la Península, Islas Baleares, Ceuta y Melilla.",
+    clima: "Mediterráneo típico en el litoral: veranos calurosos, inviernos templados, precipitaciones escasas e irregulares con aridez estival marcada (sobre todo en el sureste). Mediterráneo continentalizado en el interior: mayor amplitud térmica entre invierno y verano, lluvias concentradas en primavera y otoño, posibilidad de nieve en invierno.",
+    rios: "Cortos, poco caudalosos y con acusado estiaje; el Ebro es la excepción. Baleares, Ceuta y Melilla carecen de auténticos ríos.",
+    vegetacion: "Bosque mediterráneo de hoja perenne (encina, alcornoque, pino mediterráneo); en muchas zonas sustituido por matorral (jaras, lentiscos) y plantas aromáticas (tomillo, romero); en las áreas más explotadas, la vegetación natural casi ha desaparecido.",
+    fauna: "Mamíferos (conejos, zorros, ciervos...), reptiles (serpientes, lagartos...), aves rapaces e insectos.",
+    poblamiento: "Antiguo y desigualmente distribuido: densidades altas en Madrid y el litoral mediterráneo, bajas en buena parte del interior; concentrado en los grandes núcleos urbanos.",
+    actividadesHumanas: "Tradicionalmente, ganadería trashumante y agricultura de secano en el interior y de regadío en el litoral. Hoy, agricultura mecanizada, ganadería industrial estabulada, industria agroalimentaria y textil, y turismo y servicios en las grandes ciudades.",
+    climograma: { disponible:true, ciudad:"Cuenca", pais:"España (mediterráneo continentalizado)",
+      T:[4.2,5.2,7.4,9.7,13.6,18.3,22.4,22.1,18.6,12.9,7.7,4.8],
+      P:[52,59,41,61,58,51,16,17,40,53,61,51],
+      nota:"Mismo dato que el ejemplo de Cuenca en tu Taller de Climogramas: ilustra el mediterráneo continentalizado del interior." },
+    hidrograma: { disponible:true, rio:"Guadiana",
+      caudal:[184.4,204.9,225.3,239.0,204.9,88.8,38.2,34.1,61.5,129.7,184.4,204.9],
+      nota:"Mismo dato que el ejemplo del Guadiana (régimen mediterráneo continental) en tu Taller de Regímenes Fluviales." }
+  },
+  {
+    id: "es_subtropical",
+    nombre: "Paisaje Subtropical",
+    accent: "#3fae8a",
+    firma: { tipo: "meses", valores: [3,3,3,2,2,1,1,1,2,3,3,3] },
+    localizacion: "Islas Canarias.",
+    clima: "Temperaturas suaves todo el año. Precipitaciones escasas e irregulares en las zonas bajas de las islas, que aumentan con la altitud; menores en las islas orientales que en las occidentales.",
+    rios: "No hay ríos propiamente dichos, sino barrancos; los acuíferos son la principal reserva hídrica.",
+    vegetacion: "Numerosos endemismos (violeta del Teide, cardón, drago, tajinaste). Se escalona en altura: tabaiba y verode en el piso bajo; drago, palmera y sabina hasta los 800 m; laurisilva (bosque húmedo de laurel, faya y brezo) hasta los 1.400 m; pinar y matorral por encima.",
+    fauna: "Especies propias de mamíferos, anfibios, insectos, reptiles y aves, como el canario silvestre.",
+    poblamiento: "Tradicionalmente concentrado en la vertiente norte; hoy con grandes desigualdades: Gran Canaria y Tenerife reúnen el 83% de la población isleña, frente a Fuerteventura, Lanzarote, El Hierro o La Gomera, mucho menos pobladas.",
+    actividadesHumanas: "Tradicionalmente, policultivo de secano en las medianías y monocultivo en la costa. Hoy, agricultura modernizada con cultivos tropicales y de invernadero en el litoral, y sobre todo turismo, motor principal de la economía actual.",
+    climograma: { disponible:true, ciudad:"Lanzarote", pais:"Canarias, España",
+      T:[16.9,17.3,18.4,18.6,19.9,21.6,23.7,24.7,24.5,22.4,20.2,17.9],
+      P:[25,18,12,6,2,0,0,0,2,6,15,26],
+      nota:"Mismo dato que el ejemplo de Lanzarote en tu Taller de Climogramas." },
+    hidrograma: { disponible:false,
+      nota:"Coherente con el propio paisaje: en Canarias no hay ríos permanentes, solo barrancos que solo llevan agua tras las lluvias." }
+  },
+  {
+    id: "es_montana",
+    nombre: "Paisaje de Montaña",
+    accent: "#6f5f88",
+    firma: { tipo: "altitud" },
+    localizacion: "Tierras altas (por encima de 1.000 m) del norte de España, con la altitud mínima de este paisaje aumentando a medida que se avanza hacia el sur.",
+    clima: "Temperaturas bajas (-10 °C de media anual), con inviernos fríos y veranos cortos y frescos. Precipitaciones abundantes, en forma de nieve durante el invierno.",
+    rios: "En las montañas nacen los grandes ríos peninsulares, caudalosos y de gran fuerza erosiva en su curso alto; puede haber lagos de origen glaciar.",
+    vegetacion: "Se escalona en pisos altitudinales: hasta los 2.000 m, hayas y algunas coníferas (abeto, pino); entre 2.000 y 3.000 m, herbáceas y prados; en las cumbres más altas, musgos y líquenes.",
+    fauna: "Varía según la latitud y la altitud: cabra montés, aves rapaces, roedores.",
+    poblamiento: "Hábitat disperso en pequeños núcleos rurales.",
+    actividadesHumanas: "Tradicionalmente, tala de bosques y ganadería, quedando la agricultura para las zonas más bajas. Hoy, ganadería vacuna extensiva de carne, extracción de minerales, explotación de recursos hídricos y turismo de nieve, alpinismo y senderismo.",
+    climograma: { disponible:true, ciudad:"Puerto de Navacerrada", pais:"España (1.892 m, Sistema Central)",
+      T:[-0.4,0.1,2.3,3.4,7.4,13.2,17.0,16.8,12.7,7.3,2.8,0.7],
+      P:[124,96,84,127,124,64,23,26,60,156,176,163],
+      nota:"Datos oficiales de AEMET, valores normales 1981-2010, estación de Puerto de Navacerrada (indicativo 2462)." },
+    hidrograma: { disponible:true, rio:"Alto Ésera (Pirineo)",
+      caudal:[4.1,3.1,4.1,10.2,44.8,61.1,46.9,20.4,8.2,5.1,4.1,4.1],
+      nota:"Mismo dato que el ejemplo del Alto Ésera (régimen nival) en tu Taller de Regímenes Fluviales." }
+  }
+];
+
+if (typeof module !== "undefined") { module.exports = { MUNDO, ESPANA }; }
+
+
+const GRUPOS = { mundo: MUNDO, espana: ESPANA };
+const MAPA_ACCENT = '#455a64';
+const MAPAS = {
+  mundo:  { id:'mapa_mundo',  grupo:'mundo',  nombre:'Mapa de Climas del Mundo',  archivo:'Climas_Mundo.png' },
+  espana: { id:'mapa_espana', grupo:'espana', nombre:'Mapa de Climas de España', archivo:'Climas_España.png' }
+};
+let grupoActivo = 'mundo';
+let fichaActivaId = MAPAS.mundo.id;
+
+const pillRow = document.getElementById('pillRow');
+const plateHost = document.getElementById('plateHost');
+const titleDot = document.getElementById('titleDot');
+
+function glyphMeses(valores, color, w, h){
+  const n = valores.length;
+  const slot = w/n;
+  const barW = slot*0.62;
+  let bars = '';
+  valores.forEach((v,i)=>{
+    const barH = Math.max(1.5, (v/9)*h);
+    const x = i*slot + (slot-barW)/2;
+    const y = h - barH;
+    bars += '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+barH.toFixed(1)+'" rx="1" fill="'+color+'"/>';
+  });
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">'+bars+'</svg>';
+}
+
+function glyphAltitud(color, w, h){
+  const apexX=w/2, apexY=h*0.06, baseY=h*0.96, leftX=w*0.06, rightX=w*0.94;
+  const line1Y=h*0.40, line2Y=h*0.70;
+  function xAtY(y){ const t=(y-apexY)/(baseY-apexY); return { xl: apexX+(leftX-apexX)*t, xr: apexX+(rightX-apexX)*t }; }
+  const p1=xAtY(line1Y), p2=xAtY(line2Y);
+  const topPath = 'M'+apexX+','+apexY+' L'+p1.xr+','+line1Y+' L'+p1.xl+','+line1Y+' Z';
+  const midPath = 'M'+p1.xl+','+line1Y+' L'+p1.xr+','+line1Y+' L'+p2.xr+','+line2Y+' L'+p2.xl+','+line2Y+' Z';
+  const basePath = 'M'+p2.xl+','+line2Y+' L'+p2.xr+','+line2Y+' L'+rightX+','+baseY+' L'+leftX+','+baseY+' Z';
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">'+
+    '<path d="'+basePath+'" fill="'+color+'"/>'+
+    '<path d="'+midPath+'" fill="'+color+'" opacity="0.5"/>'+
+    '<path d="'+topPath+'" fill="#f4f6f5" stroke="'+color+'" stroke-width="1.6"/>'+
+  '</svg>';
+}
+
+function glyphFor(ficha, w, h){
+  return ficha.firma.tipo === 'altitud'
+    ? glyphAltitud(ficha.accent, w, h)
+    : glyphMeses(ficha.firma.valores, ficha.accent, w, h);
+}
+
+const MESES_ABBR = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+const COLOR_TEMP = '#c0392b';
+const COLOR_PRECIP = '#1F6E8C';
+const COLOR_GRID = '#e3e1d4';
+const COLOR_ZERO = 'rgba(20,32,28,0.4)';
+const COLOR_MESLABEL = '#5b6b64';
+
+/* Misma convención que el Taller de Climogramas: el eje de precipitación
+   siempre vale el doble que el de temperatura (relación de Walter-Lieth),
+   con pasos "redondos" de 5 o 10 grados. */
+function niceAxisTemp(T, P){
+  const maxT = Math.max.apply(null,T), minT = Math.min.apply(null,T);
+  const maxP = Math.max.apply(null,P);
+  const neededForP = maxP/2;
+  const effectiveMaxT = Math.max(maxT, neededForP);
+  const step = (Math.max(Math.abs(effectiveMaxT), Math.abs(minT)) > 40) ? 10 : 5;
+  let axisMax = Math.ceil((effectiveMaxT+2)/step)*step;
+  if(axisMax<=0) axisMax = step;
+  const axisMin = minT<0 ? Math.floor((minT-2)/step)*step : 0;
+  return { min:axisMin, max:axisMax, step:step };
+}
+
+function svgClimograma(T, P, w, h, dryMonths){
+  dryMonths = dryMonths || [];
+  const padL=30, padR=30, padT=8, padB=16;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const axis = niceAxisTemp(T,P);
+  const precipMin = axis.min*2, precipMax = axis.max*2;
+  function yTemp(t){ return padT+plotH*(1-(t-axis.min)/(axis.max-axis.min)); }
+  function yPrecip(p){ return padT+plotH*(1-(p-precipMin)/(precipMax-precipMin)); }
+  const n=12, slot=plotW/n;
+
+  let dryBands='';
+  dryMonths.forEach(function(i){
+    const x = padL+i*slot;
+    dryBands += '<rect x="'+x.toFixed(1)+'" y="'+padT+'" width="'+slot.toFixed(1)+'" height="'+plotH.toFixed(1)+'" fill="rgba(180,121,15,0.16)"/>';
+  });
+
+  let gridLines='', leftLabels='', rightLabels='';
+  const ticks = [];
+  for(let t=axis.min; t<=axis.max+0.001; t+=axis.step){ ticks.push(t); }
+  ticks.forEach(function(t, idx){
+    const y = yTemp(t);
+    const isZero = Math.abs(t)<0.001;
+    gridLines += '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(padL+plotW)+'" y2="'+y.toFixed(1)+'" stroke="'+(isZero?COLOR_ZERO:COLOR_GRID)+'" stroke-width="'+(isZero?1.3:1)+'"/>';
+    // Solo se etiqueta una de cada dos marcas (y siempre la de 0°C, como referencia) para no saturar el eje.
+    const showLabel = (idx % 2 === 0) || isZero;
+    if(showLabel){
+      leftLabels += '<text x="'+(padL-5)+'" y="'+(y+2.8).toFixed(1)+'" font-size="7.5" text-anchor="end" fill="'+COLOR_TEMP+'" font-family="IBM Plex Mono, monospace">'+Math.round(t)+'</text>';
+      const pVal = t*2;
+      if(pVal>=0){
+        rightLabels += '<text x="'+(padL+plotW+5)+'" y="'+(y+2.8).toFixed(1)+'" font-size="7.5" text-anchor="start" fill="'+COLOR_PRECIP+'" font-family="IBM Plex Mono, monospace">'+Math.round(pVal)+'</text>';
+      }
+    }
+  });
+
+  let bars='';
+  P.forEach(function(v,i){
+    const y0=yPrecip(0), y1=yPrecip(v);
+    const x=padL+i*slot+slot*0.16, bw=slot*0.68;
+    bars += '<rect x="'+x.toFixed(1)+'" y="'+Math.min(y0,y1).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0.5,Math.abs(y0-y1)).toFixed(1)+'" rx="1" fill="'+COLOR_PRECIP+'" opacity="0.78"/>';
+  });
+
+  const pts = T.map(function(t,i){ return (padL+i*slot+slot/2).toFixed(1)+','+yTemp(t).toFixed(1); });
+  const dots = T.map(function(t,i){
+    const cx=padL+i*slot+slot/2, cy=yTemp(t);
+    return '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="2.4" fill="'+COLOR_TEMP+'"/>';
+  }).join('');
+  const monthLabels = MESES_ABBR.map(function(m,i){
+    const x=padL+i*slot+slot/2;
+    return '<text x="'+x.toFixed(1)+'" y="'+(h-3)+'" font-size="7.5" text-anchor="middle" fill="'+COLOR_MESLABEL+'" font-family="IBM Plex Mono, monospace">'+m+'</text>';
+  }).join('');
+
+  const axisLines =
+    '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(padT+plotH)+'" stroke="'+COLOR_TEMP+'" stroke-width="1.3"/>'+
+    '<line x1="'+(padL+plotW)+'" y1="'+padT+'" x2="'+(padL+plotW)+'" y2="'+(padT+plotH)+'" stroke="'+COLOR_PRECIP+'" stroke-width="1.3"/>';
+
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg">'+
+    dryBands+gridLines+bars+axisLines+
+    '<path d="M'+pts.join(' L')+'" fill="none" stroke="'+COLOR_TEMP+'" stroke-width="2"/>'+
+    dots+leftLabels+rightLabels+monthLabels+
+  '</svg>';
+}
+
+/* Mismo estilo que el Taller de Regímenes Fluviales: no se dibuja el caudal
+   en bruto, sino el coeficiente de caudal k = caudal_mes / módulo, con una
+   línea de referencia discontinua en k=1 y el área sombreada por encima
+   (azul) y por debajo (ámbar) de la media. */
+function svgHidrograma(caudal, w, h){
+  const modulo = caudal.reduce(function(a,b){return a+b;},0)/12;
+  const k = caudal.map(function(v){ return modulo>0? v/modulo : 0; });
+  const maxK = Math.max.apply(null, k.concat([1]));
+  const axisMax = Math.ceil((maxK+0.15)*10)/10;
+  const padL=30, padR=8, padT=8, padB=16;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  function yK(v){ return padT+plotH*(1-v/axisMax); }
+  const n=12, slot=plotW/n;
+  function xAt(i){ return padL+i*slot+slot/2; }
+
+  const HIGH_FILL='rgba(31,110,140,0.20)', LOW_FILL='rgba(180,121,15,0.24)';
+  const yRef = yK(1);
+  let fills='';
+  for(let i=0;i<11;i++){
+    const x0=xAt(i), x1=xAt(i+1);
+    const k0=k[i], k1=k[i+1];
+    const y0=yK(k0), y1=yK(k1);
+    const side0=k0>=1, side1=k1>=1;
+    if(side0===side1){
+      fills += '<polygon points="'+x0.toFixed(1)+','+yRef.toFixed(1)+' '+x0.toFixed(1)+','+y0.toFixed(1)+' '+x1.toFixed(1)+','+y1.toFixed(1)+' '+x1.toFixed(1)+','+yRef.toFixed(1)+'" fill="'+(side0?HIGH_FILL:LOW_FILL)+'"/>';
+    } else {
+      const t=(1-k0)/(k1-k0);
+      const xc=x0+t*(x1-x0);
+      fills += '<polygon points="'+x0.toFixed(1)+','+yRef.toFixed(1)+' '+x0.toFixed(1)+','+y0.toFixed(1)+' '+xc.toFixed(1)+','+yRef.toFixed(1)+'" fill="'+(side0?HIGH_FILL:LOW_FILL)+'"/>';
+      fills += '<polygon points="'+xc.toFixed(1)+','+yRef.toFixed(1)+' '+x1.toFixed(1)+','+y1.toFixed(1)+' '+x1.toFixed(1)+','+yRef.toFixed(1)+'" fill="'+(side1?HIGH_FILL:LOW_FILL)+'"/>';
+    }
+  }
+
+  let gridLines='', yLabels='';
+  const step = axisMax<=1.5 ? 0.25 : (axisMax<=3 ? 0.5 : 1);
+  for(let v=0; v<=axisMax+0.001; v+=step){
+    const y=yK(v);
+    gridLines += '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(padL+plotW)+'" y2="'+y.toFixed(1)+'" stroke="'+COLOR_GRID+'" stroke-width="1"/>';
+    const label = (Math.round(v*100)/100).toString();
+    yLabels += '<text x="'+(padL-5)+'" y="'+(y+2.8).toFixed(1)+'" font-size="7.5" text-anchor="end" fill="'+COLOR_MESLABEL+'" font-family="IBM Plex Mono, monospace">'+label+'</text>';
+  }
+  const refLine = '<line x1="'+padL+'" y1="'+yRef.toFixed(1)+'" x2="'+(padL+plotW)+'" y2="'+yRef.toFixed(1)+'" stroke="#8A93A3" stroke-width="1.3" stroke-dasharray="5,4"/>';
+
+  const pts = k.map(function(v,i){ return xAt(i).toFixed(1)+','+yK(v).toFixed(1); });
+  const dots = k.map(function(v,i){
+    const cx=xAt(i), cy=yK(v);
+    return '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="2.4" fill="'+COLOR_PRECIP+'"/>';
+  }).join('');
+  const monthLabels = MESES_ABBR.map(function(m,i){
+    const x=xAt(i);
+    return '<text x="'+x.toFixed(1)+'" y="'+(h-3)+'" font-size="7.5" text-anchor="middle" fill="'+COLOR_MESLABEL+'" font-family="IBM Plex Mono, monospace">'+m+'</text>';
+  }).join('');
+  const axisLines =
+    '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(padT+plotH)+'" stroke="'+COLOR_PRECIP+'" stroke-width="1.3"/>'+
+    '<line x1="'+padL+'" y1="'+(padT+plotH)+'" x2="'+(padL+plotW)+'" y2="'+(padT+plotH)+'" stroke="'+COLOR_PRECIP+'" stroke-width="1.3"/>';
+
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg">'+
+    gridLines+fills+axisLines+
+    '<path d="M'+pts.join(' L')+'" fill="none" stroke="'+COLOR_PRECIP+'" stroke-width="2"/>'+
+    dots+refLine+yLabels+monthLabels+
+  '</svg>';
+}
+
+const MESES_FULL = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+/* Construye el bloque de climograma. fullscreenMode=false -> tamaño de tarjeta,
+   con botón para abrir en grande. fullscreenMode=true -> mismo contenido, sin
+   el botón (se usa dentro del propio overlay de pantalla completa). */
+function buildClimaHtml(f, fullscreenMode){
+  if(!f.climograma.disponible){
+    return '<div class="dato-empty">Sin climograma disponible. '+f.climograma.nota+'</div>';
+  }
+  const T=f.climograma.T, P=f.climograma.P;
+  const media = T.reduce(function(a,b){return a+b;},0)/12;
+  const oscilacion = Math.max.apply(null,T) - Math.min.apply(null,T);
+  const pTotal = Math.round(P.reduce(function(a,b){return a+b;},0));
+  const dryMonths = [];
+  T.forEach(function(t,i){ if(t>0 && P[i] < 2*t) dryMonths.push(i); });
+  const dryLine = dryMonths.length
+    ? '<p class="dato-dry">🟧 Mes(es) seco(s) (precipitación &lt; 2 × temperatura): '+dryMonths.map(function(i){return MESES_FULL[i];}).join(', ')+'</p>'
+    : '<p class="dato-dry">Sin meses secos: la precipitación no baja del doble de la temperatura en ningún mes.</p>';
+
+  const fsBtn = fullscreenMode ? '' : '<button class="fs-btn" data-fs-clima="'+f.id+'">⛶ Pantalla completa</button>';
+
+  return '<p class="dato-title">'+f.climograma.ciudad+', '+f.climograma.pais+'</p>'+
+    '<div class="dato-legend dato-legend-clima"><span><i style="background:'+COLOR_TEMP+';"></i>Temperatura (°C)</span><span><i style="background:'+COLOR_PRECIP+';"></i>Precipitación (mm)</span></div>'+
+    '<div class="dato-chart-wrap">'+svgClimograma(T,P,320,130,dryMonths)+'</div>'+
+    '<div class="dato-stats"><span>Temp. media: '+media.toFixed(1)+' °C</span><span>Oscilación térmica: '+oscilacion.toFixed(1)+' °C</span><span>Precipitación total: '+pTotal+' mm/año</span></div>'+
+    dryLine+
+    '<p class="dato-nota">'+f.climograma.nota+'</p>'+
+    fsBtn;
+}
+
+/* Mismo patrón que buildClimaHtml, para el hidrograma. */
+function buildHidroHtml(f, fullscreenMode){
+  if(!f.hidrograma.disponible){
+    return '<div class="dato-empty">Sin hidrograma disponible. '+f.hidrograma.nota+'</div>';
+  }
+  const Q=f.hidrograma.caudal;
+  const qMax = Math.max.apply(null,Q).toFixed(1);
+  const qAvg = (Q.reduce(function(a,b){return a+b;},0)/12).toFixed(1);
+  const fsBtn = fullscreenMode ? '' : '<button class="fs-btn" data-fs-hidro="'+f.id+'">⛶ Pantalla completa</button>';
+  return '<p class="dato-title">'+f.hidrograma.rio+'</p>'+
+    '<div class="dato-legend"><span><i style="background:'+COLOR_PRECIP+';"></i>Coeficiente de caudal (k)</span><span><i style="background:#8A93A3;"></i>k = 1 (módulo)</span></div>'+
+    '<div class="dato-chart-wrap">'+svgHidrograma(Q,320,130)+'</div>'+
+    '<div class="dato-stats"><span>Módulo: '+qAvg+' m³/s</span><span>Máx: '+qMax+' m³/s</span></div>'+
+    '<p class="dato-nota">'+f.hidrograma.nota+'</p>'+
+    fsBtn;
+}
+
+function renderDatosReales(f){
+  const climaHtml = buildClimaHtml(f, false);
+  const hidroHtml = buildHidroHtml(f, false);
+
+  return '<div class="plate-datos">'+
+    '<div class="dato-col"><div class="dato-head" style="--plate-accent:'+f.accent+';"><span class="dot"></span><h2>Climograma real</h2></div>'+climaHtml+'</div>'+
+    '<div class="dato-col"><div class="dato-head" style="--plate-accent:'+f.accent+';"><span class="dot"></span><h2>Hidrograma real</h2></div>'+hidroHtml+'</div>'+
+  '</div>';
+}
+
+function glyphMapaIcon(w,h){
+  return '<svg viewBox="0 0 34 18" xmlns="http://www.w3.org/2000/svg">'+
+    '<rect x="1" y="2" width="32" height="14" rx="2" fill="none" stroke="'+MAPA_ACCENT+'" stroke-width="1.4"/>'+
+    '<path d="M6,4.5 L6,13.5 M12,3 L12,15 M22,3 L22,15 M28,4.5 L28,13.5" stroke="'+MAPA_ACCENT+'" stroke-width="1" opacity="0.55"/>'+
+    '<circle cx="17" cy="9" r="2.6" fill="'+MAPA_ACCENT+'"/>'+
+  '</svg>';
+}
+
+function buildPills(){
+  pillRow.innerHTML = '';
+
+  const mapa = MAPAS[grupoActivo];
+  const mapaPill = document.createElement('div');
+  mapaPill.className = 'pill' + (mapa.id===fichaActivaId ? ' active' : '');
+  mapaPill.style.setProperty('--pill-accent', MAPA_ACCENT);
+  mapaPill.innerHTML = '<span class="glyph-mini">'+glyphMapaIcon(34,18)+'</span>Mapa de climas';
+  mapaPill.addEventListener('click', ()=>{ fichaActivaId = mapa.id; render(); });
+  pillRow.appendChild(mapaPill);
+
+  GRUPOS[grupoActivo].forEach(f=>{
+    const pill = document.createElement('div');
+    pill.className = 'pill' + (f.id===fichaActivaId ? ' active' : '');
+    pill.style.setProperty('--pill-accent', f.accent);
+    pill.innerHTML = '<span class="glyph-mini">'+glyphFor(f,34,18)+'</span>'+f.nombre.replace('Paisaje ','').replace('Paisajes Fríos (Polar)','Polar');
+    pill.addEventListener('click', ()=>{ fichaActivaId = f.id; render(); });
+    pillRow.appendChild(pill);
+  });
+}
+
+/* ============== VISOR DE MAPAS (mismo esquema que visor_mapas.html) ============== */
+function buildMapaViewerHtml(grupoKey, fullscreenMode){
+  const uid = 'mv_'+grupoKey+(fullscreenMode?'_fs':'_card');
+  const fsBtn = fullscreenMode ? '' : '<button class="fs-btn" data-fs-mapa="'+grupoKey+'">⛶ Pantalla completa</button>';
+  return '<div class="mapa-toolbar">'+
+      '<div class="mapa-tgroup">'+
+        '<button class="mapa-tbtn" data-mv-fit="'+uid+'" title="Ajustar a la pantalla">⤢ Ajustar</button>'+
+        '<button class="mapa-tbtn" data-mv-out="'+uid+'" title="Alejar">−</button>'+
+        '<span class="mapa-zoom-label" id="'+uid+'_zoom">100%</span>'+
+        '<button class="mapa-tbtn" data-mv-in="'+uid+'" title="Acercar">+</button>'+
+      '</div>'+
+      fsBtn+
+    '</div>'+
+    '<div class="mapa-stage" id="'+uid+'_stage">'+
+      '<div class="mapa-wrap" id="'+uid+'_wrap"><img id="'+uid+'_img" alt="" draggable="false"></div>'+
+      '<div class="mapa-hint">Rueda / pellizco: zoom · Arrastrar: mover · Doble clic: ajustar</div>'+
+    '</div>';
+}
+
+function wireMapaViewer(grupoKey, mapa, fullscreenMode){
+  const uid = 'mv_'+grupoKey+(fullscreenMode?'_fs':'_card');
+  const stage = document.getElementById(uid+'_stage');
+  const wrap = document.getElementById(uid+'_wrap');
+  const img = document.getElementById(uid+'_img');
+  const zoomLabel = document.getElementById(uid+'_zoom');
+  if(!stage || !wrap || !img) return;
+
+  let scale=1, tx=0, ty=0, fitScale=1;
+  let isPanning=false, panStart=null, startTxTy=null;
+  const activePointers = new Map();
+  let pinchStart=null;
+
+  function applyTransform(){
+    wrap.style.transform = 'translate('+tx+'px,'+ty+'px) scale('+scale+')';
+    if(zoomLabel) zoomLabel.textContent = Math.round((scale/fitScale)*100)+'%';
+  }
+  function fitToScreen(){
+    const cw=stage.clientWidth, ch=stage.clientHeight;
+    const iw=img.naturalWidth||1, ih=img.naturalHeight||1;
+    fitScale = Math.min(cw/iw, ch/ih) || 1;
+    scale = fitScale;
+    tx = (cw-iw*scale)/2; ty = (ch-ih*scale)/2;
+    applyTransform();
+  }
+  function clampScale(s){ return Math.max(fitScale*0.98, Math.min(3.2, s)); }
+  function zoomAt(factor, cx, cy){
+    const newScale = clampScale(scale*factor);
+    if(newScale===scale) return;
+    const imgX=(cx-tx)/scale, imgY=(cy-ty)/scale;
+    scale=newScale;
+    tx=cx-imgX*scale; ty=cy-imgY*scale;
+    applyTransform();
+  }
+  function stagePoint(e){ const r=stage.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+
+  img.onload = fitToScreen;
+  img.src = mapa.archivo;
+
+  stage.addEventListener('wheel', function(e){
+    e.preventDefault();
+    const r=stage.getBoundingClientRect();
+    zoomAt(e.deltaY<0?1.18:1/1.18, e.clientX-r.left, e.clientY-r.top);
+  }, {passive:false});
+
+  stage.addEventListener('pointerdown', function(e){
+    stage.setPointerCapture(e.pointerId);
+    const sp=stagePoint(e);
+    activePointers.set(e.pointerId, sp);
+    if(activePointers.size===2){
+      const pts=Array.from(activePointers.values());
+      const dist=Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+      const mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+      pinchStart={dist:dist, scale:scale, imgPoint:{x:(mid.x-tx)/scale,y:(mid.y-ty)/scale}};
+      isPanning=false;
+      return;
+    }
+    isPanning=true;
+    stage.classList.add('dragging');
+    panStart=sp; startTxTy={tx:tx,ty:ty};
+  });
+  stage.addEventListener('pointermove', function(e){
+    if(!activePointers.has(e.pointerId)) return;
+    const sp=stagePoint(e);
+    activePointers.set(e.pointerId, sp);
+    if(activePointers.size===2 && pinchStart){
+      const pts=Array.from(activePointers.values());
+      const dist=Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+      const mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+      const newScale=clampScale(pinchStart.scale*(dist/pinchStart.dist));
+      scale=newScale;
+      tx=mid.x-pinchStart.imgPoint.x*scale; ty=mid.y-pinchStart.imgPoint.y*scale;
+      applyTransform();
+      return;
+    }
+    if(isPanning){
+      tx=startTxTy.tx+(sp.x-panStart.x);
+      ty=startTxTy.ty+(sp.y-panStart.y);
+      applyTransform();
+    }
+  });
+  function endPointer(e){
+    activePointers.delete(e.pointerId);
+    if(activePointers.size<2) pinchStart=null;
+    if(activePointers.size===0){ isPanning=false; stage.classList.remove('dragging'); }
+  }
+  stage.addEventListener('pointerup', endPointer);
+  stage.addEventListener('pointercancel', endPointer);
+  stage.addEventListener('pointerleave', function(e){ if(activePointers.size<=1) endPointer(e); });
+  stage.addEventListener('dblclick', function(e){
+    const sp=stagePoint(e);
+    if(Math.abs(scale-fitScale)<0.001) zoomAt(2, sp.x, sp.y);
+    else fitToScreen();
+  });
+
+  const fitBtn=document.querySelector('[data-mv-fit="'+uid+'"]');
+  const inBtn=document.querySelector('[data-mv-in="'+uid+'"]');
+  const outBtn=document.querySelector('[data-mv-out="'+uid+'"]');
+  if(fitBtn) fitBtn.addEventListener('click', fitToScreen);
+  if(inBtn) inBtn.addEventListener('click', ()=> zoomAt(1.35, stage.clientWidth/2, stage.clientHeight/2));
+  if(outBtn) outBtn.addEventListener('click', ()=> zoomAt(1/1.35, stage.clientWidth/2, stage.clientHeight/2));
+  window.addEventListener('resize', function(){ fitToScreen(); });
+}
+
+function renderMapaPlate(mapa){
+  titleDot.style.setProperty('--group-accent', MAPA_ACCENT);
+  plateHost.innerHTML =
+    '<div class="plate">'+
+      '<div class="plate-hero">'+
+        '<div>'+
+          '<p class="plate-eyebrow" style="color:'+MAPA_ACCENT+';">'+(grupoActivo==='mundo'?'Mundo':'España')+' · Mapa de referencia</p>'+
+          '<h2 class="plate-title">'+mapa.nombre+'</h2>'+
+          '<p class="plate-localizacion">Mapa de clasificación climática para proyectar en clase y localizar cada paisaje sobre el territorio. Usa el lápiz o el láser en pantalla completa para señalar zonas mientras explicas.</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="mapa-body">'+buildMapaViewerHtml(mapa.grupo, false)+'</div>'+
+    '</div>';
+
+  wireMapaViewer(mapa.grupo, mapa, false);
+
+  const fsBtn = plateHost.querySelector('[data-fs-mapa]');
+  if(fsBtn) fsBtn.addEventListener('click', ()=> openFullscreenChart('mapa', fsBtn.dataset.fsMapa));
+}
+
+function renderPlate(){
+  const f = GRUPOS[grupoActivo].find(x=>x.id===fichaActivaId);
+  if(!f) return;
+  titleDot.style.setProperty('--group-accent', f.accent);
+
+  plateHost.innerHTML =
+    '<div class="plate">'+
+      '<div class="plate-hero">'+
+        '<div>'+
+          '<p class="plate-eyebrow" style="--plate-accent:'+f.accent+'; color:'+f.accent+';">'+(grupoActivo==='mundo'?'Mundo':'España')+' · Medio físico y humano</p>'+
+          '<h2 class="plate-title">'+f.nombre+'</h2>'+
+          '<p class="plate-localizacion">'+f.localizacion+'</p>'+
+        '</div>'+
+        '<div class="plate-glyph-big">'+glyphFor(f,150,64)+'</div>'+
+      '</div>'+
+      '<div class="plate-body">'+
+        '<div class="col">'+
+          '<div class="col-head" style="--plate-accent:'+f.accent+';"><span class="dot"></span><h2>Medio físico</h2></div>'+
+          '<div class="field"><span class="k">Clima</span><p class="v">'+f.clima+'</p></div>'+
+          '<div class="field"><span class="k">Ríos</span><p class="v">'+f.rios+'</p></div>'+
+          '<div class="field"><span class="k">Vegetación</span><p class="v">'+f.vegetacion+'</p></div>'+
+          '<div class="field"><span class="k">Fauna</span><p class="v">'+f.fauna+'</p></div>'+
+        '</div>'+
+        '<div class="col">'+
+          '<div class="col-head" style="--plate-accent:'+f.accent+';"><span class="dot"></span><h2>Medio humano</h2></div>'+
+          '<div class="field"><span class="k">Poblamiento</span><p class="v">'+f.poblamiento+'</p></div>'+
+          '<div class="field"><span class="k">Actividades humanas</span><p class="v">'+f.actividadesHumanas+'</p></div>'+
+        '</div>'+
+      '</div>'+
+      renderDatosReales(f)+
+    '</div>';
+
+  const fsBtnClima = plateHost.querySelector('[data-fs-clima]');
+  if(fsBtnClima){
+    fsBtnClima.addEventListener('click', ()=> openFullscreenChart('clima', fsBtnClima.dataset.fsClima));
+  }
+  const fsBtnHidro = plateHost.querySelector('[data-fs-hidro]');
+  if(fsBtnHidro){
+    fsBtnHidro.addEventListener('click', ()=> openFullscreenChart('hidro', fsBtnHidro.dataset.fsHidro));
+  }
+}
+
+/* ============== PANTALLA COMPLETA: GRÁFICO + LÁPIZ + LÁSER ============== */
+const fsOverlay = document.getElementById('fsOverlay');
+const fsPanel = document.getElementById('fsPanel');
+const fsContent = document.getElementById('fsContent');
+const fsCloseBtn = document.getElementById('fsCloseBtn');
+const fsPenBtn = document.getElementById('fsPenBtn');
+const fsLaserBtn = document.getElementById('fsLaserBtn');
+const fsCanvas = document.getElementById('fsDrawCanvas');
+const fsLaserDot = document.getElementById('fsLaserDot');
+const PEN_COLOR = '#d81b60';
+
+let penActive = false, laserActive = false, drawing = false, lastX = 0, lastY = 0;
+
+function openFullscreenChart(tipo, idOrGrupo){
+  if(tipo === 'mapa'){
+    const mapa = MAPAS[idOrGrupo];
+    if(!mapa) return;
+    fsContent.innerHTML =
+      '<span class="badge" style="background:'+MAPA_ACCENT+';">'+mapa.nombre+'</span>'+
+      buildMapaViewerHtml(mapa.grupo, true);
+    openFsOverlay();
+    requestAnimationFrame(function(){
+      wireMapaViewer(mapa.grupo, mapa, true);
+      resizeCanvasToChart();
+    });
+    return;
+  }
+
+  const f = [...MUNDO, ...ESPANA].find(x=>x.id===idOrGrupo);
+  if(!f) return;
+  const bodyHtml = tipo === 'clima' ? buildClimaHtml(f, true) : buildHidroHtml(f, true);
+  fsContent.innerHTML =
+    '<span class="badge" style="background:'+f.accent+';">'+f.nombre+' · '+(tipo==='clima'?'Climograma':'Hidrograma')+'</span>'+
+    bodyHtml;
+  openFsOverlay();
+  requestAnimationFrame(resizeCanvasToChart);
+}
+
+function openFsOverlay(){
+  fsOverlay.classList.add('open');
+  // Se pide pantalla completa real del navegador; si el navegador la deniega
+  // (poco frecuente), el overlay ya ocupa el 100% del viewport como respaldo.
+  const req = fsOverlay.requestFullscreen ? fsOverlay.requestFullscreen()
+    : (fsOverlay.webkitRequestFullscreen ? fsOverlay.webkitRequestFullscreen() : null);
+  if(req && req.catch) req.catch(function(){ /* se queda en el overlay a pantalla completa por CSS */ });
+}
+
+function closeFullscreen(){
+  if(!fsOverlay.classList.contains('open')) return;
+  fsOverlay.classList.remove('open');
+  fsContent.innerHTML = '';
+  setPenActive(false);
+  setLaserActive(false);
+  if(document.fullscreenElement){
+    (document.exitFullscreen ? document.exitFullscreen() : Promise.resolve()).catch(function(){});
+  }
+}
+
+/* El lienzo de anotación se ajusta al gráfico SVG (climograma/hidrograma)
+   o, si lo que hay en pantalla es un mapa, al visor de mapas completo. */
+function getAnnotationTargetEl(){
+  return fsContent.querySelector('.dato-chart-wrap svg') || fsContent.querySelector('.mapa-stage');
+}
+
+function resizeCanvasToChart(){
+  const target = getAnnotationTargetEl();
+  if(!target) { fsCanvas.style.width='0px'; fsCanvas.style.height='0px'; return; }
+  const rect = target.getBoundingClientRect();
+  const panelRect = fsPanel.getBoundingClientRect();
+  const left = rect.left - panelRect.left, top = rect.top - panelRect.top;
+  fsCanvas.style.left = left+'px';
+  fsCanvas.style.top = top+'px';
+  fsCanvas.style.width = rect.width+'px';
+  fsCanvas.style.height = rect.height+'px';
+  const dpr = window.devicePixelRatio || 1;
+  fsCanvas.width = Math.max(1, Math.round(rect.width*dpr));
+  fsCanvas.height = Math.max(1, Math.round(rect.height*dpr));
+  const ctx = fsCanvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = PEN_COLOR; ctx.lineWidth = 3;
+}
+
+function clearCanvas(){
+  const ctx = fsCanvas.getContext('2d');
+  ctx.clearRect(0,0,fsCanvas.width,fsCanvas.height);
+}
+
+function setPenActive(v){
+  penActive = v;
+  fsPenBtn.classList.toggle('active', v);
+  fsCanvas.style.pointerEvents = v ? 'auto' : 'none';
+  if(!v) clearCanvas(); // al desactivar el lápiz se borra todo lo dibujado
+  if(v) setLaserActive(false);
+}
+function setLaserActive(v){
+  laserActive = v;
+  fsLaserBtn.classList.toggle('active', v);
+  fsLaserDot.style.display = v ? 'block' : 'none';
+  if(v) setPenActive(false);
+}
+fsPenBtn.addEventListener('click', ()=> setPenActive(!penActive));
+fsLaserBtn.addEventListener('click', ()=> setLaserActive(!laserActive));
+
+function canvasPos(e){
+  const rect = fsCanvas.getBoundingClientRect();
+  return { x: e.clientX-rect.left, y: e.clientY-rect.top };
+}
+fsCanvas.addEventListener('pointerdown', function(e){
+  if(!penActive) return;
+  drawing = true;
+  const p = canvasPos(e);
+  lastX=p.x; lastY=p.y;
+  fsCanvas.setPointerCapture(e.pointerId);
+});
+fsCanvas.addEventListener('pointermove', function(e){
+  if(!penActive || !drawing) return;
+  const p = canvasPos(e);
+  const ctx = fsCanvas.getContext('2d');
+  ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.stroke();
+  lastX=p.x; lastY=p.y;
+});
+fsCanvas.addEventListener('pointerup', function(){ drawing=false; });
+fsCanvas.addEventListener('pointerleave', function(){ drawing=false; });
+
+fsOverlay.addEventListener('pointermove', function(e){
+  if(!laserActive) return;
+  fsLaserDot.style.left = e.clientX+'px';
+  fsLaserDot.style.top = e.clientY+'px';
+});
+
+fsCloseBtn.addEventListener('click', closeFullscreen);
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeFullscreen(); });
+document.addEventListener('fullscreenchange', function(){
+  if(!document.fullscreenElement && fsOverlay.classList.contains('open')) closeFullscreen();
+  else if(document.fullscreenElement) requestAnimationFrame(resizeCanvasToChart);
+});
+window.addEventListener('resize', function(){
+  if(fsOverlay.classList.contains('open')) resizeCanvasToChart();
+});
+
+function render(){
+  buildPills();
+  if(fichaActivaId === MAPAS[grupoActivo].id){
+    renderMapaPlate(MAPAS[grupoActivo]);
+  } else {
+    renderPlate();
+  }
+}
+
+document.getElementById('groupToggle').querySelectorAll('.group-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    grupoActivo = btn.dataset.group;
+    document.querySelectorAll('.group-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    fichaActivaId = MAPAS[grupoActivo].id;
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>
