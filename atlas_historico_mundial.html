@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas Histórico Mundial</title>
+<style>
+  :root{
+    --navy-deep:#0b1c2c; --navy:#132c42; --navy-light:#1c3c56;
+    --paper:#f6efdc; --paper-rgb:246,239,220; --text-soft:#dfe6ea; --ink:#20261c;
+    --ochre:#cf9a44;
+    --line: rgba(var(--paper-rgb),0.14);
+    --dim:#a9b6c2;
+    --shadow: 0 12px 30px -12px rgba(6,14,22,0.55);
+    --radius: 10px;
+    --era: #a8842c;
+    --grad-hi: #1c3c56;
+  }
+  html.light-theme{
+    --navy-deep:#f3efe4; --navy:#ffffff; --navy-light:#e8e1cf;
+    --paper:#241f14; --paper-rgb:36,31,20; --text-soft:#3a3226;
+    --ochre:#8a5a12;
+    --dim:#6b6455;
+    --shadow: 0 12px 26px -14px rgba(100,90,70,0.28);
+    --grad-hi: #e8e1cf;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(ellipse at 20% -10%, var(--grad-hi) 0%, transparent 55%), var(--navy-deep);
+    color:var(--paper);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    transition:background .25s ease, color .25s ease;
+  }
+  .wrap{max-width:1220px;margin:0 auto;padding:26px 18px 60px;}
+
+  header.masthead{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    padding-bottom:16px; margin-bottom:20px; border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  .masthead-left{display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;}
+  h1{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif; font-size:clamp(1.4rem,1.05rem + 1.5vw,2.2rem); font-weight:600; margin:0; line-height:1.15; color:var(--paper);}
+  h1 small{display:block; font-family:inherit; font-size:0.82rem; font-weight:400; letter-spacing:2.1px; text-transform:uppercase; color:var(--ochre); margin-bottom:4px;}
+  .masthead-note{font-size:0.83rem; color:var(--dim); max-width:360px; text-align:right; line-height:1.5;}
+  .theme-toggle{
+    display:inline-flex; align-items:center; gap:7px; font-family:'Courier New',monospace; font-size:0.78rem; font-weight:700;
+    background:var(--navy); border:1px solid var(--line); color:var(--paper);
+    padding:9px 15px; border-radius:999px; cursor:pointer; transition:all .15s ease; flex:0 0 auto;
+  }
+  .theme-toggle:hover{border-color:var(--ochre);}
+
+  /* --- Pestañas de era --- */
+  .era-tabs{display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap;}
+  .era-tab{
+    font-family:Georgia,serif; font-size:0.86rem; font-weight:700; padding:10px 16px;
+    border-radius:9px; border:1px solid var(--line); background:rgba(var(--paper-rgb),0.04);
+    color:#cdd8e0; cursor:pointer; transition:all .15s ease; display:flex; align-items:center; gap:8px;
+  }
+  .era-tab .dot{width:9px; height:9px; border-radius:50%; flex:0 0 auto;}
+  .era-tab:hover{background:rgba(var(--paper-rgb),0.1); color:var(--paper);}
+  .era-tab.active{background:var(--era); color:var(--navy-deep); border-color:var(--era);}
+  .era-tab.active .dot{background:var(--navy-deep);}
+
+  /* --- Píldoras de items dentro de la era --- */
+  .item-pills{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;}
+  .item-pill{
+    display:flex; align-items:center; gap:7px;
+    background:var(--navy); border:1px solid var(--line); border-radius:9px;
+    padding:8px 13px; cursor:pointer; font-size:0.82rem; color:var(--paper); transition:all .15s ease;
+  }
+  .item-pill:hover{border-color:rgba(var(--paper-rgb),0.35); transform:translateY(-1px);}
+  .item-pill.active{background:var(--era); border-color:var(--era); color:var(--navy-deep); font-weight:700;}
+  .item-pill .n{font-family:'Courier New',monospace; font-size:0.68rem; opacity:0.7;}
+
+  /* --- Ficha principal --- */
+  .plate{background:var(--navy); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; animation:fadeIn .2s ease;}
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .plate-hero{padding:26px 30px 18px; border-bottom:1px solid var(--line);}
+  .plate-eyebrow{font-family:'Courier New',monospace; font-size:0.72rem; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--era); margin:0 0 8px;}
+  .plate-title{font-family:Georgia,serif; font-weight:700; font-size:clamp(1.3rem,1.05rem + 1vw,1.9rem); margin:0; color:var(--paper); line-height:1.2;}
+
+  .item-layout{display:grid; grid-template-columns:1fr; gap:0;}
+  @media(min-width:920px){ .item-layout{grid-template-columns:1.5fr 1fr;} }
+
+  .image-col{padding:20px 24px; border-bottom:1px solid var(--line);}
+  @media(min-width:920px){ .image-col{border-bottom:none; border-right:1px solid var(--line);} }
+  .image-toolbar{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
+  .zoom-mini-hint{font-size:0.72rem; color:var(--dim);}
+  .fs-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:Georgia,serif; font-size:0.8rem; font-weight:700;
+    background:rgba(var(--paper-rgb),0.06); border:1px solid rgba(var(--paper-rgb),0.24); color:var(--paper);
+    padding:8px 15px; border-radius:8px; cursor:pointer; transition:all .15s ease;
+  }
+  .fs-btn:hover{background:rgba(var(--paper-rgb),0.14);}
+  .fs-exit-btn{background:#b9502f; border-color:#b9502f;}
+  .fs-exit-btn:hover{background:#7c3520;}
+
+  .zoom-stage{position:relative; width:100%; height:420px; overflow:hidden; touch-action:none; cursor:grab; background:#0e2436; border-radius:8px;}
+  .zoom-stage.dragging{cursor:grabbing;}
+  .zoom-stage-inner{position:absolute; inset:0; transform-origin:0 0; display:flex; align-items:center; justify-content:center;}
+  .zoom-stage-inner img{max-width:100%; max-height:100%; width:auto; height:auto; display:block; -webkit-user-drag:none; user-select:none;}
+  .zoom-stage-inner svg{max-width:100%; max-height:100%; width:auto; height:auto; display:block;}
+  .tipo-badge{display:inline-block; font-family:'Courier New',monospace; font-size:0.68rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:999px; margin-left:10px; vertical-align:middle;}
+  .img-fallback{display:none; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--dim); text-align:center; padding:20px; font-size:0.82rem;}
+
+  .credit{font-size:0.72rem; color:var(--dim); margin:10px 0 0; line-height:1.5;}
+  .credit b{color:var(--dim);}
+
+  .info-col{padding:22px 26px;}
+  .context{font-size:0.94rem; line-height:1.68; color:var(--text-soft); margin:0 0 18px;}
+  .datos-clave{margin-bottom:16px;}
+  .datos-clave .k{font-size:0.68rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--era); display:block; margin-bottom:8px;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:7px;}
+  .chip{background:rgba(var(--paper-rgb),0.07); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:0.78rem; color:var(--paper); line-height:1.4;}
+  .nota-box{background:rgba(207,154,68,0.10); border-left:3px solid var(--ochre); border-radius:6px; padding:12px 14px; font-size:0.82rem; line-height:1.55; color:#f0e3c8; margin-top:4px;}
+
+  .no-map-card{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:50px 20px; text-align:center; color:var(--dim); background:#0e2436; border-radius:8px; margin:20px 24px 0;}
+  .no-map-icon{font-size:2rem; opacity:0.7;}
+
+  footer.note{margin-top:24px; font-size:0.75rem; color:var(--dim); line-height:1.6; text-align:center; border-top:1px solid var(--line); padding-top:16px;}
+
+  /* --- Vocabulario --- */
+  .vocab-tab{background:#4a3a5e !important;}
+  .vocab-tab.active{background:#8a6fae !important; border-color:#8a6fae !important;}
+  .vocab-search-wrap{margin-bottom:18px;}
+  .vocab-search{
+    width:100%; background:var(--navy); border:1px solid var(--line); border-radius:9px;
+    padding:12px 16px; font-size:0.95rem; color:var(--paper); font-family:inherit;
+  }
+  .vocab-search::placeholder{color:var(--dim);}
+  .vocab-count{font-size:0.78rem; color:var(--dim); margin:8px 2px 0;}
+  .vocab-list{display:flex; flex-direction:column; gap:0;}
+  .vocab-letter-group{margin-bottom:6px;}
+  .vocab-letter-head{
+    position:sticky; top:0; z-index:5; background:var(--navy-deep);
+    font-family:Georgia,serif; font-weight:700; font-size:1.1rem; color:#a48fc4;
+    padding:10px 4px 6px; border-bottom:1px solid var(--line);
+  }
+  .vocab-term{padding:14px 4px; border-bottom:1px solid rgba(var(--paper-rgb),0.07);}
+  .vocab-term dt{font-family:Georgia,serif; font-weight:700; font-size:1rem; color:var(--paper); margin-bottom:4px;}
+  .vocab-term dd{margin:0; font-size:0.9rem; line-height:1.6; color:var(--text-soft);}
+  .vocab-empty{text-align:center; padding:40px 20px; color:var(--dim); font-size:0.9rem;}
+  .vocab-source{font-size:0.75rem; color:var(--dim); line-height:1.6; margin-top:18px; padding-top:14px; border-top:1px solid var(--line);}
+
+  /* --- Pantalla completa --- */
+  .fs-overlay{position:fixed; inset:0; z-index:1000; background:var(--navy-deep); display:none;}
+  .fs-overlay.open{display:block;}
+  .fs-panel{position:absolute; inset:0; width:100%; height:100%; padding:20px 28px 24px; display:flex; flex-direction:column; overflow:auto;}
+  .fs-toolbar{display:flex; align-items:center; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-bottom:10px;}
+  .fs-tool-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:Georgia,serif; font-weight:700; font-size:0.82rem;
+    background:var(--navy); color:var(--dim); border:1px solid rgba(var(--paper-rgb),0.22);
+    padding:9px 14px; border-radius:9px; cursor:pointer; transition:all .15s ease;
+  }
+  .fs-tool-btn:hover{border-color:var(--paper); color:var(--paper);}
+  .fs-tool-btn.active{background:var(--ochre); color:var(--navy-deep); border-color:var(--ochre);}
+  .fs-close{background:var(--navy-deep); color:var(--paper); border:none; border-radius:9px; padding:9px 16px; font-family:Georgia,serif; font-weight:700; font-size:0.82rem; cursor:pointer; margin-left:6px;}
+  #fsContent{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; position:relative;}
+  #fsContent .fs-badge{display:inline-block; align-self:flex-start; font-family:Georgia,serif; font-weight:700; padding:6px 14px; border-radius:999px; background:var(--era); color:var(--navy-deep); margin-bottom:10px;}
+  #fsContent .fs-title{font-family:Georgia,serif; font-size:1.3rem; font-weight:700; margin:0 0 12px; color:var(--paper);}
+  #fsContent .zoom-stage{flex:1 1 auto; min-height:0; height:auto;}
+  #fsContent .fs-zoom-toolbar{display:flex; align-items:center; gap:2px; background:rgba(11,28,44,0.85); border:1px solid var(--line); border-radius:9px; padding:4px; position:absolute; bottom:14px; right:14px; z-index:15;}
+  .zoom-tbtn{font-family:'Courier New',monospace; font-size:0.85rem; font-weight:700; padding:7px 12px; border:none; background:transparent; color:var(--paper); border-radius:6px; cursor:pointer;}
+  .zoom-tbtn:hover{background:rgba(var(--paper-rgb),0.16);}
+  #fsContent .credit{margin-top:10px;}
+  #fsDrawCanvas{position:absolute; pointer-events:none; touch-action:none; z-index:20;}
+  #fsLaserDot{
+    position:fixed; width:22px; height:22px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,40,40,0.95) 0%, rgba(255,40,40,0.55) 55%, rgba(255,40,40,0) 75%);
+    box-shadow:0 0 16px 4px rgba(255,40,40,0.6);
+    pointer-events:none; transform:translate(-50%,-50%); z-index:1100; display:none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="masthead-left">
+      <h1><small>Cartografía Histórica</small>Atlas Histórico Mundial</h1>
+      <button class="theme-toggle" id="themeToggleBtn">🌙 Modo oscuro</button>
+    </div>
+    <p class="masthead-note">30 mapas e infografías reales, de licencia libre, de la Prehistoria a la actualidad — para proyectar y explorar en clase.</p>
+  </header>
+
+  <div class="era-tabs" id="eraTabs"></div>
+  <div class="item-pills" id="itemPills"></div>
+  <div id="plateHost"></div>
+
+  <footer class="note">
+    Todos los mapas proceden de Wikimedia Commons, con licencia de dominio público o Creative Commons (crédito y licencia indicados en cada ficha). Los territorios y fronteras históricas son simplificaciones con fines didácticos. Las fichas de la sección "Conflictos y Procesos Actuales" relativas a sucesos muy recientes se presentan con fecha explícita y no sustituyen a fuentes de actualidad.
+  </footer>
+</div>
+
+<div class="fs-overlay" id="fsOverlay">
+  <div class="fs-panel" id="fsPanel">
+    <div class="fs-toolbar">
+      <button class="fs-tool-btn" id="fsPenBtn">🖊️ Lápiz</button>
+      <button class="fs-tool-btn" id="fsLaserBtn">🔴 Láser</button>
+      <button class="fs-close" id="fsCloseBtn">✕ Volver a pantalla normal</button>
+    </div>
+    <div id="fsContent"></div>
+    <canvas id="fsDrawCanvas"></canvas>
+    <div id="fsLaserDot"></div>
+  </div>
+</div>
+
+<script>
+/* ============== TEMA CLARO / OSCURO ============== */
+(function(){
+  let guardado = null;
+  try{ guardado = localStorage.getItem('atlasHistoricoTema'); } catch(e){}
+  if(guardado === 'light'){ document.documentElement.classList.add('light-theme'); }
+})();
+
+function actualizarBotonTema(){
+  const btn = document.getElementById('themeToggleBtn');
+  if(!btn) return;
+  const esClaro = document.documentElement.classList.contains('light-theme');
+  btn.textContent = esClaro ? '☀️ Modo claro' : '🌙 Modo oscuro';
+}
+
+/**
+ * ATLAS HISTÓRICO MUNDIAL — datos
+ * -----------------------------------------------------------------
+ * 30 mapas e infografías reales, todos de Wikimedia Commons con
+ * licencia libre (dominio público o Creative Commons), organizados
+ * en 6 grandes eras. Cada imagen se referencia mediante el nombre de
+ * archivo de Commons y se sirve vía Special:FilePath (mismo método
+ * usado en el resto de aplicaciones del portal), con su crédito y
+ * licencia siempre visibles.
+ *
+ * Dos fichas (la situación actual del conflicto árabe-israelí y la
+ * guerra de Irán 2025-2026) no llevan mapa propio: son sucesos tan
+ * recientes y cambiantes que un mapa fijo daría una falsa sensación
+ * de estar "al día". En su lugar llevan una nota fechada y una
+ * recomendación de consultar fuentes de actualidad.
+ * -----------------------------------------------------------------
+ */
+
+const COMMONS_BASE = "https://commons.wikimedia.org/wiki/Special:FilePath/";
+
+const ERAS = [
+{
+  id: "prehistoria", nombre: "Prehistoria", accent: "#b5652c",
+  items: [
+    {
+      id: "migracion_humana",
+      titulo: "La expansión de la humanidad fuera de África",
+      periodo: "desde hace c. 70.000 años",
+      imagen: "Human migration routes following Out-of-Africa.png",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "El registro genético y arqueológico indica que el Homo sapiens se originó en África hace unos 300.000 años y que, a partir de hace unos 70.000 años, distintos grupos fueron saliendo del continente y poblando progresivamente Asia, Oceanía, Europa y, por último, América. Las flechas del mapa representan rutas de dispersión reconstruidas a partir de restos fósiles, herramientas de piedra y ADN antiguo, no viajes únicos: fue un proceso lentísimo, de miles de generaciones.",
+      datosClave: ["Origen: África, hace c. 300.000 años", "Salida de África: hace c. 70.000 años", "Llegada a América: hace c. 15.000-20.000 años", "Última gran región poblada: Oceanía remota, hace c. 3.000 años"]
+    },
+    {
+      id: "evolucion_humana",
+      titulo: "La evolución humana: de los primeros homínidos al Homo sapiens",
+      periodo: "c. 7 millones de años - hoy",
+      tipo: "infografia_externa",
+      imagen: "Human evolution chart-es.svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "El ser humano actual es el resultado de un larguísimo proceso evolutivo compartido con otros primates. Esta infografía sitúa cronológicamente las principales especies del árbol evolutivo humano, desde los primeros homínidos bípedos hasta el Homo sapiens. Es importante no leerlo como una línea recta: varias especies convivieron durante largos periodos, y el Homo sapiens llegó a coincidir en el tiempo con los neandertales y otras especies humanas hoy extinguidas.",
+      datosClave: ["Primeros homínidos bípedos: hace c. 6-7 millones de años", "Género Homo: aparece hace c. 2,8 millones de años", "Homo sapiens: hace c. 300.000 años", "Extinción de los neandertales: hace c. 40.000 años"]
+    },
+    {
+      id: "linea_tiempo_prehistoria",
+      titulo: "Línea del tiempo: hitos de la Prehistoria",
+      periodo: "c. 2,8 millones de años - 3300 a.C.",
+      tipo: "linea_tiempo",
+      escalaLineal: false,
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "La Prehistoria abarca un periodo tan descomunal (más de dos millones de años) que representar sus hitos a escala real haría invisibles todos menos el último. Por eso, a diferencia de las demás líneas del tiempo del atlas, esta usa un espaciado regular entre hitos en lugar de proporcional a los años reales: lo importante aquí es el orden y la fecha de cada hito, no la distancia visual entre ellos.",
+      eventos: [
+        { year:-2800000, yearLabel:"c. 2,8 M. años", label:"Primeras herramientas|de piedra tallada" },
+        { year:-1500000, yearLabel:"c. 1,5 M. años", label:"Control y uso|del fuego" },
+        { year:-300000, yearLabel:"c. 300.000 años", label:"Aparición del|Homo sapiens" },
+        { year:-70000, yearLabel:"c. 70.000 años", label:"Salida de África del|Homo sapiens" },
+        { year:-40000, yearLabel:"c. 40.000 años", label:"Primer arte rupestre|(Altamira, Chauvet...)" },
+        { year:-10000, yearLabel:"c. 10.000 a.C.", label:"Revolución Neolítica:|agricultura y ganadería" },
+        { year:-3300, yearLabel:"c. 3300 a.C.", label:"Invención de la escritura:|fin de la Prehistoria" }
+      ]
+    }
+  ]
+},
+{
+  id: "antigua", nombre: "Edad Antigua", accent: "#a8842c",
+  items: [
+    {
+      id: "creciente_fertil",
+      titulo: "Las primeras civilizaciones: el Creciente Fértil",
+      periodo: "c. 3500-3000 a.C.",
+      imagen: "Map of fertile crescent.svg",
+      licencia: "CC BY-SA",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Entre los ríos Tigris y Éufrates (Mesopotamia) y el valle del Nilo (Egipto) surgieron, hacia el IV milenio a.C., las primeras civilizaciones urbanas: sociedades con escritura, Estado, excedente agrícola gracias al regadío, y una clara división del trabajo. El nombre 'Creciente Fértil' describe la forma de media luna que dibujan estas tierras fértiles entre el desierto de Arabia y las montañas de Anatolia e Irán.",
+      datosClave: ["Mesopotamia: entre el Tigris y el Éufrates", "Egipto: valle del Nilo", "Primera escritura conocida: cuneiforme sumerio, c. 3200 a.C.", "Base económica: agricultura de regadío"]
+    },
+    {
+      id: "grecia_micenica",
+      titulo: "Grecia micénica",
+      periodo: "c. 1400-1100 a.C.",
+      imagen: "Mycenaean World en.png",
+      licencia: "CC BY-SA 3.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Antes de la Grecia clásica de las polis, el Egeo estuvo dominado por la civilización micénica: un mundo de palacios fortificados (Micenas, Tirinto, Pilos) gobernados por reyes guerreros, con una administración burocrática que registraba su actividad en tablillas de arcilla escritas en Lineal B, el sistema de escritura griego más antiguo conocido. La tradición oral griega posterior — la guerra de Troya que narra la Ilíada — se ambienta precisamente en este mundo micénico.",
+      datosClave: ["Escritura: Lineal B (silábica)", "Principales centros: Micenas, Tirinto, Pilos, Cnosos", "Organización: palacios-Estado independientes", "Fin: colapso hacia 1200-1150 a.C."]
+    },
+    {
+      id: "colapso_bronce",
+      titulo: "El colapso de la Edad del Bronce",
+      periodo: "c. 1200-1150 a.C.",
+      imagen: "Invasions, destructions and possible population movements during the Bronze Age Collapse, ca. 1200 BC.png",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "En apenas unas décadas, alrededor de 1200 a.C., el mundo interconectado del Mediterráneo oriental se derrumbó: los palacios micénicos fueron destruidos y abandonados, el Imperio hitita desapareció, y Egipto sufrió graves ataques que lo debilitaron para siempre como gran potencia. Los historiadores no se ponen de acuerdo sobre una única causa: se combinan probablemente sequías y malas cosechas, terremotos, colapso de las rutas comerciales, revueltas internas y las invasiones de los llamados 'Pueblos del Mar'. Tras el colapso, Grecia entró en una 'Edad Oscura' de varios siglos sin escritura.",
+      datosClave: ["Civilizaciones afectadas: micénica, hitita, Ugarit, Egipto", "Posibles causas: sequía, terremotos, invasiones, colapso comercial", "'Pueblos del Mar': grupos invasores de origen incierto", "Consecuencia en Grecia: 'Edad Oscura' (c. 1100-800 a.C.), sin escritura"]
+    },
+    {
+      id: "colonizacion_griega",
+      titulo: "La colonización griega arcaica",
+      periodo: "s. VIII-VI a.C.",
+      imagen: "Greek Colonization Archaic Period.png",
+      licencia: "Dominio público",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Superada la Edad Oscura, las polis griegas vivieron un fuerte crecimiento demográfico que, unido a la falta de tierra cultivable y al interés por el comercio, impulsó una intensa colonización por todo el Mediterráneo y el mar Negro. Cada colonia (apoikía) era una ciudad-Estado independiente de su metrópolis, aunque mantenía vínculos religiosos y comerciales con ella. Así nacieron ciudades como Marsella, Nápoles, Siracusa o Bizancio (la futura Constantinopla).",
+      datosClave: ["Zonas colonizadas: sur de Italia, Sicilia, costas de Francia y España, mar Negro", "Ejemplos de colonias: Massalia (Marsella), Neápolis (Nápoles), Bizancio", "Motivos: presión demográfica, falta de tierra, comercio", "Relación con la metrópolis: independencia política, vínculo religioso"]
+    },
+    {
+      id: "imperio_alejandro",
+      titulo: "El Imperio de Alejandro Magno",
+      periodo: "336-323 a.C.",
+      imagen: "Map-alexander-empire.png",
+      licencia: "Dominio público",
+      autorFuente: "Wikimedia Commons",
+      contexto: "En apenas trece años de campañas, Alejandro Magno, rey de Macedonia, conquistó el Imperio persa aqueménida y llevó sus ejércitos hasta la India, creando el mayor imperio que se había visto hasta entonces en el mundo antiguo. Su muerte prematura en Babilonia, con solo 32 años, provocó la fragmentación del imperio entre sus generales (los diádocos), dando origen a los reinos helenísticos que difundieron la cultura griega por todo Oriente Próximo durante siglos.",
+      datosClave: ["Extensión: desde Grecia hasta el río Indo", "Duración de las campañas: 336-323 a.C.", "Muerte: Babilonia, 323 a.C., a los 32 años", "Legado: reinos helenísticos (Ptolemaico, Seléucida, Antigónida)"]
+    },
+    {
+      id: "imperio_romano",
+      titulo: "El Imperio Romano en su máxima extensión",
+      periodo: "117 d.C.",
+      imagen: "Roman Empire Trajan 117AD.png",
+      licencia: "Muy usada en Wikipedia; verificar licencia exacta al reutilizar",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Bajo el emperador Trajano, el año 117 d.C., Roma alcanzó su máxima extensión territorial: desde Britania hasta Mesopotamia, y desde el Rin y el Danubio hasta el norte de África, todo el Mediterráneo se había convertido en un 'lago romano' (Mare Nostrum). Fue posible gracias a una potente red de calzadas, un ejército profesional y un derecho común que, siglos más tarde, seguiría siendo la base del derecho de buena parte de Europa.",
+      datosClave: ["Máxima extensión: año 117 d.C., bajo Trajano", "Superficie aproximada: 5 millones de km²", "Capital: Roma", "Legado: derecho romano, red de calzadas, latín como base de las lenguas romances"]
+    },
+    {
+      id: "cronologia_antigua",
+      titulo: "Línea del tiempo: las grandes civilizaciones antiguas",
+      periodo: "c. 3500 a.C. - 476 d.C.",
+      tipo: "infografia_propia",
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "Un error muy habitual es imaginar que Mesopotamia, Egipto, Grecia y Roma se sucedieron unas a otras en el tiempo, como capítulos de un libro. En realidad se solaparon durante siglos: cuando Roma apenas era una aldea junto al Tíber, Egipto llevaba ya casi 2.500 años de historia. Esta línea del tiempo sitúa las cuatro grandes civilizaciones antiguas en su marco cronológico real, para visualizar de un vistazo qué convivió con qué.",
+      datosClave: ["Mesopotamia: c. 3500-539 a.C.", "Egipto: c. 3100-30 a.C.", "Grecia: c. 1600-146 a.C. (de la civilización micénica a la conquista romana)", "Roma: 753 a.C.-476 d.C. (Monarquía, República e Imperio)"]
+    },
+    {
+      id: "linea_tiempo_antigua",
+      titulo: "Línea del tiempo: hitos de la Edad Antigua",
+      periodo: "c. 3300 a.C. - 476 d.C.",
+      tipo: "linea_tiempo",
+      escalaLineal: true,
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "Ocho hitos para fijar el mapa mental de la Edad Antigua: desde la invención de la escritura, que marca convencionalmente su inicio, hasta la caída de Roma, que marca su final.",
+      eventos: [
+        { year:-3300, yearLabel:"3300 a.C.", label:"Invención de la|escritura cuneiforme" },
+        { year:-2560, yearLabel:"2560 a.C.", label:"Gran Pirámide|de Guiza" },
+        { year:-1792, yearLabel:"1792 a.C.", label:"Código de|Hammurabi" },
+        { year:-776, yearLabel:"776 a.C.", label:"Primeros Juegos|Olímpicos" },
+        { year:-753, yearLabel:"753 a.C.", label:"Fundación|de Roma" },
+        { year:-336, yearLabel:"336 a.C.", label:"Alejandro Magno,|rey de Macedonia" },
+        { year:-27, yearLabel:"27 a.C.", label:"Augusto, primer|emperador romano" },
+        { year:476, yearLabel:"476 d.C.", label:"Caída de Roma|en Occidente" }
+      ]
+    }
+  ]
+},
+{
+  id: "media", nombre: "Edad Media", accent: "#7a2e3d",
+  items: [
+    {
+      id: "expansion_islam",
+      titulo: "La expansión del Islam",
+      periodo: "622-750",
+      imagen: "Map of expansion of Caliphate.svg",
+      licencia: "Dominio público",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Tras la muerte de Mahoma en 632, los ejércitos árabes protagonizaron una de las expansiones más rápidas de la historia: en poco más de un siglo, el islam se extendió desde la península arábiga hasta la península ibérica por el oeste y hasta el valle del Indo por el este, derribando el Imperio persa sasánida y arrebatando a Bizancio buena parte de sus territorios en Oriente Próximo y el norte de África.",
+      datosClave: ["632: muerte de Mahoma", "711: conquista de la península ibérica", "732: derrota franca en Poitiers, límite de la expansión hacia el norte", "750: fin del califato omeya, inicio del abasí"]
+    },
+    {
+      id: "reconquista",
+      titulo: "La Reconquista y los reinos cristianos",
+      periodo: "718-1492",
+      imagen: "Progress of the Reconquista (718–1492) - es.svg",
+      licencia: "CC BY-SA",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Casi ocho siglos separan la batalla de Covadonga (722, tradicionalmente el inicio de la resistencia cristiana) de la toma de Granada en 1492. En ese tiempo, los reinos cristianos del norte peninsular —Asturias-León, Castilla, Aragón, Navarra, Portugal— fueron avanzando hacia el sur a costa de Al-Ándalus, en un proceso mucho más irregular de lo que sugiere la palabra 'Reconquista': hubo largos periodos de convivencia, parias (tributos), alianzas cambiantes entre reinos cristianos y musulmanes, y también fases de retroceso cristiano, como tras la llegada de almorávides y almohades.",
+      datosClave: ["722 (trad.): batalla de Covadonga", "1085: toma de Toledo por Alfonso VI", "1212: batalla de las Navas de Tolosa", "1492: toma de Granada, último reino nazarí"]
+    },
+    {
+      id: "imperio_mongol",
+      titulo: "El Imperio Mongol en su máxima extensión",
+      periodo: "s. XIII",
+      imagen: "Mongol Empire (greatest extent).svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Fundado por Gengis Kan a comienzos del siglo XIII, el Imperio mongol llegó a ser el mayor imperio contiguo de la historia, extendiéndose desde Corea hasta Europa central y desde Siberia hasta el golfo Pérsico. Su caballería, extraordinariamente móvil, y un sistema de comunicaciones basado en postas (el Yam) le permitieron controlar territorios inmensos. La 'Paz Mongola' (Pax Mongolica) facilitó durante décadas el comercio y el intercambio cultural a lo largo de la Ruta de la Seda entre China y Europa.",
+      datosClave: ["Fundador: Gengis Kan (proclamado en 1206)", "Superficie máxima: c. 24 millones de km²", "Mayor imperio contiguo de la historia", "Efecto comercial: impulso a la Ruta de la Seda (Pax Mongolica)"]
+    },
+    {
+      id: "imperio_otomano",
+      titulo: "El Imperio Otomano en su máxima extensión",
+      periodo: "1683",
+      imagen: "OttomanEmpireMain.png",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Tras conquistar Constantinopla en 1453 y poner fin así al milenario Imperio bizantino, los otomanos siguieron expandiéndose por los Balcanes, Oriente Próximo y el norte de África hasta convertirse en una de las grandes potencias mundiales. Su máxima extensión llegó en 1683, cuando sus ejércitos asediaron Viena por segunda vez; la derrota allí marcó el inicio de un lento retroceso que se prolongaría durante más de dos siglos, hasta la disolución del imperio tras la Primera Guerra Mundial.",
+      datosClave: ["1453: conquista de Constantinopla", "1683: máxima extensión, segundo asedio de Viena", "Capital: Constantinopla (Estambul)", "Fin: 1922-1923, tras la Primera Guerra Mundial"]
+    },
+    {
+      id: "piramide_feudal",
+      titulo: "La pirámide feudal",
+      periodo: "s. IX-XV",
+      tipo: "infografia_externa",
+      imagen: "Piramide feudal.gif",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Hegodis, vía Wikimedia Commons",
+      contexto: "El feudalismo organizaba la sociedad medieval como una pirámide de lealtades personales: en la cima, el rey o el emperador; debajo, la nobleza y el alto clero (grandes señores feudales); más abajo, los caballeros y la baja nobleza; y en la base, sosteniendo todo el edificio con su trabajo, los campesinos y siervos, sin apenas derechos ni poder de decisión. Cada nivel entregaba lealtad y servicios (sobre todo militares) al nivel superior, a cambio de protección y de tierras (feudos).",
+      datosClave: ["Vínculo básico: vasallaje (fidelidad a cambio de protección y tierra)", "Ceremonia de entrada: el homenaje", "Base de la pirámide: campesinos y siervos, la inmensa mayoría de la población", "Economía de base: el señorío y el trabajo de la tierra"]
+    },
+    {
+      id: "ruta_seda_comercio",
+      titulo: "El comercio en la Ruta de la Seda",
+      periodo: "c. 1200",
+      tipo: "infografia_externa",
+      imagen: "Silk Road Trade (c.1200 CE).jpg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "La Ruta de la Seda no era un único camino, sino una red de rutas terrestres y marítimas que conectaba China con el Mediterráneo a través de Asia Central, Persia y Oriente Próximo. Esta infografía muestra qué mercancías circulaban en cada sentido: seda, porcelana, papel y especias viajaban hacia Occidente, mientras que oro, plata, caballos, vidrio y textiles europeos viajaban hacia Oriente. El Imperio Mongol, al unificar bajo un solo poder buena parte de esta red en el siglo XIII, facilitó como nunca antes este intercambio (la 'Pax Mongolica').",
+      datosClave: ["Duración: activa desde el s. II a.C. hasta el s. XV", "Mercancía más famosa hacia Occidente: la seda china", "También viajaban: ideas, religiones (budismo) y enfermedades (peste)", "Impulso clave: la Pax Mongolica del siglo XIII"]
+    },
+    {
+      id: "linea_tiempo_media",
+      titulo: "Línea del tiempo: hitos de la Edad Media",
+      periodo: "476-1492",
+      tipo: "linea_tiempo",
+      escalaLineal: true,
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "Casi mil años separan la caída de Roma de la toma de Granada. Esta línea del tiempo marca nueve hitos —políticos, religiosos y culturales— que ayudan a situar el resto de fichas de este bloque (el Islam, la Reconquista, los mongoles, los otomanos) dentro del periodo medieval.",
+      eventos: [
+        { year:476, yearLabel:"476", label:"Caída de Roma|en Occidente" },
+        { year:711, yearLabel:"711", label:"Conquista musulmana|de la Península" },
+        { year:800, yearLabel:"800", label:"Coronación de|Carlomagno" },
+        { year:1054, yearLabel:"1054", label:"Cisma de Oriente|y Occidente" },
+        { year:1096, yearLabel:"1096", label:"Primera|Cruzada" },
+        { year:1212, yearLabel:"1212", label:"Batalla de las|Navas de Tolosa" },
+        { year:1347, yearLabel:"1347", label:"Llegada de la|Peste Negra" },
+        { year:1453, yearLabel:"1453", label:"Caída de|Constantinopla" },
+        { year:1492, yearLabel:"1492", label:"Toma de Granada|y llegada a América" }
+      ]
+    }
+  ]
+},
+{
+  id: "moderna", nombre: "Edad Moderna", accent: "#1f6e8c",
+  items: [
+    {
+      id: "descubrimientos_portugueses",
+      titulo: "Las rutas de los descubrimientos portugueses",
+      periodo: "s. XV-XVI",
+      imagen: "Portuguese discoveries and explorationsV2en.png",
+      licencia: "CC BY-SA 3.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Portugal fue la potencia pionera de la expansión europea de ultramar: desde el impulso inicial del infante Enrique 'el Navegante', sus barcos fueron bordeando la costa africana década tras década hasta que Bartolomeu Dias dobló el cabo de Buena Esperanza (1488) y Vasco da Gama alcanzó la India por mar (1498), abriendo una ruta comercial directa hacia las especias asiáticas que hasta entonces dependía de intermediarios árabes e italianos.",
+      datosClave: ["1488: Bartolomeu Dias dobla el cabo de Buena Esperanza", "1498: Vasco da Gama llega a Calicut (India)", "1500: Pedro Álvares Cabral llega a Brasil", "Objetivo: ruta directa a las especias de Asia"]
+    },
+    {
+      id: "imperios_espana_portugal",
+      titulo: "Los imperios español y portugués",
+      periodo: "c. 1790",
+      imagen: "Imperios Español y Portugués 1790.svg",
+      licencia: "CC BY-SA",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Tras el Tratado de Tordesillas (1494), que repartió entre Castilla y Portugal el mundo por descubrir, ambas coronas construyeron imperios de ultramar que llegaron a abarcar buena parte del planeta: España dominaba la mayor parte de América y Filipinas, mientras Portugal controlaba Brasil y una red de puestos comerciales en África, India y el sudeste asiático. Hacia 1790, en vísperas de las independencias americanas, ambos imperios estaban en su apogeo territorial.",
+      datosClave: ["Tratado de Tordesillas: 1494", "Imperio español: virreinatos de Nueva España, Perú, Nueva Granada, Río de la Plata", "Imperio portugués: Brasil y enclaves en África y Asia", "Fin próximo: independencias americanas desde 1810"]
+    },
+    {
+      id: "estamentos_antiguo_regimen",
+      titulo: "Los tres estamentos del Antiguo Régimen",
+      periodo: "s. XVI-XVIII",
+      tipo: "infografia_propia",
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "La sociedad del Antiguo Régimen no se organizaba por riqueza, sino por estamentos: grupos cerrados a los que se pertenecía por nacimiento, cada uno con leyes y privilegios distintos. La nobleza y el clero —apenas un 2% de la población— estaban exentos de pagar impuestos y concentraban la propiedad de la tierra y los cargos de poder. El resto, el Estado llano —campesinos, artesanos y una burguesía cada vez más rica pero sin privilegios políticos—, cargaba con todo el peso fiscal. Este desequilibrio fue una de las causas principales de la Revolución francesa de 1789.",
+      datosClave: ["Primer estamento: el clero", "Segundo estamento: la nobleza", "Tercer estamento (Estado llano): c. 98% de la población", "Privilegio clave: exención fiscal de nobleza y clero"]
+    },
+    {
+      id: "linea_tiempo_moderna",
+      titulo: "Línea del tiempo: hitos de la Edad Moderna",
+      periodo: "1492-1789",
+      tipo: "linea_tiempo",
+      escalaLineal: true,
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "De la llegada de Colón a América a la Revolución francesa: trescientos años que transformaron Europa y su relación con el resto del mundo, entre la expansión de los imperios ultramarinos, la ruptura religiosa de la Reforma y el auge de las nuevas ideas de la Ilustración que acabarían por poner fin al propio Antiguo Régimen.",
+      eventos: [
+        { year:1492, yearLabel:"1492", label:"Llegada de Colón|a América" },
+        { year:1517, yearLabel:"1517", label:"Lutero inicia la|Reforma protestante" },
+        { year:1521, yearLabel:"1521", label:"Primera vuelta al|mundo (Elcano)" },
+        { year:1545, yearLabel:"1545", label:"Concilio de Trento|(Contrarreforma)" },
+        { year:1648, yearLabel:"1648", label:"Paz de Westfalia" },
+        { year:1688, yearLabel:"1688", label:"Revolución Gloriosa|inglesa" },
+        { year:1751, yearLabel:"1751", label:"Publicación de la|Enciclopedia" },
+        { year:1789, yearLabel:"1789", label:"Revolución|Francesa" }
+      ]
+    }
+  ]
+},
+{
+  id: "contemporanea", nombre: "Edad Contemporánea", accent: "#4a5a72",
+  items: [
+    {
+      id: "europa_napoleonica",
+      titulo: "La Europa napoleónica",
+      periodo: "1812",
+      imagen: "Europe map 1812-es.svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "En el momento de máxima expansión del Imperio napoleónico, Francia controlaba directamente o a través de Estados satélites y aliados la práctica totalidad de la Europa continental, desde España hasta el Gran Ducado de Varsovia. Solo el Reino Unido, protegido por su flota, y el Imperio ruso quedaban fuera de su órbita. Ese mismo año 1812, la fracasada invasión de Rusia marcaría el principio del fin del dominio napoleónico en Europa.",
+      datosClave: ["1804: Napoleón se corona emperador", "1812: máxima extensión del Imperio y de sus Estados satélites", "1812: desastrosa campaña de Rusia", "1815: derrota final en Waterloo"]
+    },
+    {
+      id: "reparto_africa",
+      titulo: "El reparto colonial de África",
+      periodo: "1880 → 1913",
+      imagen: "Scramble-for-Africa-1880-1913-v2.png",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "En apenas tres décadas, las potencias europeas pasaron de controlar un 10% del territorio africano a repartirse casi todo el continente entre sí. La Conferencia de Berlín (1884-1885) fijó las reglas de este reparto —realizado sin apenas contar con los pueblos africanos— trazando fronteras arbitrarias que en muchos casos ignoraban las divisiones étnicas y culturales existentes, con consecuencias que se prolongan hasta hoy.",
+      datosClave: ["1884-1885: Conferencia de Berlín", "África bajo control europeo en 1880: c. 10%", "África bajo control europeo en 1913: c. 90%", "Únicos países independientes en 1913: Etiopía y Liberia"]
+    },
+    {
+      id: "independencias_hispanoamerica",
+      titulo: "Las independencias de Hispanoamérica",
+      periodo: "1810-1825",
+      imagen: "Americas independence map.PNG",
+      licencia: "verificar licencia exacta al reutilizar",
+      autorFuente: "Wikimedia Commons",
+      contexto: "El debilitamiento de la monarquía española tras la invasión napoleónica de 1808 abrió paso a un proceso de independencias que, en poco más de tres lustros, puso fin al imperio español en el continente americano. Líderes como Simón Bolívar, José de San Martín o Miguel Hidalgo encabezaron movimientos que, entre 1810 y 1825, dieron lugar a la mayoría de las repúblicas hispanoamericanas actuales; España conservó Cuba y Puerto Rico hasta 1898.",
+      datosClave: ["1808: crisis de la monarquía española", "1810: primeras juntas autonomistas", "1824: batalla de Ayacucho, fin del dominio español en Suramérica", "1898: pérdida de Cuba y Puerto Rico"]
+    },
+    {
+      id: "unificacion_alemania",
+      titulo: "La unificación de Alemania",
+      periodo: "1871",
+      imagen: "Deutsches Reich (1871-1918)-de.svg",
+      licencia: "CC BY-SA 3.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "A diferencia de Francia o España, Alemania no existió como Estado unificado hasta 1871: era un mosaico de reinos, ducados y ciudades libres. El canciller prusiano Otto von Bismarck logró la unificación mediante una política de 'sangre y hierro', que incluyó tres guerras (contra Dinamarca, Austria y Francia), culminando con la proclamación del Imperio alemán en el propio palacio de Versalles, tras la derrota francesa.",
+      datosClave: ["Artífice: Otto von Bismarck, canciller de Prusia", "1864, 1866, 1870-71: guerras de unificación", "18 de enero de 1871: proclamación del Imperio en Versalles", "Primer emperador: Guillermo I de Prusia"]
+    },
+    {
+      id: "imperios_1914",
+      titulo: "Los imperios coloniales del mundo en 1914",
+      periodo: "1914",
+      imagen: "World 1914 empires colonies territory.PNG",
+      licencia: "CC BY 3.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "En vísperas de la Primera Guerra Mundial, el mundo estaba dominado por un puñado de imperios coloniales europeos: el Imperio británico, el mayor de la historia, sobre el que 'nunca se ponía el sol'; el francés, con un enorme dominio en África y el sudeste asiático; y los imperios alemán, belga, italiano, portugués, español, holandés, y los grandes imperios continentales ruso, austrohúngaro y otomano, ya en declive.",
+      datosClave: ["Mayor imperio: británico, c. 35,5 millones de km²", "Segundo mayor: francés", "África en 1914: prácticamente toda bajo dominio europeo", "Imperios en declive: otomano y austrohúngaro"]
+    },
+    {
+      id: "alianzas_1gm",
+      titulo: "Las alianzas de la Primera Guerra Mundial",
+      periodo: "1914",
+      imagen: "Map Europe alliances 1914-en.svg",
+      licencia: "CC BY-SA",
+      autorFuente: "Wikimedia Commons",
+      contexto: "El estallido de la Primera Guerra Mundial en el verano de 1914 activó un sistema de alianzas que arrastró a toda Europa a la guerra en pocas semanas: la Triple Alianza (Alemania, Austria-Hungría e Italia, aunque esta última acabaría uniéndose al bando contrario) frente a la Triple Entente (Francia, Reino Unido y Rusia). Un atentado en Sarajevo —el asesinato del archiduque Francisco Fernando— bastó para desencadenar un conflicto que ya llevaba años gestándose por la rivalidad colonial, el militarismo y el nacionalismo.",
+      datosClave: ["28 de junio de 1914: asesinato del archiduque Francisco Fernando en Sarajevo", "Potencias Centrales: Alemania, Austria-Hungría, Imperio otomano, Bulgaria", "Triple Entente / Aliados: Francia, Reino Unido, Rusia (y luego más países)", "Duración: 1914-1918"]
+    },
+    {
+      id: "participantes_2gm",
+      titulo: "Los participantes en la Segunda Guerra Mundial",
+      periodo: "1939-1945",
+      imagen: "Map of participants in World War II.svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "La Segunda Guerra Mundial fue el conflicto más extenso y mortífero de la historia, con combates en Europa, el norte de África, Asia y el Pacífico. Enfrentó a las potencias del Eje (Alemania, Italia, Japón) contra los Aliados (encabezados por el Reino Unido, la Unión Soviética, Estados Unidos y China), con la práctica totalidad del planeta implicada de un modo u otro, ya fuera como combatiente, ocupado o proveedor de recursos.",
+      datosClave: ["Inicio: 1 de septiembre de 1939 (invasión de Polonia)", "Fin en Europa: 8 de mayo de 1945", "Fin en el Pacífico: 2 de septiembre de 1945", "Víctimas totales estimadas: 70-85 millones de personas"]
+    },
+    {
+      id: "guerra_fria",
+      titulo: "La Guerra Fría: OTAN frente al Pacto de Varsovia",
+      periodo: "1949-1990",
+      imagen: "NATO vs. Warsaw Pact (1949-1990).svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Tras la Segunda Guerra Mundial, el mundo quedó dividido en dos bloques enfrentados sin llegar a una guerra directa entre ellos: el bloque occidental capitalista, articulado militarmente en torno a la OTAN (1949) y liderado por Estados Unidos, y el bloque comunista, organizado en el Pacto de Varsovia (1955) bajo el liderazgo soviético. Europa quedó literalmente partida en dos por el 'Telón de Acero', con Alemania dividida como símbolo máximo de esa frontera.",
+      datosClave: ["1949: creación de la OTAN", "1955: creación del Pacto de Varsovia (respuesta a la entrada de la RFA en la OTAN)", "Símbolo de la división: el Muro de Berlín (1961-1989)", "Fin: disolución del Pacto de Varsovia en 1991"]
+    },
+    {
+      id: "descolonizacion_africa",
+      titulo: "La descolonización de África",
+      periodo: "1951-1980",
+      imagen: "Africa independence dates.svg",
+      licencia: "CC BY-SA 3.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Tras la Segunda Guerra Mundial, el auge de los movimientos nacionalistas africanos y el debilitamiento de las metrópolis europeas precipitaron un rápido proceso de independencias: en apenas dos décadas, casi todo el continente dejó de estar bajo dominio colonial. El año 1960, conocido como el 'Año de África', vio nacer 17 nuevos Estados independientes solo en ese periodo. El proceso no siempre fue pacífico: guerras de independencia como la de Argelia costaron cientos de miles de vidas.",
+      datosClave: ["1951: Libia, primera independencia africana de posguerra", "1960: 'Año de África', 17 países independientes", "1962: independencia de Argelia tras una guerra muy sangrienta", "1980: Zimbabue, entre las últimas independencias"]
+    },
+    {
+      id: "union_europea",
+      titulo: "La Unión Europea",
+      periodo: "estado en 2008",
+      imagen: "EU27-2008 European Union map.svg",
+      licencia: "CC BY-SA 2.5",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Nacida de las cenizas de dos guerras mundiales con el objetivo de hacer la guerra 'no solo impensable sino materialmente imposible' entre sus miembros, la construcción europea comenzó en 1951 con la Comunidad Europea del Carbón y del Acero, entre seis países, y ha ido ampliándose hasta convertirse en el mayor proyecto de integración política y económica de la historia.",
+      datosClave: ["1951: CECA, origen del proyecto europeo (6 países)", "1957: Tratado de Roma, nace la CEE", "1993: Tratado de Maastricht, nace la Unión Europea", "1999/2002: entrada en circulación del euro"],
+      nota: "El mapa que se muestra refleja la Unión Europea de 2008 (27 miembros), el mejor disponible con licencia libre; no incluye la posterior entrada de Croacia (2013) ni la salida del Reino Unido (2020, 'Brexit'). Desde 2020, la Unión Europea tiene 27 Estados miembros."
+    },
+    {
+      id: "ampliacion_ue",
+      titulo: "La ampliación de la Unión Europea",
+      periodo: "1957-2020",
+      tipo: "infografia_propia",
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "El mapa de la ficha anterior es una fotografía fija de 2008; esta infografía añade lo que un mapa no puede mostrar por sí solo: el tiempo. La Unión Europea ha crecido de 6 a 28 miembros en menos de sesenta años, casi siempre sumando países — con la única excepción, en toda su historia, de la salida del Reino Unido en 2020 ('Brexit'), que redujo el número de miembros por primera vez.",
+      datosClave: ["1957: 6 países fundadores (Tratado de Roma)", "2004: mayor ampliación de la historia, 10 países de golpe", "2013: Croacia, último país en incorporarse", "2020: primera salida de un Estado miembro (Reino Unido)"]
+    },
+    {
+      id: "linea_tiempo_contemporanea",
+      titulo: "Línea del tiempo: hitos de la Edad Contemporánea",
+      periodo: "1789-1991",
+      tipo: "linea_tiempo",
+      escalaLineal: true,
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "De la Revolución francesa a la disolución de la URSS: dos siglos que incluyen las dos guerras mundiales, las grandes revoluciones sociales y políticas, y el ascenso y caída del bloque comunista. La línea se detiene en 1991 porque lo posterior —ya la más rabiosa actualidad— tiene su propia línea del tiempo en el siguiente bloque.",
+      eventos: [
+        { year:1789, yearLabel:"1789", label:"Revolución|Francesa" },
+        { year:1815, yearLabel:"1815", label:"Congreso|de Viena" },
+        { year:1848, yearLabel:"1848", label:"Oleada de revoluciones|liberales" },
+        { year:1871, yearLabel:"1871", label:"Unificación de|Alemania e Italia" },
+        { year:1914, yearLabel:"1914", label:"Primera Guerra|Mundial" },
+        { year:1917, yearLabel:"1917", label:"Revolución|Rusa" },
+        { year:1939, yearLabel:"1939", label:"Segunda Guerra|Mundial" },
+        { year:1989, yearLabel:"1989", label:"Caída del Muro|de Berlín" },
+        { year:1991, yearLabel:"1991", label:"Disolución|de la URSS" }
+      ]
+    }
+  ]
+},
+{
+  id: "actualidad", nombre: "Conflictos y Procesos Actuales", accent: "#c0392b",
+  items: [
+    {
+      id: "particion_palestina_1947",
+      titulo: "El conflicto árabe-israelí (I): el Plan de Partición de la ONU",
+      periodo: "1947-1949",
+      imagen: "1947-UN-Partition-Plan-1949-Armistice-Comparison-es.svg",
+      licencia: "Dominio público",
+      autorFuente: "Wikimedia Commons / ONU",
+      contexto: "Al finalizar el Mandato británico de Palestina, la Asamblea General de la ONU aprobó en noviembre de 1947 (Resolución 181) un plan para dividir el territorio en un Estado judío y un Estado árabe, con Jerusalén bajo administración internacional. El plan fue aceptado por el liderazgo judío y rechazado por el liderazgo árabe. Tras la proclamación del Estado de Israel en mayo de 1948, estalló la primera guerra árabe-israelí; el armisticio de 1949 fijó unas fronteras (las 'líneas verdes') bastante distintas de las del plan original de la ONU, tal como compara este mapa.",
+      datosClave: ["Noviembre de 1947: Resolución 181 de la ONU (Plan de Partición)", "14 de mayo de 1948: proclamación del Estado de Israel", "1948-1949: primera guerra árabe-israelí", "Consecuencia: cientos de miles de refugiados palestinos (Nakba)"]
+    },
+    {
+      id: "guerra_seis_dias",
+      titulo: "El conflicto árabe-israelí (II): la Guerra de los Seis Días",
+      periodo: "junio de 1967",
+      imagen: "Six Day War Territories-es.svg",
+      licencia: "CC BY-SA 3.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "En junio de 1967, en un contexto de fuerte tensión con sus vecinos árabes, Israel lanzó una ofensiva militar que, en solo seis días, le permitió ocupar la península del Sinaí y la Franja de Gaza (Egipto), Cisjordania y Jerusalén Este (Jordania) y los Altos del Golán (Siria). El Sinaí fue devuelto a Egipto en 1982 tras los Acuerdos de Camp David, pero el resto de territorios ocupados en 1967 —Gaza, Cisjordania, Jerusalén Este y el Golán— siguen en el centro del conflicto hasta hoy.",
+      datosClave: ["5-10 de junio de 1967: duración del conflicto", "Territorios ocupados: Sinaí, Gaza, Cisjordania, Jerusalén Este, Altos del Golán", "1982: devolución del Sinaí a Egipto", "Resolución 242 de la ONU: pide la retirada israelí de los territorios ocupados"]
+    },
+    {
+      id: "oslo_areas",
+      titulo: "El conflicto árabe-israelí (III): los Acuerdos de Oslo",
+      periodo: "1993-1995",
+      imagen: "Zones A and B in the occupied Palestinian territories (Zone C hatched).svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "SoWhAt249, vía Wikimedia Commons",
+      contexto: "Los Acuerdos de Oslo (1993) sentaron, por primera vez, las bases de un reconocimiento mutuo entre Israel y la Organización para la Liberación de Palestina (OLP), y crearon la Autoridad Palestina como gobierno interino. El Acuerdo de Oslo II (1995) dividió Cisjordania en tres zonas con estatutos distintos: el Área A bajo control palestino pleno, el Área B con control civil palestino y seguridad compartida, y el Área C —la mayor parte del territorio— bajo control israelí total. Pensada como una solución transitoria de cinco años, esta división sigue vigente hoy, más de dos décadas después de lo previsto.",
+      datosClave: ["1993: Acuerdos de Oslo I, reconocimiento mutuo Israel-OLP", "1995: Oslo II, división de Cisjordania en Áreas A, B y C", "Área A: c. 18% de Cisjordania, control palestino", "Área C: c. 60% de Cisjordania, control israelí total"]
+    },
+    {
+      id: "guerra_civil_siria",
+      titulo: "La guerra civil siria",
+      periodo: "2011-2024",
+      imagen: "Syrian Civil War map (November 29, 2024).svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons",
+      contexto: "Lo que en 2011 comenzó como protestas pacíficas dentro de la 'Primavera Árabe' contra el régimen de Bashar al Asad derivó en una guerra civil de trece años que fragmentó Siria entre el gobierno, distintos grupos de la oposición armada, fuerzas kurdas y, durante años, el autoproclamado Estado Islámico. El mapa muestra el reparto territorial pocos días antes del desenlace: en diciembre de 2024, una ofensiva relámpago liderada por Hayat Tahrir al-Sham tomó Damasco y puso fin al gobierno de Asad, abriendo una nueva etapa de transición política todavía inestable.",
+      datosClave: ["2011: inicio de las protestas contra Bashar al Asad", "2014-2019: auge y derrota territorial del Estado Islámico", "8 de diciembre de 2024: caída de Damasco, fin del gobierno de Asad", "Víctimas estimadas de la guerra civil: entre 300.000 y 600.000"],
+      nota: "Este mapa capta el frente pocos días antes de la caída del régimen de Asad; la situación posterior (gobierno de transición, tensiones con las fuerzas kurdas del noreste) se resume en el texto, pero no está representada en la imagen."
+    },
+    {
+      id: "guerra_ucrania",
+      titulo: "La guerra de Ucrania",
+      periodo: "desde 2022 (situación a agosto de 2026)",
+      imagen: "2022 Russian invasion of Ukraine.svg",
+      licencia: "CC BY-SA 4.0",
+      autorFuente: "Wikimedia Commons (mapa vivo, mantenido por la comunidad)",
+      contexto: "La invasión rusa a gran escala de Ucrania, iniciada el 24 de febrero de 2022, es la mayor guerra convencional en Europa desde la Segunda Guerra Mundial. Tras el rápido avance inicial ruso y las contraofensivas ucranianas de 2022, el frente se ha estabilizado desde 2023-2024 en una guerra de desgaste a lo largo de unos 1.000 km, con avances territoriales muy lentos medidos en pueblos y kilómetros, no en regiones enteras. En agosto de 2026 el conflicto seguía activo, sin alto el fuego firmado.",
+      datosClave: ["24 de febrero de 2022: inicio de la invasión a gran escala", "2014: origen del conflicto (anexión de Crimea, guerra del Donbás)", "Frente actual: c. 1.000 km, desde Járkov hasta Jersón", "Territorio ucraniano bajo control ruso: en torno al 18-20%"],
+      nota: "Este mapa se actualiza periódicamente en Wikimedia Commons a medida que cambia el frente; la imagen que ves refleja la última versión disponible, no necesariamente el día exacto en que la estés consultando. Comprueba la fecha indicada en la propia imagen."
+    },
+    {
+      id: "cronologia_conflictos",
+      titulo: "Cronología de grandes conflictos internacionales desde 1990",
+      periodo: "1990-actualidad",
+      tipo: "infografia_propia",
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "Ver los grandes conflictos de los últimos 35 años uno junto a otro, en la misma escala de tiempo, ayuda a situar cada ficha de esta sección en un contexto más amplio: desde el final de la Guerra Fría no ha habido ningún año sin un conflicto internacional de gran escala activo en el mundo. Las barras que llegan hasta el borde derecho señalan conflictos que seguían abiertos en la fecha de esta ficha (agosto de 2026).",
+      datosClave: ["1990-1991: Guerra del Golfo", "1991-2001: Guerras de Yugoslavia", "2003-2011: Guerra de Irak", "2011-2024: Guerra Civil Siria"]
+    },
+    {
+      id: "linea_tiempo_actualidad",
+      titulo: "Línea del tiempo: el mundo desde el fin de la Guerra Fría",
+      periodo: "1989-2026",
+      tipo: "linea_tiempo",
+      escalaLineal: true,
+      autorFuente: "Elaboración propia",
+      licencia: "—",
+      contexto: "A diferencia de la cronología de conflictos (que compara duraciones), esta línea del tiempo marca hitos puntuales del mundo surgido tras el fin de la Guerra Fría: el momento exacto en que ocurrió cada suceso, no cuánto duró.",
+      eventos: [
+        { year:1989, yearLabel:"1989", label:"Caída del Muro|de Berlín" },
+        { year:1991, yearLabel:"1991", label:"Disolución|de la URSS" },
+        { year:2001, yearLabel:"2001", label:"Atentados|del 11-S" },
+        { year:2008, yearLabel:"2008", label:"Crisis financiera|global" },
+        { year:2011, yearLabel:"2011", label:"Primavera|Árabe" },
+        { year:2014, yearLabel:"2014", label:"Anexión rusa|de Crimea" },
+        { year:2020, yearLabel:"2020", label:"Pandemia de|COVID-19" },
+        { year:2022, yearLabel:"2022", label:"Invasión rusa de|Ucrania a gran escala" },
+        { year:2023, yearLabel:"2023", label:"Ataque de Hamás y|guerra en Gaza" }
+      ]
+    }
+  ]
+}
+];
+
+/**
+ * VOCABULARIO HISTÓRICO — glosario general, alfabético (no por épocas)
+ * -----------------------------------------------------------------
+ * Definiciones propias, redactadas para nivel ESO, elaboradas
+ * consultando y fusionando varias fuentes de acceso libre:
+ *  - Wikipedia en español, "Anexo:Glosario de Historia" (CC BY-SA 4.0)
+ *  - Wikcionario en español (CC BY-SA 4.0)
+ * No son una copia literal de esas fuentes (evitamos reproducir su
+ * texto); son definiciones originales, escritas a partir de ellas y
+ * de conocimiento histórico general, citando su origen tal como pide
+ * la licencia Creative Commons con la que se publican.
+ * El propio código las ordena alfabéticamente (localeCompare 'es'),
+ * así que aquí pueden escribirse en cualquier orden.
+ * -----------------------------------------------------------------
+ */
+const VOCABULARIO = [
+  { termino:"Absolutismo", definicion:"Sistema político propio del Antiguo Régimen en el que el rey concentraba todo el poder sin límites legales ni control parlamentario, por considerarse su autoridad de origen divino." },
+  { termino:"Anacronismo", definicion:"Error que consiste en situar una persona, objeto o idea en una época a la que no pertenece, o en juzgar el pasado con las ideas y valores del presente." },
+  { termino:"Anexión", definicion:"Incorporación de un territorio al de otro Estado, ya sea por conquista, compra, acuerdo político o, en muchos casos históricos, sin el consentimiento de su población." },
+  { termino:"Antiguo Régimen", definicion:"Sistema social, político y económico propio de la Europa moderna (s. XVI-XVIII), basado en la monarquía absoluta, la sociedad estamental y una economía mayoritariamente agraria." },
+  { termino:"Apoikía", definicion:"Nombre griego de las colonias fundadas por las polis durante la colonización arcaica; eran ciudades políticamente independientes de su metrópolis, aunque mantenían vínculos religiosos y comerciales con ella." },
+  { termino:"Arqueología", definicion:"Ciencia que estudia las sociedades del pasado a través de sus restos materiales: edificios, objetos, huesos y cualquier huella física que hayan dejado." },
+  { termino:"Armisticio", definicion:"Acuerdo por el que las partes en conflicto suspenden los combates, sin que ello suponga necesariamente el fin oficial de la guerra ni un tratado de paz definitivo." },
+  { termino:"Autarquía", definicion:"Política económica que busca el autoabastecimiento de un país, reduciendo al mínimo su dependencia del comercio exterior; fue característica de regímenes como la primera etapa del franquismo." },
+  { termino:"Beneficio (feudal)", definicion:"Tierra o cargo que un señor entregaba a su vasallo a cambio de sus servicios, sobre todo militares, dentro del sistema feudal." },
+  { termino:"Bipedestación", definicion:"Capacidad de caminar erguido sobre dos piernas; fue una de las primeras adaptaciones que distinguieron a los homínidos de otros primates." },
+  { termino:"Burguesía", definicion:"Clase social urbana dedicada al comercio, la industria y las profesiones liberales, que fue ganando peso económico y político desde la Edad Media hasta liderar las revoluciones liberales del siglo XIX." },
+  { termino:"Califato", definicion:"Territorio y forma de gobierno de los musulmanes bajo la autoridad de un califa, considerado sucesor político y religioso del profeta Mahoma." },
+  { termino:"Capitalismo", definicion:"Sistema económico basado en la propiedad privada de los medios de producción, la libre empresa y el mercado como mecanismo principal para asignar los recursos." },
+  { termino:"Capitulación", definicion:"Acuerdo o contrato, habitual en la conquista de América, mediante el cual la Corona autorizaba a un particular a explorar o conquistar un territorio a cambio de una parte de los beneficios." },
+  { termino:"Colonialismo", definicion:"Sistema de dominio político, económico y cultural que una potencia ejerce sobre un territorio y una población extranjeros, explotando sus recursos y subordinando sus instituciones." },
+  { termino:"Comunismo", definicion:"Ideología y sistema político que defiende la abolición de la propiedad privada de los medios de producción y una sociedad sin clases sociales, con la propiedad colectiva como base económica." },
+  { termino:"Constitución", definicion:"Ley fundamental de un Estado, que organiza sus poderes y reconoce los derechos de la ciudadanía; en España, la primera constitución fue la de Cádiz, de 1812." },
+  { termino:"Contrarreforma", definicion:"Movimiento de renovación de la Iglesia católica, impulsado sobre todo a partir del Concilio de Trento (1545-1563), como respuesta al avance de la Reforma protestante." },
+  { termino:"Corsario", definicion:"Marino autorizado por su gobierno mediante una 'patente de corso' para atacar y saquear barcos de países enemigos, a diferencia del pirata, que actuaba por cuenta propia y al margen de la ley." },
+  { termino:"Cronología", definicion:"Ciencia auxiliar de la historia que ordena los hechos históricos en el tiempo, situándolos en su fecha o periodo correspondiente." },
+  { termino:"Cruzada", definicion:"Expedición militar convocada por el papado, entre los siglos XI y XIII, con el objetivo declarado de recuperar Tierra Santa para la cristiandad." },
+  { termino:"Cuneiforme", definicion:"Sistema de escritura mesopotámico, uno de los más antiguos conocidos, formado por marcas en forma de cuña impresas sobre tablillas de arcilla." },
+  { termino:"Democracia", definicion:"Sistema político en el que el poder reside en el conjunto de la ciudadanía, que lo ejerce de forma directa o a través de representantes elegidos; nació en la antigua Atenas, aunque con una participación mucho más restringida que la actual." },
+  { termino:"Descolonización", definicion:"Proceso histórico, especialmente intenso entre 1945 y 1975, por el cual las antiguas colonias africanas y asiáticas alcanzaron su independencia política de las metrópolis europeas." },
+  { termino:"Diáspora", definicion:"Dispersión de un pueblo por distintos territorios, lejos de su lugar de origen, generalmente de forma forzada; el término se aplica clásicamente a la dispersión del pueblo judío." },
+  { termino:"Diádoco", definicion:"Cada uno de los generales de Alejandro Magno que, tras su muerte en 323 a.C., se repartieron su imperio y fundaron los reinos helenísticos." },
+  { termino:"Edad Antigua", definicion:"Periodo histórico que abarca, aproximadamente, desde la aparición de la escritura (c. 3300 a.C.) hasta la caída del Imperio romano de Occidente (476 d.C.)." },
+  { termino:"Edad Contemporánea", definicion:"Periodo histórico que se extiende desde la Revolución francesa (1789) hasta la actualidad." },
+  { termino:"Edad de los Metales", definicion:"Etapa final de la Prehistoria, posterior al Neolítico, caracterizada por el uso progresivo del cobre, el bronce y el hierro para fabricar herramientas y armas." },
+  { termino:"Edad Media", definicion:"Periodo histórico comprendido, de forma convencional, entre la caída del Imperio romano de Occidente (476) y la caída de Constantinopla (1453) o el descubrimiento de América (1492)." },
+  { termino:"Edad Moderna", definicion:"Periodo histórico situado entre el final de la Edad Media (s. XV) y el inicio de la Edad Contemporánea (1789), marcado por el Renacimiento, los descubrimientos geográficos y el Antiguo Régimen." },
+  { termino:"Emirato", definicion:"Territorio gobernado por un emir, título musulmán que designa a un gobernante político y militar; Córdoba fue emirato dependiente de Damasco antes de convertirse en califato independiente." },
+  { termino:"Estamento", definicion:"Cada uno de los grupos sociales cerrados y jerárquicos de la sociedad del Antiguo Régimen (nobleza, clero y estado llano), a los que se pertenecía por nacimiento y no por mérito o riqueza." },
+  { termino:"Fascismo", definicion:"Ideología y movimiento político totalitario, nacionalista y antidemocrático surgido en Europa tras la Primera Guerra Mundial, cuyo ejemplo de origen es la Italia de Mussolini." },
+  { termino:"Feudalismo", definicion:"Sistema de organización social, política y económica propio de buena parte de la Europa medieval, basado en la relación de vasallaje entre señores y vasallos y en el trabajo de los campesinos sobre la tierra." },
+  { termino:"Fuente histórica", definicion:"Cualquier resto, documento, testimonio u objeto que permite al historiador reconstruir y conocer el pasado." },
+  { termino:"Fuente primaria", definicion:"Fuente histórica producida en la misma época del hecho que documenta, por quienes lo vivieron o presenciaron directamente (documentos de archivo, restos arqueológicos, testimonios directos)." },
+  { termino:"Fuente secundaria", definicion:"Trabajo que interpreta, analiza o resume fuentes primarias, elaborado por historiadores con posterioridad a los hechos que estudia (libros de historia, artículos académicos)." },
+  { termino:"Fuero", definicion:"Conjunto de leyes y privilegios concedidos, en la España medieval, a un territorio, ciudad o grupo social determinado." },
+  { termino:"Genocidio", definicion:"Exterminio sistemático y deliberado de un grupo humano por motivos de nacionalidad, etnia, religión u otra característica que lo identifique como colectivo." },
+  { termino:"Golpe de Estado", definicion:"Toma ilegal y por la fuerza del poder político de un Estado, habitualmente protagonizada por las fuerzas armadas u otro sector del propio aparato del Estado." },
+  { termino:"Gremio", definicion:"Asociación medieval y moderna de artesanos de un mismo oficio, que regulaba la producción, los precios y la formación de nuevos maestros en su ciudad." },
+  { termino:"Guerra Fría", definicion:"Periodo de tensión y enfrentamiento indirecto, sin guerra abierta entre las dos superpotencias, que dividió al mundo entre el bloque capitalista, liderado por Estados Unidos, y el comunista, liderado por la URSS, entre 1947 y 1991." },
+  { termino:"Helenismo", definicion:"Periodo y cultura surgidos tras las conquistas de Alejandro Magno, caracterizados por la difusión y fusión de la cultura griega con las tradiciones de Oriente Próximo, Egipto y Asia central." },
+  { termino:"Historiografía", definicion:"Estudio de cómo se ha escrito la historia a lo largo del tiempo: sus métodos, sus corrientes de interpretación y las obras producidas por los historiadores." },
+  { termino:"Homenaje (feudal)", definicion:"Ceremonia por la que un vasallo juraba fidelidad a su señor, comprometiéndose a servirle a cambio de protección y de un beneficio, normalmente tierras." },
+  { termino:"Homo sapiens", definicion:"Especie a la que pertenecemos los seres humanos actuales; surgió en África hace unos 300.000 años y es la única especie humana que sobrevive hoy." },
+  { termino:"Humanismo", definicion:"Movimiento cultural e intelectual del Renacimiento que situaba al ser humano, y no solo a Dios, en el centro del pensamiento, recuperando el interés por los autores clásicos grecolatinos." },
+  { termino:"Ilustración", definicion:"Movimiento intelectual del siglo XVIII que defendía la razón, la ciencia y el espíritu crítico frente a la tradición y la autoridad, y que preparó ideológicamente las revoluciones liberales." },
+  { termino:"Imperialismo", definicion:"Política de expansión de una potencia sobre otros territorios mediante el dominio político, militar o económico, especialmente intensa entre 1870 y 1914 durante el reparto colonial de África y Asia." },
+  { termino:"Industrialización", definicion:"Proceso de transformación de una economía agraria en otra basada en la producción industrial mecanizada, iniciado en Gran Bretaña a finales del siglo XVIII con la Revolución Industrial." },
+  { termino:"Investidura (feudal)", definicion:"Acto por el que un señor entregaba formalmente a su vasallo el feudo o beneficio, tras el homenaje y el juramento de fidelidad." },
+  { termino:"Jeroglífico", definicion:"Sistema de escritura del antiguo Egipto que combina signos con valor de dibujo (ideogramas) y signos con valor sonoro (fonogramas)." },
+  { termino:"Legión", definicion:"Unidad militar básica del ejército romano, formada por varios miles de soldados de infantería (legionarios), organizada en cohortes y centurias." },
+  { termino:"Liberalismo", definicion:"Ideología política y económica surgida en los siglos XVIII-XIX que defiende las libertades individuales, la división de poderes, el sufragio y la limitación del poder del Estado frente al del Antiguo Régimen." },
+  { termino:"Megalito", definicion:"Monumento prehistórico construido con grandes bloques de piedra, como los dólmenes o los menhires, propio del Neolítico y la Edad de los Metales." },
+  { termino:"Mercantilismo", definicion:"Doctrina económica dominante en la Europa moderna que identificaba la riqueza de un Estado con la acumulación de metales preciosos y defendía un comercio favorable a la metrópolis frente a sus colonias." },
+  { termino:"Mesopotamia", definicion:"Región histórica situada entre los ríos Tigris y Éufrates, en el actual Irak, cuna de algunas de las primeras civilizaciones urbanas de la humanidad, como Sumeria, Babilonia o Asiria." },
+  { termino:"Metrópoli", definicion:"Ciudad o Estado que funda y ejerce autoridad sobre una colonia; en la Grecia antigua, la ciudad de origen de los colonos que fundaban una apoikía." },
+  { termino:"Milenio", definicion:"Periodo de tiempo equivalente a mil años, usado habitualmente para agrupar procesos históricos de muy larga duración, como el desarrollo de las primeras civilizaciones." },
+  { termino:"Monacato", definicion:"Forma de vida religiosa basada en el retiro del mundo y la vida en comunidad (o en soledad) dedicada a la oración y, en la Edad Media, también al trabajo agrícola y a la copia de manuscritos." },
+  { termino:"Movimiento obrero", definicion:"Conjunto de organizaciones (sindicatos, partidos) y luchas protagonizadas por la clase trabajadora desde el siglo XIX para mejorar sus condiciones laborales y conquistar derechos sociales y políticos." },
+  { termino:"Mozárabe", definicion:"Cristiano que vivía en territorio de Al-Ándalus bajo dominio musulmán, conservando su religión y parte de su organización social a cambio del pago de tributos." },
+  { termino:"Mudéjar", definicion:"Musulmán que permaneció viviendo en los territorios conquistados por los reinos cristianos durante la Reconquista, conservando su religión bajo determinadas condiciones." },
+  { termino:"Nacionalismo", definicion:"Ideología que defiende la existencia de una nación con identidad, cultura e historia propias, y que reivindica para ella algún grado de autogobierno o la independencia política." },
+  { termino:"Neolítico", definicion:"Etapa de la Prehistoria iniciada hace unos 10.000-12.000 años, caracterizada por la aparición de la agricultura, la ganadería, la sedentarización y la cerámica." },
+  { termino:"Nomadismo", definicion:"Forma de vida basada en el desplazamiento continuo de un grupo humano, sin asentamiento fijo, típica de las sociedades cazadoras-recolectoras del Paleolítico." },
+  { termino:"Oligarquía", definicion:"Forma de gobierno en la que el poder político está en manos de un grupo reducido de personas, generalmente por su riqueza o su posición social." },
+  { termino:"Paleografía", definicion:"Ciencia auxiliar de la historia que estudia la evolución de la escritura antigua para leer, datar y analizar documentos históricos." },
+  { termino:"Paleolítico", definicion:"Periodo más largo de la Prehistoria, caracterizado por el uso de herramientas de piedra tallada y una economía basada en la caza, la pesca y la recolección." },
+  { termino:"Parias", definicion:"Tributos que, durante la Reconquista, los reinos musulmanes de Al-Ándalus pagaban a los reinos cristianos a cambio de paz o protección." },
+  { termino:"Patricio", definicion:"Miembro de la clase social alta y privilegiada de la antigua Roma, con derecho a ocupar los principales cargos políticos y religiosos, en contraste con los plebeyos." },
+  { termino:"Peste Negra", definicion:"Gran epidemia de peste bubónica que asoló Europa entre 1347 y 1351, causando la muerte de un tercio de su población aproximadamente y provocando una profunda crisis demográfica, económica y social." },
+  { termino:"Plebeyo", definicion:"Ciudadano romano perteneciente a la clase popular, sin los privilegios políticos y sociales reservados originalmente a los patricios." },
+  { termino:"Polis", definicion:"Ciudad-Estado de la antigua Grecia, unidad política básica e independiente formada por una ciudad y su territorio circundante, como Atenas o Esparta." },
+  { termino:"Politeísmo", definicion:"Creencia religiosa en la existencia de varios dioses, propia de casi todas las civilizaciones antiguas (Egipto, Grecia, Roma, Mesopotamia) frente al monoteísmo." },
+  { termino:"Prehistoria", definicion:"Periodo más largo de la historia humana, anterior a la invención de la escritura, que se estudia principalmente a través de restos arqueológicos." },
+  { termino:"Proletariado", definicion:"Clase social formada por los trabajadores asalariados que, sin ser propietarios de medios de producción, venden su fuerza de trabajo a cambio de un salario; concepto central en el análisis marxista de la sociedad industrial." },
+  { termino:"Reconquista", definicion:"Proceso histórico, entre los siglos VIII y XV, por el que los reinos cristianos del norte de la península ibérica fueron ocupando los territorios de Al-Ándalus, culminado con la toma de Granada en 1492." },
+  { termino:"Reforma protestante", definicion:"Movimiento religioso iniciado por Martín Lutero en 1517 que rompió la unidad de la Iglesia católica en Europa occidental y dio lugar a las distintas iglesias protestantes." },
+  { termino:"Refugiado", definicion:"Persona que se ve obligada a abandonar su país por temor a sufrir persecución, violencia o guerra, y que busca protección en otro Estado." },
+  { termino:"Renacimiento", definicion:"Movimiento cultural y artístico europeo, iniciado en Italia en el siglo XV, que recuperó los modelos estéticos de la antigüedad clásica grecorromana." },
+  { termino:"Revolución Industrial", definicion:"Proceso de transformación económica y social, iniciado en Gran Bretaña a finales del siglo XVIII, basado en la mecanización de la producción, el uso del carbón y la máquina de vapor, y el crecimiento de las fábricas." },
+  { termino:"Senado", definicion:"Institución política de la antigua Roma formada por los patricios de mayor prestigio, con gran influencia sobre el gobierno tanto en la República como, de forma más simbólica, en el Imperio." },
+  { termino:"Señorío", definicion:"Territorio y conjunto de derechos que un señor feudal ejercía sobre unas tierras y sobre los campesinos que las trabajaban." },
+  { termino:"Sindicato", definicion:"Organización formada por trabajadores para defender colectivamente sus intereses laborales frente a los empresarios, especialmente activa desde la Revolución Industrial." },
+  { termino:"Socialismo", definicion:"Ideología y movimiento político que propone superar las desigualdades del capitalismo mediante una mayor intervención del Estado y de la colectividad en la economía y la propiedad." },
+  { termino:"Sufragio universal", definicion:"Derecho al voto reconocido a toda la ciudadanía adulta, sin restricciones de renta, sexo o nivel de estudios; en España, el sufragio universal masculino llegó en 1890 y el femenino en 1931." },
+  { termino:"Taifa", definicion:"Cada uno de los pequeños reinos musulmanes independientes en que se fragmentó Al-Ándalus tras la desaparición del califato de Córdoba en 1031." },
+  { termino:"Tirano", definicion:"En la antigua Grecia, gobernante que accedía al poder de forma no hereditaria, a menudo con apoyo popular, y lo ejercía de manera personal y absoluta, sin la connotación exclusivamente negativa que tiene hoy la palabra." },
+  { termino:"Totalitarismo", definicion:"Sistema político que busca el control absoluto de todos los aspectos de la vida social, económica y cultural de un país, sin admitir oposición ni pluralismo; el fascismo, el nazismo y el estalinismo son ejemplos históricos." },
+  { termino:"Vasallaje", definicion:"Vínculo de dependencia personal propio del feudalismo por el cual un vasallo se comprometía a servir y ser fiel a un señor a cambio de protección y de un beneficio." },
+  { termino:"Vasallo", definicion:"Persona que, mediante el homenaje, se comprometía a servir a un señor feudal a cambio de protección y de recibir un beneficio, normalmente tierras." },
+  { termino:"Virreinato", definicion:"Territorio del imperio español en América y Asia gobernado en nombre del rey por un virrey, su máximo representante; los principales fueron Nueva España, Perú, Nueva Granada y Río de la Plata." },
+  { termino:"Yihad", definicion:"Concepto islámico que significa 'esfuerzo' y que puede referirse tanto al esfuerzo espiritual personal como, en su sentido más conocido en Occidente, a la guerra en defensa o expansión del islam." },
+
+  { termino:"Abadía", definicion:"Monasterio gobernado por un abad o una abadesa, centro de vida religiosa y, en la Edad Media, también de producción agrícola, copia de manuscritos y conservación del saber." },
+  { termino:"Acueducto", definicion:"Construcción de ingeniería romana destinada a transportar agua, a menudo mediante arcadas de piedra, desde manantiales lejanos hasta las ciudades." },
+  { termino:"Alquimia", definicion:"Práctica precientífica, muy extendida en la Edad Media, que buscaba transformar metales comunes en oro y hallar el elixir de la vida eterna; precedente histórico de la química moderna." },
+  { termino:"Anarquismo", definicion:"Ideología política que defiende la abolición de todo Estado y autoridad impuesta, organizando la sociedad mediante la cooperación libre y voluntaria entre las personas." },
+  { termino:"Anfiteatro", definicion:"Edificio de planta ovalada propio de la arquitectura romana, destinado a espectáculos públicos como los combates de gladiadores; el Coliseo de Roma es el más célebre." },
+  { termino:"Antisemitismo", definicion:"Hostilidad, prejuicio o discriminación dirigidos contra el pueblo judío, presente a lo largo de la historia y que alcanzó su expresión más extrema en el Holocausto nazi." },
+  { termino:"Astrolabio", definicion:"Instrumento astronómico usado desde la Antigüedad y perfeccionado en el mundo islámico medieval para determinar la posición de los astros, la hora y, en navegación, la latitud." },
+  { termino:"Burgo", definicion:"Núcleo urbano medieval, a menudo surgido junto a un castillo, un monasterio o una ruta comercial, habitado por comerciantes y artesanos (los burgueses) con cierta autonomía respecto al señor feudal." },
+  { termino:"Colonato", definicion:"Sistema de explotación agrícola del Bajo Imperio romano en el que los colonos, campesinos libres pero atados a la tierra que trabajaban, anticipan algunos rasgos de la futura servidumbre feudal." },
+  { termino:"Concilio", definicion:"Asamblea de obispos y otras autoridades de la Iglesia católica convocada para tratar cuestiones de doctrina, disciplina o gobierno eclesiástico; el de Trento (s. XVI) fue clave en la Contrarreforma." },
+  { termino:"Cortes (parlamento)", definicion:"Asamblea de representantes de los distintos estamentos (nobleza, clero y ciudades) que, en los reinos medievales hispánicos, podía asesorar al rey y, en ocasiones, aprobar impuestos." },
+  { termino:"Desamortización", definicion:"Proceso, especialmente intenso en la España del siglo XIX, por el cual el Estado expropiaba y ponía a la venta tierras y bienes en manos 'muertas' (la Iglesia, los municipios) que no podían venderse libremente." },
+  { termino:"Despotismo ilustrado", definicion:"Forma de gobierno del siglo XVIII en la que monarcas absolutos adoptaban algunas ideas de la Ilustración para modernizar el Estado, sin renunciar a su poder absoluto ('todo para el pueblo, pero sin el pueblo')." },
+  { termino:"Diezmo", definicion:"Tributo, habitualmente la décima parte de la cosecha o de las ganancias, que los fieles debían entregar a la Iglesia en la Edad Media y la Edad Moderna." },
+  { termino:"Encomienda", definicion:"Institución de la América colonial española por la que un colono (encomendero) recibía el trabajo y los tributos de un grupo de indígenas, a cambio, en teoría, de protegerlos y evangelizarlos; en la práctica derivó a menudo en un sistema de explotación abusiva." },
+  { termino:"Escolástica", definicion:"Método de pensamiento filosófico y teológico dominante en las universidades medievales, que buscaba conciliar la razón (especialmente la filosofía de Aristóteles) con la fe cristiana." },
+  { termino:"Estado del bienestar", definicion:"Modelo de organización política y económica en el que el Estado garantiza servicios sociales básicos (sanidad, educación, pensiones) a toda la ciudadanía, desarrollado en Europa occidental sobre todo tras la Segunda Guerra Mundial." },
+  { termino:"Excomunión", definicion:"Sanción eclesiástica por la que la Iglesia católica expulsaba a una persona de la comunidad de los fieles, privándola de los sacramentos; en la Edad Media tenía también enormes consecuencias políticas y sociales." },
+  { termino:"Falange (militar)", definicion:"Formación de combate de la antigua Grecia, especialmente de Esparta y Macedonia, en la que los soldados de infantería pesada (hoplitas) luchaban en bloque compacto, protegidos por sus escudos y largas lanzas." },
+  { termino:"Foro romano", definicion:"Plaza pública en el centro de las ciudades romanas, sede de los principales edificios políticos, religiosos y comerciales, y escenario de la vida pública y del debate político." },
+  { termino:"Globalización", definicion:"Proceso de creciente interconexión económica, política, tecnológica y cultural entre los distintos países del mundo, especialmente intenso desde finales del siglo XX." },
+  { termino:"Guerra de guerrillas", definicion:"Forma de combate irregular, basada en ataques rápidos y sorpresivos de pequeños grupos armados frente a un ejército convencional más numeroso, empleada, por ejemplo, contra la ocupación napoleónica en España." },
+  { termino:"Guerra fría (concepto)", definicion:"Situación de tensión y enfrentamiento indirecto entre dos potencias o bloques que, pese a la hostilidad, evitan el enfrentamiento militar directo entre ellas." },
+  { termino:"Herejía", definicion:"Doctrina religiosa que se aparta de lo establecido como ortodoxo por la Iglesia católica; su persecución dio lugar, entre otras instituciones, a la Inquisición medieval y moderna." },
+  { termino:"Hoplita", definicion:"Soldado de infantería pesada de la antigua Grecia, armado con lanza, espada corta y un gran escudo redondo (hoplón), que combatía formando la falange." },
+  { termino:"Iconoclastia", definicion:"Movimiento y política, especialmente intensos en el Imperio bizantino durante los siglos VIII y IX, contrarios al uso religioso de imágenes sagradas (iconos), que llegaron a destruirse." },
+  { termino:"Imperio", definicion:"Forma de organización política en la que un único poder central gobierna sobre territorios y pueblos muy extensos y diversos, a menudo conquistados por la fuerza; ejemplos históricos van del Imperio romano al británico." },
+  { termino:"Indulgencia", definicion:"En la doctrina católica medieval y moderna, remisión de la pena por los pecados que la Iglesia podía conceder; su venta abusiva fue una de las causas inmediatas de la Reforma protestante de Lutero." },
+  { termino:"Jacobino", definicion:"Miembro del club político más radical de la Revolución francesa, partidario de medidas revolucionarias enérgicas; por extensión, se usa para designar posturas políticas revolucionarias intransigentes." },
+  { termino:"Juglar", definicion:"Artista ambulante de la Edad Media que recitaba, cantaba o representaba obras (a menudo compuestas por los trovadores) ante todo tipo de público, de las cortes a las plazas de los pueblos." },
+  { termino:"Latifundio", definicion:"Gran propiedad agrícola, característica de ciertas regiones desde la Antigüedad romana hasta la España contemporánea, cuya explotación extensiva ha sido objeto histórico de debate sobre reformas agrarias." },
+  { termino:"Mercenario", definicion:"Soldado que combate a cambio de un pago, sin vínculo de lealtad nacional o política con quien lo contrata; muy habituales en los ejércitos de la Edad Media y la Edad Moderna." },
+  { termino:"Mesías", definicion:"En las tradiciones judía y cristiana, figura enviada por Dios para liberar y salvar al pueblo; los cristianos identifican al Mesías con Jesús de Nazaret." },
+  { termino:"Mestizaje", definicion:"Mezcla biológica y cultural entre distintos grupos humanos, especialmente relevante en la América colonial tras el contacto entre europeos, indígenas americanos y población africana esclavizada." },
+  { termino:"Milicia", definicion:"Cuerpo armado formado por ciudadanos no profesionales, movilizado en momentos de necesidad, a diferencia de un ejército permanente y profesional." },
+  { termino:"Momificación", definicion:"Técnica del antiguo Egipto para preservar el cuerpo de los difuntos, basada en la extracción de órganos y la desecación con natrón, ligada a la creencia en la vida después de la muerte." },
+  { termino:"Nazismo", definicion:"Ideología y régimen totalitario, racista y antisemita liderado por Adolf Hitler en Alemania entre 1933 y 1945, causante de la Segunda Guerra Mundial y del Holocausto." },
+  { termino:"Ostracismo", definicion:"Procedimiento de la democracia ateniense por el cual la asamblea ciudadana podía votar el destierro temporal, durante diez años, de un ciudadano considerado peligroso para la estabilidad de la polis." },
+  { termino:"Panteísmo", definicion:"Creencia religiosa o filosófica que identifica a Dios con la totalidad del universo y la naturaleza, en lugar de concebirlo como un ser personal separado del mundo." },
+  { termino:"Papado", definicion:"Institución y autoridad del papa como cabeza de la Iglesia católica, con enorme influencia política además de religiosa a lo largo de la Edad Media y la Edad Moderna europeas." },
+  { termino:"Patriarcado", definicion:"Sistema social en el que la autoridad y el poder —familiar, económico, político— recaen principalmente en los varones, dominante en la mayoría de las sociedades históricas hasta épocas recientes." },
+  { termino:"Peregrinación", definicion:"Viaje realizado por motivos religiosos hacia un lugar sagrado; el Camino de Santiago, Roma y Jerusalén fueron los principales destinos de peregrinación de la Europa medieval." },
+  { termino:"Populismo", definicion:"Estilo y estrategia política que apela directamente al 'pueblo' frente a las élites, presentando la política como un enfrentamiento simplificado entre ambos; puede darse tanto en movimientos de izquierda como de derecha." },
+  { termino:"Pretor", definicion:"Magistrado de la antigua Roma, situado por debajo del cónsul, encargado principalmente de la administración de justicia, tanto en la República como, con funciones distintas, en el Imperio." },
+  { termino:"Propaganda (política)", definicion:"Conjunto de técnicas de comunicación destinadas a difundir una idea, ideología o régimen político, influyendo en la opinión pública; alcanzó un desarrollo sin precedentes con los totalitarismos del siglo XX." },
+  { termino:"Reconversión industrial", definicion:"Proceso de transformación y reducción de sectores industriales tradicionales (minería, siderurgia, naval) considerados poco competitivos, especialmente relevante en la España de los años 80." },
+  { termino:"Sátrapa", definicion:"Gobernador de una provincia (satrapía) del Imperio persa aqueménida, con amplios poderes administrativos, militares y fiscales delegados por el rey." },
+  { termino:"Servidumbre", definicion:"Condición del siervo medieval, campesino que, sin ser esclavo, estaba sujeto a la tierra y a la autoridad de un señor feudal, con obligaciones y restricciones sobre su libertad personal." },
+  { termino:"Simonía", definicion:"Compraventa de cargos, sacramentos o bienes espirituales dentro de la Iglesia, práctica condenada como pecado grave y combatida especialmente durante las reformas eclesiásticas medievales." },
+  { termino:"Sindicalismo", definicion:"Movimiento y doctrina que defiende la organización de los trabajadores en sindicatos como principal herramienta para mejorar sus condiciones laborales y transformar la sociedad." },
+  { termino:"Sufragista", definicion:"Persona, especialmente mujer, que a finales del siglo XIX y principios del XX defendió activamente el derecho de las mujeres al voto; el movimiento sufragista fue clave para lograr el sufragio femenino en numerosos países." },
+  { termino:"Tecnocracia", definicion:"Forma de gobierno o gestión en la que los cargos de responsabilidad recaen en expertos técnicos más que en políticos electos, en nombre de una gestión pretendidamente más eficaz y menos ideológica." },
+  { termino:"Terrorismo", definicion:"Uso sistemático de la violencia contra la población civil con fines políticos, religiosos o ideológicos, buscando generar miedo generalizado para presionar a gobiernos o sociedades." },
+  { termino:"Trovador", definicion:"Poeta y compositor de la Europa medieval, sobre todo en el sur de Francia, autor de composiciones líricas —a menudo de amor cortés— que después difundían los juglares." },
+  { termino:"Zigurat", definicion:"Templo escalonado en forma de pirámide construido en las ciudades de Mesopotamia, dedicado a las divinidades locales y considerado un punto de unión simbólico entre la tierra y el cielo." }
+];
+
+if (typeof module !== "undefined") { module.exports = { COMMONS_BASE, ERAS, VOCABULARIO }; }
+
+
+/* ============== NAV: ERAS Y PÍLDORAS ============== */
+const eraTabsEl = document.getElementById('eraTabs');
+const itemPillsEl = document.getElementById('itemPills');
+const plateHost = document.getElementById('plateHost');
+
+let eraActivaId = ERAS[0].id;
+let itemActivoId = ERAS[0].items[0].id;
+let modoVocabulario = false;
+
+function findEra(id){ return ERAS.find(e=>e.id===id); }
+function findItem(eraId, itemId){ return findEra(eraId).items.find(i=>i.id===itemId); }
+
+function buildEraTabs(){
+  eraTabsEl.innerHTML = '';
+  ERAS.forEach(era=>{
+    const btn = document.createElement('button');
+    btn.className = 'era-tab' + (!modoVocabulario && era.id===eraActivaId ? ' active' : '');
+    btn.style.setProperty('--era', era.accent);
+    btn.innerHTML = '<span class="dot" style="background:'+era.accent+';"></span>'+era.nombre;
+    btn.addEventListener('click', ()=>{
+      modoVocabulario = false;
+      eraActivaId = era.id;
+      itemActivoId = era.items[0].id;
+      render();
+    });
+    eraTabsEl.appendChild(btn);
+  });
+  const vocabBtn = document.createElement('button');
+  vocabBtn.className = 'era-tab vocab-tab' + (modoVocabulario ? ' active' : '');
+  vocabBtn.innerHTML = '<span class="dot" style="background:#a48fc4;"></span>📖 Vocabulario';
+  vocabBtn.addEventListener('click', ()=>{ modoVocabulario = true; render(); });
+  eraTabsEl.appendChild(vocabBtn);
+}
+
+function buildItemPills(){
+  itemPillsEl.innerHTML = '';
+  if(modoVocabulario){ itemPillsEl.style.display = 'none'; return; }
+  itemPillsEl.style.display = '';
+  const era = findEra(eraActivaId);
+  document.documentElement.style.setProperty('--era', era.accent);
+  era.items.forEach((it,i)=>{
+    const pill = document.createElement('div');
+    pill.className = 'item-pill' + (it.id===itemActivoId ? ' active' : '');
+    pill.innerHTML = '<span class="n">'+String(i+1).padStart(2,'0')+'</span>'+it.titulo;
+    pill.addEventListener('click', ()=>{ itemActivoId = it.id; render(); });
+    itemPillsEl.appendChild(pill);
+  });
+}
+
+/* ============== VOCABULARIO (alfabético, con buscador) ============== */
+function renderVocabulario(){
+  const ordenado = VOCABULARIO.slice().sort((a,b)=> a.termino.localeCompare(b.termino, 'es'));
+
+  plateHost.innerHTML =
+    '<div class="plate">'+
+      '<div class="plate-hero">'+
+        '<p class="plate-eyebrow" style="color:#a48fc4;">Vocabulario · '+ordenado.length+' términos</p>'+
+        '<h2 class="plate-title">Vocabulario Histórico</h2>'+
+      '</div>'+
+      '<div style="padding:22px 26px;">'+
+        '<div class="vocab-search-wrap">'+
+          '<input type="text" class="vocab-search" id="vocabSearch" placeholder="Buscar un término (p. ej. feudalismo, ilustración…)">'+
+          '<p class="vocab-count" id="vocabCount"></p>'+
+        '</div>'+
+        '<dl class="vocab-list" id="vocabList"></dl>'+
+        '<p class="vocab-source">Definiciones propias, redactadas para nivel ESO a partir de varias fuentes de acceso libre: <b>Wikipedia en español</b> ("Anexo:Glosario de Historia", licencia CC BY-SA 4.0) y <b>Wikcionario en español</b> (CC BY-SA 4.0). No es una copia literal de esas fuentes, sino una redacción original que las referencia y funde con conocimiento histórico general.</p>'+
+      '</div>'+
+    '</div>';
+
+  const listEl = document.getElementById('vocabList');
+  const countEl = document.getElementById('vocabCount');
+  const searchEl = document.getElementById('vocabSearch');
+
+  function paint(filtro){
+    const f = (filtro||'').trim().toLowerCase();
+    const filtrados = f
+      ? ordenado.filter(v => v.termino.toLowerCase().includes(f) || v.definicion.toLowerCase().includes(f))
+      : ordenado;
+
+    if(filtrados.length === 0){
+      listEl.innerHTML = '';
+      countEl.textContent = '';
+      listEl.insertAdjacentHTML('afterend', '');
+      listEl.innerHTML = '<div class="vocab-empty">Ningún término coincide con «'+filtro+'».</div>';
+      return;
+    }
+    countEl.textContent = f ? filtrados.length+' resultado(s)' : ordenado.length+' términos en total';
+
+    let html = '';
+    let letraActual = '';
+    filtrados.forEach(v=>{
+      const letra = v.termino.charAt(0).toUpperCase();
+      if(letra !== letraActual){
+        letraActual = letra;
+        html += '<div class="vocab-letter-group"><div class="vocab-letter-head">'+letra+'</div>';
+      }
+      html += '<div class="vocab-term"><dt>'+v.termino+'</dt><dd>'+v.definicion+'</dd></div>';
+    });
+    listEl.innerHTML = html;
+  }
+
+  paint('');
+  searchEl.addEventListener('input', ()=> paint(searchEl.value));
+}
+
+/* ============== INFOGRAFÍAS PROPIAS (SVG original, sin dependencias) ============== */
+function buildInfografiaSVG(id, accent){
+  if(id === 'cronologia_antigua') return svgCronologiaAntigua();
+  if(id === 'estamentos_antiguo_regimen') return svgEstamentos(accent);
+  if(id === 'ampliacion_ue') return svgAmpliacionUE(accent);
+  if(id === 'cronologia_conflictos') return svgCronologiaConflictos(accent);
+  return '<svg viewBox="0 0 400 200"><text x="20" y="100" fill="#f6efdc">Infografía no disponible</text></svg>';
+}
+
+function buildLineaTiempoParaItem(item, accent){
+  return svgLineaTiempo(item.eventos, accent, item.escalaLineal !== false);
+}
+
+function svgCronologiaAntigua(){
+  const w=900, h=340, padL=125, padR=25, padT=30, padB=46;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const yMin=-3600, yMax=600, range=yMax-yMin;
+  function x(year){ return padL + (year-yMin)/range*plotW; }
+  const rowH = plotH/4;
+  function rowY(i){ return padT + i*rowH; }
+  const barH = rowH*0.5;
+
+  const COL_MESO='#a8842c', COL_EGIPTO='#c9a13a', COL_GRECIA1='#8fae6f', COL_GRECIA2='#5f8f4a', COL_GRECIA3='#3c6b2e', COL_ROMA1='#e3a86b', COL_ROMA2='#c9762f', COL_ROMA3='#a3491c';
+
+  let grid='', labels='';
+  for(let yr=-3500; yr<=500; yr+=500){
+    const gx = x(yr);
+    const isZero = yr===0;
+    grid += '<line x1="'+gx.toFixed(1)+'" y1="'+padT+'" x2="'+gx.toFixed(1)+'" y2="'+(padT+plotH)+'" stroke="'+(isZero?'rgba(246,239,220,0.45)':'rgba(246,239,220,0.12)')+'" stroke-width="'+(isZero?1.4:1)+'"/>';
+    const lbl = yr===0 ? '0' : (yr<0 ? Math.abs(yr)+' a.C.' : yr+' d.C.');
+    labels += '<text x="'+gx.toFixed(1)+'" y="'+(padT+plotH+18)+'" font-size="10" text-anchor="middle" fill="#a9b6c2" font-family="Courier New, monospace">'+lbl+'</text>';
+  }
+
+  function bar(y0, y1, rowIdx, color){
+    const bx0=x(y0), bx1=x(y1), by=rowY(rowIdx)+ (rowH-barH)/2;
+    return '<rect x="'+bx0.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+(bx1-bx0).toFixed(1)+'" height="'+barH.toFixed(1)+'" rx="3" fill="'+color+'"/>';
+  }
+  function rowLabel(rowIdx, texto){
+    const ly = rowY(rowIdx) + rowH/2 + 4;
+    return '<text x="'+(padL-12)+'" y="'+ly.toFixed(1)+'" font-size="13" text-anchor="end" fill="#f6efdc" font-family="Georgia, serif" font-weight="700">'+texto+'</text>';
+  }
+
+  let bars = '';
+  bars += bar(-3500,-539,0,COL_MESO) + rowLabel(0,'Mesopotamia');
+  bars += bar(-3100,-30,1,COL_EGIPTO) + rowLabel(1,'Egipto');
+  bars += bar(-1600,-1100,2,COL_GRECIA1) + bar(-1100,-500,2,COL_GRECIA2) + bar(-500,-146,2,COL_GRECIA3) + rowLabel(2,'Grecia');
+  bars += bar(-753,-509,3,COL_ROMA1) + bar(-509,-27,3,COL_ROMA2) + bar(-27,476,3,COL_ROMA3) + rowLabel(3,'Roma');
+
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg">'+grid+bars+labels+'</svg>';
+}
+
+function svgEstamentos(accent){
+  const w=560, h=340;
+  const apexX=280, apexY=24, baseY=300, leftX=50, rightX=510;
+  const line1Y = apexY + (baseY-apexY)*0.15;
+  const line2Y = apexY + (baseY-apexY)*0.30;
+  function edgeX(y, left){
+    const t=(y-apexY)/(baseY-apexY);
+    return left ? apexX+(leftX-apexX)*t : apexX+(rightX-apexX)*t;
+  }
+  const cleroTop = 'M'+apexX+','+apexY+' L'+edgeX(line1Y,false).toFixed(1)+','+line1Y+' L'+edgeX(line1Y,true).toFixed(1)+','+line1Y+' Z';
+  const noblezaMid = 'M'+edgeX(line1Y,true).toFixed(1)+','+line1Y+' L'+edgeX(line1Y,false).toFixed(1)+','+line1Y+' L'+edgeX(line2Y,false).toFixed(1)+','+line2Y+' L'+edgeX(line2Y,true).toFixed(1)+','+line2Y+' Z';
+  const estadoBase = 'M'+edgeX(line2Y,true).toFixed(1)+','+line2Y+' L'+edgeX(line2Y,false).toFixed(1)+','+line2Y+' L'+rightX+','+baseY+' L'+leftX+','+baseY+' Z';
+
+  const labelClero = '<text x="'+apexX+'" y="'+(line1Y-8)+'" font-size="13" text-anchor="middle" fill="#f6efdc" font-family="Georgia, serif" font-weight="700">Clero</text>';
+  const labelNobleza = '<text x="'+apexX+'" y="'+((line1Y+line2Y)/2+5)+'" font-size="13" text-anchor="middle" fill="#f6efdc" font-family="Georgia, serif" font-weight="700">Nobleza</text>';
+  const labelEstado = '<text x="'+apexX+'" y="'+((line2Y+baseY)/2)+'" font-size="15" text-anchor="middle" fill="#20261c" font-family="Georgia, serif" font-weight="700">Estado llano</text>'+
+    '<text x="'+apexX+'" y="'+((line2Y+baseY)/2+22)+'" font-size="11" text-anchor="middle" fill="#20261c" font-family="Courier New, monospace">campesinos · artesanos · burguesía</text>'+
+    '<text x="'+apexX+'" y="'+((line2Y+baseY)/2+38)+'" font-size="11" text-anchor="middle" fill="#20261c" font-family="Courier New, monospace">c. 98% de la población</text>';
+
+  const sideNoteRight = '<text x="'+(rightX+14)+'" y="'+((apexY+line2Y)/2)+'" font-size="11" fill="#a9b6c2" font-family="Courier New, monospace">c. 2% de la</text>'+
+    '<text x="'+(rightX+14)+'" y="'+((apexY+line2Y)/2+14)+'" font-size="11" fill="#a9b6c2" font-family="Courier New, monospace">población,</text>'+
+    '<text x="'+(rightX+14)+'" y="'+((apexY+line2Y)/2+28)+'" font-size="11" fill="#a9b6c2" font-family="Courier New, monospace">privilegiados</text>';
+
+  return '<svg viewBox="0 0 640 '+h+'" xmlns="http://www.w3.org/2000/svg">'+
+    '<path d="'+cleroTop+'" fill="'+accent+'" opacity="0.55"/>'+
+    '<path d="'+noblezaMid+'" fill="'+accent+'" opacity="0.8"/>'+
+    '<path d="'+estadoBase+'" fill="#e9dfc4"/>'+
+    labelClero+labelNobleza+labelEstado+sideNoteRight+
+  '</svg>';
+}
+
+function svgAmpliacionUE(accent){
+  const w=800, h=320, padL=50, padR=30, padT=24, padB=44;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const data = [[1957,6],[1973,9],[1981,10],[1986,12],[1995,15],[2004,25],[2007,27],[2013,28],[2020,27]];
+  const yearMin=1955, yearMax=2022, countMax=30;
+  function x(yr){ return padL + (yr-yearMin)/(yearMax-yearMin)*plotW; }
+  function y(c){ return padT + plotH*(1-c/countMax); }
+
+  let grid='', yLabels='';
+  for(let c=0;c<=countMax;c+=5){
+    const gy=y(c);
+    grid += '<line x1="'+padL+'" y1="'+gy.toFixed(1)+'" x2="'+(padL+plotW)+'" y2="'+gy.toFixed(1)+'" stroke="rgba(246,239,220,0.12)" stroke-width="1"/>';
+    yLabels += '<text x="'+(padL-8)+'" y="'+(gy+3).toFixed(1)+'" font-size="10" text-anchor="end" fill="#a9b6c2" font-family="Courier New, monospace">'+c+'</text>';
+  }
+
+  let stepPath = 'M'+x(data[0][0]).toFixed(1)+','+y(data[0][1]).toFixed(1);
+  let dots='', pointLabels='';
+  for(let i=0;i<data.length;i++){
+    const [yr,c] = data[i];
+    if(i>0){
+      stepPath += ' L'+x(yr).toFixed(1)+','+y(data[i-1][1]).toFixed(1);
+      stepPath += ' L'+x(yr).toFixed(1)+','+y(c).toFixed(1);
+    }
+    const isBrexit = c < (data[i-1] ? data[i-1][1] : c);
+    dots += '<circle cx="'+x(yr).toFixed(1)+'" cy="'+y(c).toFixed(1)+'" r="4.5" fill="'+(isBrexit?'#b9502f':accent)+'"/>';
+    pointLabels += '<text x="'+x(yr).toFixed(1)+'" y="'+(y(c)-11).toFixed(1)+'" font-size="10" text-anchor="middle" fill="#f6efdc" font-family="Courier New, monospace">'+yr+'</text>';
+  }
+  const xLabels = [1957,1973,1986,1995,2004,2013,2020].map(function(yr){
+    return '<text x="'+x(yr).toFixed(1)+'" y="'+(padT+plotH+18)+'" font-size="10" text-anchor="middle" fill="#a9b6c2" font-family="Courier New, monospace">'+yr+'</text>';
+  }).join('');
+
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg">'+
+    grid+
+    '<path d="'+stepPath+'" fill="none" stroke="'+accent+'" stroke-width="2.5"/>'+
+    dots+pointLabels+yLabels+xLabels+
+    '<text x="'+padL+'" y="16" font-size="11" fill="#a9b6c2" font-family="Courier New, monospace">Nº de Estados miembros</text>'+
+  '</svg>';
+}
+
+function svgCronologiaConflictos(accent){
+  const w=900, h=380, padL=210, padR=30, padT=24, padB=40;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const yearMin=1990, yearMax=2027;
+  function x(yr){ return padL + (yr-yearMin)/(yearMax-yearMin)*plotW; }
+  const rows = [
+    { label:'Guerra del Golfo', ini:1990, fin:1991, abierto:false },
+    { label:'Guerras de Yugoslavia', ini:1991, fin:2001, abierto:false },
+    { label:'Guerra de Afganistán', ini:2001, fin:2021, abierto:false },
+    { label:'Guerra de Irak', ini:2003, fin:2011, abierto:false },
+    { label:'Primavera Árabe', ini:2011, fin:2012, abierto:false },
+    { label:'Guerra Civil Siria', ini:2011, fin:2024, abierto:false },
+    { label:'Conflicto de Ucrania', ini:2014, fin:2026, abierto:true },
+    { label:'Guerra de Gaza', ini:2023, fin:2026, abierto:true }
+  ];
+  const rowH = plotH/rows.length;
+  const barH = rowH*0.52;
+
+  let grid='', xLabels='';
+  for(let yr=1990; yr<=2025; yr+=5){
+    const gx=x(yr);
+    grid += '<line x1="'+gx.toFixed(1)+'" y1="'+padT+'" x2="'+gx.toFixed(1)+'" y2="'+(padT+plotH)+'" stroke="rgba(246,239,220,0.12)" stroke-width="1"/>';
+    xLabels += '<text x="'+gx.toFixed(1)+'" y="'+(padT+plotH+18)+'" font-size="10" text-anchor="middle" fill="#a9b6c2" font-family="Courier New, monospace">'+yr+'</text>';
+  }
+
+  let bars='', labels='';
+  rows.forEach(function(r,i){
+    const by = padT + i*rowH + (rowH-barH)/2;
+    const bx0 = x(r.ini), bx1 = x(r.fin);
+    bars += '<rect x="'+bx0.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+(bx1-bx0).toFixed(1)+'" height="'+barH.toFixed(1)+'" rx="3" fill="'+accent+'" opacity="'+(r.abierto?1:0.62)+'"/>';
+    if(r.abierto){
+      bars += '<path d="M'+(bx1-2).toFixed(1)+','+(by-3).toFixed(1)+' L'+(bx1+7).toFixed(1)+','+(by+barH/2).toFixed(1)+' L'+(bx1-2).toFixed(1)+','+(by+barH+3).toFixed(1)+' Z" fill="'+accent+'"/>';
+    }
+    labels += '<text x="'+(padL-12)+'" y="'+(by+barH/2+4).toFixed(1)+'" font-size="12" text-anchor="end" fill="#f6efdc" font-family="Georgia, serif" font-weight="700">'+r.label+'</text>';
+  });
+
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg">'+grid+bars+labels+xLabels+
+    '<text x="'+(w-padR)+'" y="16" font-size="10" text-anchor="end" fill="#a9b6c2" font-family="Courier New, monospace">▶ = sigue activo en 2026</text>'+
+  '</svg>';
+}
+
+/* Línea del tiempo genérica de hitos puntuales, reutilizada por las 6 eras.
+   Los eventos alternan etiqueta arriba/abajo de la línea para no solaparse.
+   escalaLineal=true -> posición proporcional al año real (para periodos de
+   pocos siglos). escalaLineal=false -> espaciado regular entre hitos, usado
+   solo para la Prehistoria, donde la escala real dejaría casi todos los
+   hitos amontonados en el extremo derecho. */
+function svgLineaTiempo(eventos, accent, escalaLineal){
+  const w=900, h=280, padL=60, padR=60;
+  const midY = h/2;
+  const n = eventos.length;
+  const plotL = padL, plotR = w-padR;
+  const minGap = 85; // separación horizontal mínima entre hitos consecutivos
+
+  let xs;
+  if(escalaLineal){
+    const years = eventos.map(function(e){ return e.year; });
+    const yMin = Math.min.apply(null, years), yMax = Math.max.apply(null, years);
+    const range = Math.max(1, yMax-yMin);
+    xs = eventos.map(function(e){ return plotL + (e.year-yMin)/range*(plotR-plotL); });
+  } else {
+    xs = eventos.map(function(e,i){ return plotL + (n>1 ? i/(n-1) : 0.5)*(plotR-plotL); });
+  }
+
+  // Cuando dos hitos caen muy próximos en el tiempo (p. ej. 1517 y 1521),
+  // la posición proporcional al año real los deja casi pegados y sus
+  // textos de dos líneas chocan. Se prioriza la legibilidad: primero se
+  // separan hacia la derecha los hitos demasiado próximos a su anterior; si
+  // eso empuja el último hito fuera del lienzo, se comprime el conjunto de
+  // vuelta hacia la izquierda manteniendo esa separación mínima siempre que
+  // sea posible. El resultado ya no es estrictamente proporcional en los
+  // tramos muy apretados, pero evita que ningún texto se monte sobre otro.
+  for(let i=1;i<xs.length;i++){
+    if(xs[i]-xs[i-1] < minGap) xs[i] = xs[i-1]+minGap;
+  }
+  if(xs[xs.length-1] > plotR){
+    xs[xs.length-1] = plotR;
+    for(let i=xs.length-2;i>=0;i--){
+      xs[i] = Math.min(xs[i], xs[i+1]-minGap);
+    }
+  }
+
+  let out = '<line x1="'+plotL+'" y1="'+midY+'" x2="'+plotR+'" y2="'+midY+'" stroke="'+accent+'" stroke-width="2.5"/>';
+
+  eventos.forEach(function(e,i){
+    const x = xs[i];
+    const above = i%2===0;
+    const dotY = midY;
+    const labelY = above ? midY-58 : midY+40;
+    const connY1 = above ? midY-7 : midY+7;
+    const connY2 = above ? labelY+30 : labelY-10;
+
+    out += '<line x1="'+x.toFixed(1)+'" y1="'+connY1+'" x2="'+x.toFixed(1)+'" y2="'+connY2+'" stroke="'+accent+'" stroke-width="1.2" opacity="0.55"/>';
+    out += '<circle cx="'+x.toFixed(1)+'" cy="'+dotY+'" r="6.5" fill="'+accent+'"/>';
+    out += '<circle cx="'+x.toFixed(1)+'" cy="'+dotY+'" r="6.5" fill="none" stroke="#f6efdc" stroke-width="1.6"/>';
+
+    const yearY = above ? labelY+14 : labelY-26;
+    out += '<text x="'+x.toFixed(1)+'" y="'+yearY+'" font-size="11.5" font-weight="700" text-anchor="middle" fill="'+accent+'" font-family="Courier New, monospace">'+e.yearLabel+'</text>';
+
+    const lines = e.label.split('|');
+    lines.forEach(function(ln, li){
+      const ly = above ? (labelY+30+li*13) : (labelY-10+li*13);
+      out += '<text x="'+x.toFixed(1)+'" y="'+ly+'" font-size="11" text-anchor="middle" fill="#f6efdc" font-family="Georgia, serif">'+ln+'</text>';
+    });
+  });
+
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg">'+out+'</svg>';
+}
+
+function renderPlate(){
+  const era = findEra(eraActivaId);
+  const item = findItem(eraActivaId, itemActivoId);
+  if(!item) return;
+
+  const datosHtml = (item.datosClave && item.datosClave.length)
+    ? '<div class="datos-clave"><span class="k">Datos clave</span><div class="chip-row">'+item.datosClave.map(d=>'<span class="chip">'+d+'</span>').join('')+'</div></div>'
+    : '';
+  const notaHtml = item.nota ? '<div class="nota-box">💡 '+item.nota+'</div>' : '';
+
+  const tipoBadge = item.tipo === 'linea_tiempo'
+    ? '<span class="tipo-badge" style="background:'+era.accent+'; color:#20261c;">📅 Línea del tiempo</span>'
+    : (item.tipo === 'infografia_propia'
+      ? '<span class="tipo-badge" style="background:'+era.accent+'; color:#20261c;">📊 Infografía propia</span>'
+      : (item.tipo === 'infografia_externa'
+        ? '<span class="tipo-badge" style="background:rgba(var(--paper-rgb),0.14); color:var(--paper);">📊 Infografía</span>'
+        : (item.tieneImagen === false ? '' : '<span class="tipo-badge" style="background:rgba(var(--paper-rgb),0.14); color:var(--paper);">🗺️ Mapa</span>')));
+
+  let imageColHtml;
+  if(item.tieneImagen === false){
+    imageColHtml =
+      '<div class="image-col">'+
+        '<div class="no-map-card"><div class="no-map-icon">📰</div><p>Sin mapa propio: suceso demasiado reciente<br>para representarlo con una imagen fija.<br>Ver la nota en la ficha.</p></div>'+
+      '</div>';
+  } else if(item.tipo === 'infografia_propia' || item.tipo === 'linea_tiempo'){
+    const uid = 'img_'+item.id;
+    const svgMarkup = item.tipo === 'linea_tiempo' ? buildLineaTiempoParaItem(item, era.accent) : buildInfografiaSVG(item.id, era.accent);
+    imageColHtml =
+      '<div class="image-col">'+
+        '<div class="image-toolbar">'+
+          '<span class="zoom-mini-hint">Rueda / pellizco para hacer zoom · arrastrar para mover</span>'+
+          '<button class="fs-btn" id="mainFsBtn">⛶ Pantalla completa</button>'+
+        '</div>'+
+        '<div class="zoom-stage" id="'+uid+'_stage">'+
+          '<div class="zoom-stage-inner" id="'+uid+'_inner">'+svgMarkup+'</div>'+
+        '</div>'+
+        '<p class="credit"><b>Fuente:</b> '+item.autorFuente+' — datos históricos generales, sin copyright sobre los hechos en sí.</p>'+
+      '</div>';
+  } else {
+    const uid = 'img_'+item.id;
+    const url = COMMONS_BASE + encodeURIComponent(item.imagen);
+    imageColHtml =
+      '<div class="image-col">'+
+        '<div class="image-toolbar">'+
+          '<span class="zoom-mini-hint">Rueda / pellizco para hacer zoom · arrastrar para mover</span>'+
+          '<button class="fs-btn" id="mainFsBtn">⛶ Pantalla completa</button>'+
+        '</div>'+
+        '<div class="zoom-stage" id="'+uid+'_stage">'+
+          '<div class="zoom-stage-inner" id="'+uid+'_inner">'+
+            '<img id="'+uid+'_img" src="'+url+'" alt="'+item.titulo+'" draggable="false" onerror="this.style.display=\'none\'; this.parentElement.parentElement.querySelector(\'.img-fallback\').style.display=\'flex\';">'+
+          '</div>'+
+          '<div class="img-fallback"><div class="no-map-icon">🖼️</div><p>No se pudo cargar la imagen desde Wikimedia Commons.<br>Archivo: '+item.imagen+'</p></div>'+
+        '</div>'+
+        '<p class="credit"><b>Fuente:</b> '+item.autorFuente+' · <b>Licencia:</b> '+item.licencia+'</p>'+
+      '</div>';
+  }
+
+  plateHost.innerHTML =
+    '<div class="plate">'+
+      '<div class="plate-hero">'+
+        '<p class="plate-eyebrow" style="color:'+era.accent+';">'+era.nombre+' · '+item.periodo+tipoBadge+'</p>'+
+        '<h2 class="plate-title">'+item.titulo+'</h2>'+
+      '</div>'+
+      '<div class="item-layout">'+
+        imageColHtml+
+        '<div class="info-col">'+
+          '<p class="context">'+item.contexto+'</p>'+
+          datosHtml+
+          notaHtml+
+        '</div>'+
+      '</div>'+
+    '</div>';
+
+  if(item.tieneImagen !== false){
+    wireZoomStage('img_'+item.id, era.accent);
+    const fsBtn = document.getElementById('mainFsBtn');
+    fsBtn.addEventListener('click', ()=> openFullscreenItem(item, era));
+  }
+}
+
+function render(){
+  buildEraTabs();
+  buildItemPills();
+  if(modoVocabulario){ renderVocabulario(); }
+  else { renderPlate(); }
+}
+
+/* ============== ZOOM (tarjeta normal, siempre activo aquí) ============== */
+const zoomControllers = {};
+function wireZoomStage(uid, accentColor){
+  const stage = document.getElementById(uid+'_stage');
+  const inner = document.getElementById(uid+'_inner');
+  if(!stage || !inner) return;
+  zoomControllers[uid] = makeZoomStage(stage, inner, true);
+}
+
+function makeZoomStage(stageEl, innerEl, alwaysActive){
+  let scale=1, tx=0, ty=0, dragging=false, moved=false, dragStart=null, startTxTy=null;
+  const pts = new Map();
+  let pinchStart = null;
+  const MIN=1, MAX=6;
+
+  stageEl.addEventListener('dragstart', function(e){ e.preventDefault(); });
+
+  function apply(){ innerEl.style.transform = 'translate('+tx+'px,'+ty+'px) scale('+scale+')'; }
+  function clampScale(s){ return Math.max(MIN, Math.min(MAX, s)); }
+  function clampPan(){
+    if(scale<=1){ tx=0; ty=0; return; }
+    const rect = stageEl.getBoundingClientRect();
+    const minX = rect.width*(1-scale), minY = rect.height*(1-scale);
+    tx = Math.min(0, Math.max(minX, tx));
+    ty = Math.min(0, Math.max(minY, ty));
+  }
+  function stagePoint(e){ const r=stageEl.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+  function zoomAt(factor, cx, cy){
+    const newScale = clampScale(scale*factor);
+    if(newScale===scale) return;
+    const localX=(cx-tx)/scale, localY=(cy-ty)/scale;
+    scale = newScale;
+    tx = cx - localX*scale; ty = cy - localY*scale;
+    clampPan(); apply();
+  }
+  function reset(){ scale=1; tx=0; ty=0; innerEl.style.transform=''; }
+  function active(){ return alwaysActive || (typeof isMapFullscreen==='function' && isMapFullscreen()); }
+
+  stageEl.addEventListener('wheel', function(e){
+    if(!active()) return;
+    e.preventDefault();
+    const p = stagePoint(e);
+    zoomAt(e.deltaY<0 ? 1.2 : 1/1.2, p.x, p.y);
+  }, {passive:false});
+
+  stageEl.addEventListener('pointerdown', function(e){
+    if(!active()) return;
+    pts.set(e.pointerId, stagePoint(e));
+    if(pts.size===2){
+      const arr=[...pts.values()];
+      pinchStart = { dist:Math.hypot(arr[0].x-arr[1].x, arr[0].y-arr[1].y), scale:scale,
+        mid:{x:(arr[0].x+arr[1].x)/2, y:(arr[0].y+arr[1].y)/2} };
+      dragging=false;
+      return;
+    }
+    dragging = true; moved=false;
+    dragStart = stagePoint(e); startTxTy = {tx,ty};
+  });
+  stageEl.addEventListener('pointermove', function(e){
+    if(!active() || !pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, stagePoint(e));
+    if(pts.size===2 && pinchStart){
+      const arr=[...pts.values()];
+      const dist = Math.hypot(arr[0].x-arr[1].x, arr[0].y-arr[1].y);
+      const newScale = clampScale(pinchStart.scale*(dist/pinchStart.dist));
+      const localX=(pinchStart.mid.x-tx)/scale, localY=(pinchStart.mid.y-ty)/scale;
+      scale = newScale;
+      tx = pinchStart.mid.x - localX*scale; ty = pinchStart.mid.y - localY*scale;
+      clampPan(); apply();
+      return;
+    }
+    if(dragging && scale>1){
+      const p = stagePoint(e);
+      const dx = p.x-dragStart.x, dy = p.y-dragStart.y;
+      if(Math.abs(dx)>4 || Math.abs(dy)>4) moved=true;
+      if(moved){
+        tx = startTxTy.tx+dx; ty = startTxTy.ty+dy;
+        clampPan(); apply();
+        stageEl.classList.add('dragging');
+      }
+    }
+  });
+  function endPointer(e){
+    pts.delete(e.pointerId);
+    if(pts.size<2) pinchStart=null;
+    if(pts.size===0){ dragging=false; stageEl.classList.remove('dragging'); }
+  }
+  stageEl.addEventListener('pointerup', endPointer);
+  stageEl.addEventListener('pointercancel', endPointer);
+  stageEl.addEventListener('pointerleave', function(e){ if(pts.size<=1) endPointer(e); });
+  stageEl.addEventListener('dblclick', function(){ if(active()) reset(); });
+
+  return {
+    zoomIn: function(){ const r=stageEl.getBoundingClientRect(); zoomAt(1.4, r.width/2, r.height/2); },
+    zoomOut: function(){ const r=stageEl.getBoundingClientRect(); zoomAt(1/1.4, r.width/2, r.height/2); },
+    fit: reset,
+    reset: reset
+  };
+}
+
+/* ============== PANTALLA COMPLETA + LÁPIZ + LÁSER + ZOOM ============== */
+const fsOverlay = document.getElementById('fsOverlay');
+const fsPanel = document.getElementById('fsPanel');
+const fsContent = document.getElementById('fsContent');
+const fsCloseBtn = document.getElementById('fsCloseBtn');
+const fsPenBtn = document.getElementById('fsPenBtn');
+const fsLaserBtn = document.getElementById('fsLaserBtn');
+const fsCanvas = document.getElementById('fsDrawCanvas');
+const fsLaserDot = document.getElementById('fsLaserDot');
+const PEN_COLOR = '#d81b60';
+let penActive = false, laserActive = false, drawing = false, lastX = 0, lastY = 0;
+let fsZoomCtrl = null;
+
+function isMapFullscreen(){
+  return document.fullscreenElement === fsOverlay || fsOverlay.classList.contains('open');
+}
+
+function openFullscreenItem(item, era){
+  const uid = 'fsimg_'+item.id;
+  const esGenerado = item.tipo === 'infografia_propia' || item.tipo === 'linea_tiempo';
+  const contentMarkup = esGenerado
+    ? (item.tipo === 'linea_tiempo' ? buildLineaTiempoParaItem(item, era.accent) : buildInfografiaSVG(item.id, era.accent))
+    : '<img id="'+uid+'_img" src="'+COMMONS_BASE + encodeURIComponent(item.imagen)+'" alt="'+item.titulo+'" draggable="false">';
+  const creditoMarkup = esGenerado
+    ? '<p class="credit"><b>Fuente:</b> '+item.autorFuente+' — datos históricos generales, sin copyright sobre los hechos en sí.</p>'
+    : '<p class="credit"><b>Fuente:</b> '+item.autorFuente+' · <b>Licencia:</b> '+item.licencia+'</p>';
+
+  fsContent.innerHTML =
+    '<span class="fs-badge" style="background:'+era.accent+';">'+era.nombre+'</span>'+
+    '<h2 class="fs-title">'+item.titulo+'</h2>'+
+    '<div class="zoom-stage" id="'+uid+'_stage">'+
+      '<div class="zoom-stage-inner" id="'+uid+'_inner">'+contentMarkup+'</div>'+
+      '<div class="fs-zoom-toolbar">'+
+        '<button class="zoom-tbtn" id="fsZoomFit">⤢</button>'+
+        '<button class="zoom-tbtn" id="fsZoomOut">−</button>'+
+        '<button class="zoom-tbtn" id="fsZoomIn">+</button>'+
+      '</div>'+
+    '</div>'+
+    creditoMarkup;
+
+  fsOverlay.classList.add('open');
+  const req = fsOverlay.requestFullscreen ? fsOverlay.requestFullscreen()
+    : (fsOverlay.webkitRequestFullscreen ? fsOverlay.webkitRequestFullscreen() : null);
+  if(req && req.catch) req.catch(function(){});
+
+  requestAnimationFrame(function(){
+    const stage = document.getElementById(uid+'_stage');
+    const inner = document.getElementById(uid+'_inner');
+    fsZoomCtrl = makeZoomStage(stage, inner, true);
+    document.getElementById('fsZoomFit').addEventListener('click', fsZoomCtrl.fit);
+    document.getElementById('fsZoomOut').addEventListener('click', fsZoomCtrl.zoomOut);
+    document.getElementById('fsZoomIn').addEventListener('click', fsZoomCtrl.zoomIn);
+    resizeCanvasToImage();
+  });
+}
+
+function closeFullscreen(){
+  if(!fsOverlay.classList.contains('open')) return;
+  fsOverlay.classList.remove('open');
+  fsContent.innerHTML = '';
+  fsZoomCtrl = null;
+  setPenActive(false);
+  setLaserActive(false);
+  if(document.fullscreenElement){
+    (document.exitFullscreen ? document.exitFullscreen() : Promise.resolve()).catch(function(){});
+  }
+}
+
+function getFsImage(){ return fsContent.querySelector('.zoom-stage'); }
+
+function resizeCanvasToImage(){
+  const stage = getFsImage();
+  if(!stage){ fsCanvas.style.width='0px'; fsCanvas.style.height='0px'; return; }
+  const rect = stage.getBoundingClientRect();
+  const panelRect = fsPanel.getBoundingClientRect();
+  fsCanvas.style.left = (rect.left-panelRect.left)+'px';
+  fsCanvas.style.top = (rect.top-panelRect.top)+'px';
+  fsCanvas.style.width = rect.width+'px';
+  fsCanvas.style.height = rect.height+'px';
+  const dpr = window.devicePixelRatio || 1;
+  fsCanvas.width = Math.max(1, Math.round(rect.width*dpr));
+  fsCanvas.height = Math.max(1, Math.round(rect.height*dpr));
+  const ctx = fsCanvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.strokeStyle = PEN_COLOR; ctx.lineWidth = 3;
+}
+function clearCanvas(){ const ctx = fsCanvas.getContext('2d'); ctx.clearRect(0,0,fsCanvas.width,fsCanvas.height); }
+
+function setPenActive(v){
+  penActive = v;
+  fsPenBtn.classList.toggle('active', v);
+  fsCanvas.style.pointerEvents = v ? 'auto' : 'none';
+  if(!v) clearCanvas();
+  if(v) setLaserActive(false);
+}
+function setLaserActive(v){
+  laserActive = v;
+  fsLaserBtn.classList.toggle('active', v);
+  fsLaserDot.style.display = v ? 'block' : 'none';
+  if(v) setPenActive(false);
+}
+fsPenBtn.addEventListener('click', ()=> setPenActive(!penActive));
+fsLaserBtn.addEventListener('click', ()=> setLaserActive(!laserActive));
+
+function canvasPos(e){ const rect = fsCanvas.getBoundingClientRect(); return { x: e.clientX-rect.left, y: e.clientY-rect.top }; }
+fsCanvas.addEventListener('pointerdown', function(e){
+  if(!penActive) return;
+  drawing = true;
+  const p = canvasPos(e);
+  lastX=p.x; lastY=p.y;
+  fsCanvas.setPointerCapture(e.pointerId);
+});
+fsCanvas.addEventListener('pointermove', function(e){
+  if(!penActive || !drawing) return;
+  const p = canvasPos(e);
+  const ctx = fsCanvas.getContext('2d');
+  ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.stroke();
+  lastX=p.x; lastY=p.y;
+});
+fsCanvas.addEventListener('pointerup', function(){ drawing=false; });
+fsCanvas.addEventListener('pointerleave', function(){ drawing=false; });
+
+fsOverlay.addEventListener('pointermove', function(e){
+  if(!laserActive) return;
+  fsLaserDot.style.left = e.clientX+'px';
+  fsLaserDot.style.top = e.clientY+'px';
+});
+
+fsCloseBtn.addEventListener('click', closeFullscreen);
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeFullscreen(); });
+document.addEventListener('fullscreenchange', function(){
+  if(!document.fullscreenElement && fsOverlay.classList.contains('open')) closeFullscreen();
+  else if(document.fullscreenElement) requestAnimationFrame(resizeCanvasToImage);
+});
+window.addEventListener('resize', function(){
+  if(fsOverlay.classList.contains('open')) resizeCanvasToImage();
+});
+
+render();
+actualizarBotonTema();
+document.getElementById('themeToggleBtn').addEventListener('click', function(){
+  document.documentElement.classList.toggle('light-theme');
+  actualizarBotonTema();
+  try{ localStorage.setItem('atlasHistoricoTema', document.documentElement.classList.contains('light-theme') ? 'light' : 'dark'); } catch(e){}
+});
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>
