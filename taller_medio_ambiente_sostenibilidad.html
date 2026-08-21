@@ -197,21 +197,27 @@
   }
   .exit-fullscreen-btn svg{ width:16px; height:16px; flex:none; }
   .map-full-wrap:fullscreen .exit-fullscreen-btn,
-  .map-full-wrap:-webkit-full-screen .exit-fullscreen-btn{ display:flex; }
-  .map-full-wrap:fullscreen, .map-full-wrap:-webkit-full-screen{
+  .map-full-wrap:-webkit-full-screen .exit-fullscreen-btn,
+  .map-full-wrap.sim-fullscreen .exit-fullscreen-btn{ display:flex; }
+  .map-full-wrap:fullscreen, .map-full-wrap:-webkit-full-screen, .map-full-wrap.sim-fullscreen{
     background:var(--paper); padding:16px; display:flex; flex-direction:column; overflow:auto;
   }
-  .map-full-wrap:fullscreen .quiz-bar, .map-full-wrap:-webkit-full-screen .quiz-bar{ flex:0 0 auto; }
-  .map-full-wrap:fullscreen .map-inner, .map-full-wrap:-webkit-full-screen .map-inner{ flex:1 1 auto; min-height:0; display:flex; }
-  .map-full-wrap:fullscreen #quizMap, .map-full-wrap:-webkit-full-screen #quizMap{
+  .map-full-wrap.sim-fullscreen{
+    position:fixed !important; top:0; left:0; right:0; bottom:0;
+    width:100vw; height:100vh; margin:0; z-index:99998;
+  }
+  .map-full-wrap:fullscreen .quiz-bar, .map-full-wrap:-webkit-full-screen .quiz-bar, .map-full-wrap.sim-fullscreen .quiz-bar{ flex:0 0 auto; }
+  .map-full-wrap:fullscreen .map-inner, .map-full-wrap:-webkit-full-screen .map-inner, .map-full-wrap.sim-fullscreen .map-inner{ flex:1 1 auto; min-height:0; display:flex; }
+  .map-full-wrap:fullscreen #quizMap, .map-full-wrap:-webkit-full-screen #quizMap, .map-full-wrap.sim-fullscreen #quizMap{
     flex:1 1 auto; height:auto; min-height:0; width:100%;
   }
-  .map-full-wrap:fullscreen .quiz-choices, .map-full-wrap:-webkit-full-screen .quiz-choices{ flex:0 0 auto; margin-top:14px; }
-  .map-full-wrap:fullscreen .quiz-feedback, .map-full-wrap:-webkit-full-screen .quiz-feedback{ flex:0 0 auto; }
+  .map-full-wrap:fullscreen .quiz-choices, .map-full-wrap:-webkit-full-screen .quiz-choices, .map-full-wrap.sim-fullscreen .quiz-choices{ flex:0 0 auto; margin-top:14px; }
+  .map-full-wrap:fullscreen .quiz-feedback, .map-full-wrap:-webkit-full-screen .quiz-feedback, .map-full-wrap.sim-fullscreen .quiz-feedback{ flex:0 0 auto; }
   @media (hover:hover) and (pointer:fine){
     .fullscreen-btn:hover{ background:#2A3B5C; }
     .exit-fullscreen-btn:hover{ background:#2A3B5C; }
   }
+  html.sim-fs-lock, html.sim-fs-lock body{ overflow:hidden; height:100%; }
 
   /* ---- Pantalla completa de los mapas de casos de estudio ---- */
   .mini-map-wrap{ position:relative; }
@@ -223,11 +229,16 @@
   }
   .mini-map-fs-btn svg{ width:14px; height:14px; flex:none; }
   .mini-map-wrap:fullscreen .exit-fullscreen-btn,
-  .mini-map-wrap:-webkit-full-screen .exit-fullscreen-btn{ display:flex; }
-  .mini-map-wrap:fullscreen, .mini-map-wrap:-webkit-full-screen{
+  .mini-map-wrap:-webkit-full-screen .exit-fullscreen-btn,
+  .mini-map-wrap.sim-fullscreen .exit-fullscreen-btn{ display:flex; }
+  .mini-map-wrap:fullscreen, .mini-map-wrap:-webkit-full-screen, .mini-map-wrap.sim-fullscreen{
     background:var(--paper); padding:16px; display:flex; flex-direction:column; overflow:auto;
   }
-  .mini-map-wrap:fullscreen .mini-map, .mini-map-wrap:-webkit-full-screen .mini-map{
+  .mini-map-wrap.sim-fullscreen{
+    position:fixed !important; top:0; left:0; right:0; bottom:0;
+    width:100vw; height:100vh; margin:0; z-index:99998;
+  }
+  .mini-map-wrap:fullscreen .mini-map, .mini-map-wrap:-webkit-full-screen .mini-map, .mini-map-wrap.sim-fullscreen .mini-map{
     flex:1 1 auto; height:auto; min-height:0; width:100%;
   }
   @media (hover:hover) and (pointer:fine){
@@ -843,28 +854,57 @@
   var EXPAND_ICON = '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
   var COMPRESS_ICON = '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>';
 
-  var fsSupported = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
-  if(!fsSupported){
-    var btnFsInit = document.getElementById('btnFullscreen');
-    if(btnFsInit) btnFsInit.style.display = 'none';
+  /* Algunos Safari/iPadOS (sobre todo instalados como app desde la
+     pantalla de inicio) aceptan la llamada a requestFullscreen() pero
+     nunca llegan a entrar en pantalla completa real, sin lanzar ningún
+     error. Por eso, si la API nativa no responde a tiempo, se activa un
+     modo de pantalla completa "simulado" con CSS que consigue el mismo
+     resultado visual sin depender de esa API. */
+  function requestFullscreenSafe(el){
+    var attempted = false;
+    try{
+      if(el.requestFullscreen){
+        attempted = true;
+        var p = el.requestFullscreen();
+        if(p && p.catch) p.catch(function(){ enterSimFullscreen(el); });
+      } else if(el.webkitRequestFullscreen){
+        attempted = true;
+        el.webkitRequestFullscreen();
+      }
+    } catch(e){ attempted = false; }
+    if(!attempted){ enterSimFullscreen(el); return; }
+    setTimeout(function(){
+      var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if(fsEl !== el && !el.classList.contains('sim-fullscreen')) enterSimFullscreen(el);
+    }, 400);
+  }
+  function exitFullscreenSafe(el){
+    if(el.classList.contains('sim-fullscreen')){ exitSimFullscreen(el); return; }
+    if(document.exitFullscreen) document.exitFullscreen();
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+  function enterSimFullscreen(el){
+    el.classList.add('sim-fullscreen');
+    document.documentElement.classList.add('sim-fs-lock');
+    document.dispatchEvent(new Event('simfullscreenchange'));
+  }
+  function exitSimFullscreen(el){
+    el.classList.remove('sim-fullscreen');
+    document.documentElement.classList.remove('sim-fs-lock');
+    document.dispatchEvent(new Event('simfullscreenchange'));
   }
 
   window.toggleFullscreen = function(){
     var el = document.getElementById('quizFullWrap');
-    var isFs = document.fullscreenElement || document.webkitFullscreenElement;
-    if(!isFs){
-      if(el.requestFullscreen) el.requestFullscreen();
-      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } else {
-      if(document.exitFullscreen) document.exitFullscreen();
-      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-    }
+    var isFs = (document.fullscreenElement || document.webkitFullscreenElement) === el || el.classList.contains('sim-fullscreen');
+    if(!isFs) requestFullscreenSafe(el);
+    else exitFullscreenSafe(el);
   };
 
   function onFullscreenChange(){
     var quizWrapEl = document.getElementById('quizFullWrap');
     var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-    var isFs = !!fsEl && fsEl === quizWrapEl;
+    var isFs = (!!fsEl && fsEl === quizWrapEl) || quizWrapEl.classList.contains('sim-fullscreen');
     var icon = document.getElementById('fsIcon');
     if(icon) icon.innerHTML = isFs ? COMPRESS_ICON : EXPAND_ICON;
     var btnFs = document.getElementById('btnFullscreen');
@@ -877,6 +917,7 @@
   }
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+  document.addEventListener('simfullscreenchange', onFullscreenChange);
 
   /* ---------------------------------------------------------------
      Pantalla completa de los mapas de casos de estudio (mini-map)
@@ -885,7 +926,6 @@
      y su propio botón de salir de pantalla completa.
   ----------------------------------------------------------------*/
   function initMiniMapFullscreen(){
-    if(!fsSupported) return;
     document.querySelectorAll('.mini-map').forEach(function(mapEl){
       if(mapEl.closest('.mini-map-wrap')) return;
       var wrap = document.createElement('div');
@@ -915,13 +955,9 @@
 
   window.toggleMiniMapFullscreen = function(wrap){
     var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-    if(fsEl !== wrap){
-      if(wrap.requestFullscreen) wrap.requestFullscreen();
-      else if(wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
-    } else {
-      if(document.exitFullscreen) document.exitFullscreen();
-      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-    }
+    var isActive = (fsEl === wrap) || wrap.classList.contains('sim-fullscreen');
+    if(!isActive) requestFullscreenSafe(wrap);
+    else exitFullscreenSafe(wrap);
   };
 
   function onMiniMapFullscreenChange(){
@@ -929,7 +965,7 @@
     document.querySelectorAll('.mini-map-wrap').forEach(function(wrap){
       var btn = wrap.querySelector('.mini-map-fs-btn');
       var icon = btn ? btn.querySelector('svg') : null;
-      var active = (wrap === fsEl);
+      var active = (wrap === fsEl) || wrap.classList.contains('sim-fullscreen');
       if(icon) icon.innerHTML = active ? COMPRESS_ICON : EXPAND_ICON;
       if(btn) btn.title = active ? 'Salir de pantalla completa' : 'Ver a pantalla completa';
       if(active){
@@ -941,6 +977,7 @@
   }
   document.addEventListener('fullscreenchange', onMiniMapFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onMiniMapFullscreenChange);
+  document.addEventListener('simfullscreenchange', onMiniMapFullscreenChange);
 
   /* ---------------------------------------------------------------
      INICIO
