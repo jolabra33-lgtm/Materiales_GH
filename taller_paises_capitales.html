@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Practica países y capitales de todo el mundo, continente a continente, y las Comunidades Autónomas de España: mapa interactivo con chinchetas y tarjetas de repaso.">
+<title>Países y Capitales</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Países y Capitales">
+<meta name="theme-color" content="#182338">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+  :root{
+    --ink:#182338;
+    --ink-soft:#3C4A66;
+    --muted:#5E6779;
+    --paper:#EDEFE8;
+    --card:#FFFFFF;
+    --line:#E2E0D2;
+    --lat:#1F6E8C;
+    --lon:#C1440E;
+    --gold:#B4790F;
+    --purple:#6B4C9A;
+    --teal:#2E8B74;
+    --crimson:#B23A48;
+    --good:#2E7D4F;
+    --good-soft:rgba(46,125,79,0.12);
+    --bad:#B23A2E;
+    --bad-soft:rgba(178,58,46,0.12);
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-sm:0 1px 2px rgba(20,30,50,.05);
+    --shadow-md:0 10px 28px rgba(20,30,50,.08);
+    --shadow-lg:0 20px 46px rgba(20,30,50,.14);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:960px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
+
+  header.hero{
+    position:relative; padding:34px 36px 40px; margin-bottom:26px; border-radius:18px;
+    background:var(--ink); color:var(--paper); overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(224,168,61,0.30), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(76,153,181,0.28), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.16em; text-transform:uppercase;
+    color:#E0A83D; font-weight:500; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:#E0A83D; display:inline-block; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(30px, 4.2vw, 46px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
+  }
+  .lede{ max-width:64ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+
+  /* ---- Pestañas de continente ---- */
+  .cont-tabs{
+    display:flex; flex-wrap:wrap; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:6px; margin-bottom:20px; box-shadow:var(--shadow-sm);
+  }
+  .cont-tab{
+    flex:1 1 auto; min-width:100px; border:none; background:transparent; color:var(--muted); font-family:'Inter', sans-serif;
+    font-weight:700; font-size:14px; padding:12px 10px; border-radius:10px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:7px; transition:background .15s ease, color .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cont-tab.active{ background:var(--accent, var(--ink)); color:#fff; box-shadow:var(--shadow-sm); }
+  .cont-tab-count{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; opacity:0.75;
+    background:rgba(0,0,0,0.08); border-radius:999px; padding:1px 7px;
+  }
+  .cont-tab.active .cont-tab-count{ background:rgba(255,255,255,0.22); }
+  @media (hover:hover) and (pointer:fine){
+    .cont-tab:not(.active):hover{ background:rgba(24,35,56,0.06); color:var(--ink); }
+  }
+
+  .panel-intro{ margin-bottom:16px; }
+  .panel-intro h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:24px; margin:0 0 6px; color:var(--ink);
+    display:flex; align-items:center; gap:10px;
+  }
+  .panel-intro .dot{ width:12px; height:12px; border-radius:50%; background:var(--accent, var(--ink)); flex:none; }
+  .panel-intro p{ margin:0; color:var(--muted); font-size:14.5px; }
+
+  /* ---- Pestañas de modo ---- */
+  .mode-tabs{ display:flex; gap:8px; margin-bottom:18px; }
+  .mode-tab{
+    flex:1; border:1px solid var(--line); background:var(--card); color:var(--muted); font-family:'Inter', sans-serif;
+    font-weight:700; font-size:14px; padding:12px 14px; border-radius:11px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px; transition:all .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mode-tab svg{ width:16px; height:16px; }
+  .mode-tab.active{ background:var(--accent, var(--ink)); color:#fff; border-color:transparent; box-shadow:var(--shadow-sm); }
+  @media (hover:hover) and (pointer:fine){
+    .mode-tab:not(.active):hover{ background:rgba(24,35,56,0.05); }
+  }
+
+  .mode-panel{ display:none; }
+  .mode-panel.active{ display:block; }
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-md); padding:22px 24px 26px; margin-bottom:20px;
+    border-top:3px solid var(--accent, var(--ink));
+  }
+
+  button{
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; border-radius:var(--radius-sm);
+    padding:12px 18px; cursor:pointer; border:1px solid transparent;
+    transition:transform .08s ease, background .15s ease, box-shadow .15s ease;
+    display:inline-flex; align-items:center; gap:7px; min-height:44px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--accent, var(--ink)); color:#fff; }
+  .btn-ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn-block{ width:100%; justify-content:center; }
+  @media (hover:hover) and (pointer:fine){
+    .btn-ghost:hover{ background:rgba(24,35,56,0.05); }
+  }
+
+  /* ---- Modo mapa ---- */
+  .quiz-bar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:14px;
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 16px;
+  }
+  .quiz-prompt{ flex:1 1 260px; font-size:14.5px; color:var(--ink-soft); }
+  .quiz-prompt b{ color:var(--ink); font-family:'Fraunces', serif; font-size:16px; }
+  .quiz-controls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .quiz-score{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--ink-soft);
+    background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+  }
+  #map{ height:440px; border-radius:var(--radius-sm); border:1px solid var(--line); background:#dfe3e6; }
+  .leaflet-popup-content{ font-family:'Inter', sans-serif; font-size:13px; line-height:1.5; color:var(--ink); }
+  .leaflet-popup-content b{ font-family:'Fraunces', serif; font-size:14.5px; }
+  .map-hint{
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:10px 14px; font-size:13px; color:var(--muted); margin-top:12px;
+  }
+  .quiz-result{
+    display:none; text-align:center; padding:26px 20px; background:#F7F6EF; border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+  }
+  .quiz-result.active{ display:block; }
+  .quiz-result .big{ font-family:'Fraunces', serif; font-size:30px; font-weight:600; color:var(--ink); margin:0 0 6px; }
+  .quiz-result p{ margin:0 0 16px; color:var(--muted); font-size:14.5px; }
+
+  /* ---- Pantalla completa del mapa ---- */
+  .map-full-wrap{ position:relative; }
+  .map-inner{ position:relative; }
+  .fullscreen-btn{
+    position:absolute; top:10px; right:10px; z-index:500;
+    width:40px; height:40px; padding:0; min-height:0; border-radius:9px;
+    background:var(--ink); color:var(--paper); border:1px solid rgba(255,255,255,0.18);
+    box-shadow:var(--shadow-md); display:flex; align-items:center; justify-content:center;
+  }
+  .fullscreen-btn svg{ width:16px; height:16px; flex:none; }
+  .exit-fullscreen-btn{
+    display:none; position:fixed; top:max(14px, env(safe-area-inset-top) + 10px);
+    left:50%; transform:translateX(-50%); z-index:99999;
+    background:var(--ink); color:var(--paper); border:1px solid rgba(255,255,255,0.2);
+    border-radius:999px; padding:11px 20px 11px 15px; align-items:center; gap:8px;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:13.5px; box-shadow:var(--shadow-lg);
+  }
+  .exit-fullscreen-btn svg{ width:16px; height:16px; flex:none; }
+  .map-full-wrap:fullscreen .exit-fullscreen-btn,
+  .map-full-wrap:-webkit-full-screen .exit-fullscreen-btn{ display:flex; }
+  .map-full-wrap:fullscreen, .map-full-wrap:-webkit-full-screen{
+    background:var(--paper); padding:16px; display:flex; flex-direction:column;
+  }
+  .map-full-wrap:fullscreen .quiz-bar, .map-full-wrap:-webkit-full-screen .quiz-bar{ flex:0 0 auto; }
+  .map-full-wrap:fullscreen .map-hint, .map-full-wrap:-webkit-full-screen .map-hint{ flex:0 0 auto; }
+  .map-full-wrap:fullscreen .map-inner, .map-full-wrap:-webkit-full-screen .map-inner{ flex:1 1 auto; min-height:0; display:flex; }
+  .map-full-wrap:fullscreen #map, .map-full-wrap:-webkit-full-screen #map{
+    flex:1 1 auto; height:auto; min-height:0; width:100%;
+  }
+  .map-full-wrap:fullscreen .quiz-result, .map-full-wrap:-webkit-full-screen .quiz-result{
+    flex:0 0 auto; max-height:30vh; overflow:auto; margin-top:12px;
+  }
+  @media (hover:hover) and (pointer:fine){
+    .fullscreen-btn:hover{ background:#2A3B5C; }
+    .exit-fullscreen-btn:hover{ background:#2A3B5C; }
+  }
+
+  /* marcadores */
+  .pin-icon{ width:16px; height:16px; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
+    background:var(--ink); border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.4); }
+  .pin-icon.ok{ background:var(--good); }
+  .pin-icon.bad{ background:var(--bad); }
+  .pin-icon.target{ background:var(--gold); }
+
+  /* ---- Modo tarjetas ---- */
+  .cards-settings{
+    display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; margin-bottom:18px;
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 16px;
+  }
+  .setting-group{ display:flex; align-items:center; gap:8px; }
+  .setting-group label{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+  .setting-group select{
+    font-family:'Inter', sans-serif; font-size:13.5px; font-weight:600; color:var(--ink);
+    background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+  }
+
+  .flashcard{
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius); padding:34px 28px; text-align:center;
+  }
+  .flashcard-kicker{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--accent, var(--muted)); margin-bottom:10px; font-weight:600;
+  }
+  .flashcard-prompt{ font-family:'Fraunces', serif; font-weight:600; font-size:clamp(24px,4vw,32px); color:var(--ink); margin:0 0 26px; }
+  .flashcard-choices{ display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:560px; margin:0 auto; }
+  @media (max-width:560px){ .flashcard-choices{ grid-template-columns:1fr; } }
+  .choice-btn{
+    background:#fff; border:1.5px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:15px; color:var(--ink); cursor:pointer;
+    min-height:52px; text-align:center; justify-content:center; transition:all .12s ease;
+  }
+  .choice-btn.correct{ background:var(--good-soft); border-color:var(--good); color:var(--good); }
+  .choice-btn.incorrect{ background:var(--bad-soft); border-color:var(--bad); color:var(--bad); }
+  .choice-btn:disabled{ cursor:default; }
+  @media (hover:hover) and (pointer:fine){
+    .choice-btn:not(:disabled):hover{ border-color:var(--accent, var(--ink)); transform:translateY(-1px); }
+  }
+  .type-row{ display:flex; gap:10px; max-width:420px; margin:0 auto; }
+  .type-row input[type="text"]{
+    flex:1; padding:14px 16px; border:1.5px solid var(--line); border-radius:var(--radius-sm);
+    font-family:'Inter', sans-serif; font-size:16px; background:#fff; color:var(--ink); text-align:center;
+  }
+  .type-row input.correct{ border-color:var(--good); background:var(--good-soft); }
+  .type-row input.incorrect{ border-color:var(--bad); background:var(--bad-soft); }
+  input:focus-visible, button:focus-visible, select:focus-visible{ outline:2px solid var(--accent, var(--lat)); outline-offset:2px; }
+
+  .flashcard-feedback{ min-height:26px; margin-top:16px; font-size:14.5px; font-weight:600; }
+  .flashcard-feedback.ok{ color:var(--good); }
+  .flashcard-feedback.bad{ color:var(--bad); }
+  .flashcard-actions{ margin-top:18px; display:flex; justify-content:center; gap:10px; }
+
+  .cards-score-row{ display:flex; justify-content:center; gap:24px; margin-top:20px; flex-wrap:wrap; }
+  .stat-chip{ text-align:center; }
+  .stat-chip .val{ font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; color:var(--ink); display:block; }
+  .stat-chip .lbl{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:18px 14px 70px; }
+    header.hero{ padding:26px 20px 30px; }
+    .panel{ padding:18px 16px; }
+    #map{ height:340px; }
+    .cont-tab{ font-size:12.5px; padding:10px 6px; min-width:80px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Geografía · Geografía política</div>
+      <h1>Países y Capitales</h1>
+      <p class="lede">Practica los países y capitales del mundo, continente a continente, y las comunidades autónomas de España: localízalos en el mapa o repásalos con tarjetas.</p>
+    </div>
+  </header>
+
+  <div class="cont-tabs" id="contTabs"></div>
+
+  <div class="panel-intro" id="panelIntro">
+    <h2><span class="dot"></span><span id="introTitle">Europa</span></h2>
+    <p id="introText">44 países. Elige cómo quieres practicar.</p>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="modeBtnMapa" onclick="selectMode('mapa')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>
+      Mapa interactivo
+    </button>
+    <button class="mode-tab" id="modeBtnTarjetas" onclick="selectMode('tarjetas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+      Tarjetas de repaso
+    </button>
+  </div>
+
+  <!-- ============== MODO MAPA ============== -->
+  <div class="mode-panel active" id="panelMapa">
+    <section class="panel">
+      <div class="map-full-wrap" id="mapFullWrap">
+        <div class="quiz-bar">
+          <div class="quiz-prompt" id="quizPrompt">Explora el mapa libremente (toca una chincheta para ver el país y su capital), o pulsa «Empezar a preguntar» para ponerte a prueba.</div>
+          <div class="quiz-controls">
+            <button class="btn-primary" id="btnStartQuiz" onclick="startMapQuiz()">Empezar a preguntar</button>
+            <button class="btn-ghost" id="btnStopQuiz" onclick="stopMapQuiz()" style="display:none;">Terminar</button>
+            <span class="quiz-score" id="mapScore" style="display:none;"></span>
+          </div>
+        </div>
+        <div class="map-inner">
+          <button type="button" class="fullscreen-btn" id="btnFullscreen" title="Ver a pantalla completa" aria-label="Ver el mapa a pantalla completa" onclick="toggleFullscreen()">
+            <svg id="fsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </button>
+          <div id="map" aria-label="Mapa interactivo"></div>
+        </div>
+        <button type="button" class="exit-fullscreen-btn" id="btnExitFullscreen" title="Salir de pantalla completa" aria-label="Salir de pantalla completa" onclick="toggleFullscreen()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          Salir de pantalla completa
+        </button>
+        <div class="quiz-result" id="quizResult">
+          <p class="big" id="quizResultBig">¡Completado!</p>
+          <p id="quizResultText"></p>
+          <button class="btn-primary" onclick="startMapQuiz()">Volver a intentar</button>
+          <button class="btn-ghost" onclick="closeQuizResult()">Explorar el mapa</button>
+        </div>
+        <div class="map-hint" id="mapHint">💡 En modo pregunta, te pedimos un país por su nombre: toca la chincheta correcta en el mapa. Si fallas, te mostramos cuál era. En pantalla completa puedes hacer zoom con la rueda del ratón.</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============== MODO TARJETAS ============== -->
+  <div class="mode-panel" id="panelTarjetas">
+    <section class="panel">
+      <div class="cards-settings">
+        <div class="setting-group">
+          <label for="selDireccion">Dirección</label>
+          <select id="selDireccion" onchange="onSettingsChange()">
+            <option value="mixto">Aleatoria</option>
+            <option value="pc" id="optDirPC">País → Capital</option>
+            <option value="cp" id="optDirCP">Capital → País</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label for="selModo">Respuesta</label>
+          <select id="selModo" onchange="onSettingsChange()">
+            <option value="opciones">Elegir opción</option>
+            <option value="escribir">Escribir</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flashcard">
+        <div class="flashcard-kicker" id="cardKicker">País → Capital</div>
+        <p class="flashcard-prompt" id="cardPrompt">—</p>
+
+        <div class="flashcard-choices" id="cardChoices"></div>
+        <div class="type-row" id="cardTypeRow" style="display:none;">
+          <input type="text" id="cardTypeInput" placeholder="Escribe tu respuesta" autocomplete="off">
+          <button class="btn-primary" id="btnCheckType" onclick="checkTypedAnswer()">Comprobar</button>
+        </div>
+
+        <p class="flashcard-feedback" id="cardFeedback"></p>
+        <div class="flashcard-actions">
+          <button class="btn-primary" id="btnNextCard" onclick="nextCard()" style="display:none;">Siguiente tarjeta →</button>
+        </div>
+      </div>
+
+      <div class="cards-score-row">
+        <div class="stat-chip"><span class="val" id="statCorrect">0</span><span class="lbl">Aciertos</span></div>
+        <div class="stat-chip"><span class="val" id="statWrong">0</span><span class="lbl">Fallos</span></div>
+        <div class="stat-chip"><span class="val" id="statStreak">0</span><span class="lbl">Racha</span></div>
+        <div class="stat-chip"><span class="val" id="statSeen">0</span><span class="lbl">Vistas</span></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Herramienta de práctica creada para el aula de Geografía. Las puntuaciones se llevan solo durante esta sesión y no se guardan en ningún servidor.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+const DATA = {
+ "europa": [
+  {
+   "n": "Albania",
+   "c": "Tirana",
+   "lat": 41.33,
+   "lon": 19.82
+  },
+  {
+   "n": "Alemania",
+   "c": "Berlín",
+   "lat": 52.52,
+   "lon": 13.4
+  },
+  {
+   "n": "Andorra",
+   "c": "Andorra la Vieja",
+   "lat": 42.51,
+   "lon": 1.52
+  },
+  {
+   "n": "Austria",
+   "c": "Viena",
+   "lat": 48.21,
+   "lon": 16.37
+  },
+  {
+   "n": "Bélgica",
+   "c": "Bruselas",
+   "lat": 50.85,
+   "lon": 4.35
+  },
+  {
+   "n": "Bielorrusia",
+   "c": "Minsk",
+   "lat": 53.9,
+   "lon": 27.57
+  },
+  {
+   "n": "Bosnia y Herzegovina",
+   "c": "Sarajevo",
+   "lat": 43.86,
+   "lon": 18.41
+  },
+  {
+   "n": "Bulgaria",
+   "c": "Sofía",
+   "lat": 42.7,
+   "lon": 23.32
+  },
+  {
+   "n": "Chipre",
+   "c": "Nicosia",
+   "lat": 35.17,
+   "lon": 33.36
+  },
+  {
+   "n": "Croacia",
+   "c": "Zagreb",
+   "lat": 45.81,
+   "lon": 15.98
+  },
+  {
+   "n": "Dinamarca",
+   "c": "Copenhague",
+   "lat": 55.68,
+   "lon": 12.57
+  },
+  {
+   "n": "Eslovaquia",
+   "c": "Bratislava",
+   "lat": 48.15,
+   "lon": 17.11
+  },
+  {
+   "n": "Eslovenia",
+   "c": "Liubliana",
+   "lat": 46.06,
+   "lon": 14.51
+  },
+  {
+   "n": "Estonia",
+   "c": "Tallin",
+   "lat": 59.44,
+   "lon": 24.75
+  },
+  {
+   "n": "Finlandia",
+   "c": "Helsinki",
+   "lat": 60.17,
+   "lon": 24.94
+  },
+  {
+   "n": "Francia",
+   "c": "París",
+   "lat": 48.86,
+   "lon": 2.35
+  },
+  {
+   "n": "Grecia",
+   "c": "Atenas",
+   "lat": 37.98,
+   "lon": 23.73
+  },
+  {
+   "n": "Hungría",
+   "c": "Budapest",
+   "lat": 47.5,
+   "lon": 19.04
+  },
+  {
+   "n": "Irlanda",
+   "c": "Dublín",
+   "lat": 53.35,
+   "lon": -6.26
+  },
+  {
+   "n": "Islandia",
+   "c": "Reikiavik",
+   "lat": 64.15,
+   "lon": -21.94
+  },
+  {
+   "n": "Italia",
+   "c": "Roma",
+   "lat": 41.9,
+   "lon": 12.5
+  },
+  {
+   "n": "Letonia",
+   "c": "Riga",
+   "lat": 56.95,
+   "lon": 24.11
+  },
+  {
+   "n": "Liechtenstein",
+   "c": "Vaduz",
+   "lat": 47.14,
+   "lon": 9.52
+  },
+  {
+   "n": "Lituania",
+   "c": "Vilna",
+   "lat": 54.69,
+   "lon": 25.28
+  },
+  {
+   "n": "Luxemburgo",
+   "c": "Luxemburgo",
+   "lat": 49.61,
+   "lon": 6.13
+  },
+  {
+   "n": "Macedonia del Norte",
+   "c": "Skopie",
+   "lat": 42.0,
+   "lon": 21.43
+  },
+  {
+   "n": "Malta",
+   "c": "La Valeta",
+   "lat": 35.9,
+   "lon": 14.51
+  },
+  {
+   "n": "Moldavia",
+   "c": "Chisináu",
+   "lat": 47.01,
+   "lon": 28.86
+  },
+  {
+   "n": "Mónaco",
+   "c": "Mónaco",
+   "lat": 43.73,
+   "lon": 7.42
+  },
+  {
+   "n": "Montenegro",
+   "c": "Podgorica",
+   "lat": 42.44,
+   "lon": 19.26
+  },
+  {
+   "n": "Noruega",
+   "c": "Oslo",
+   "lat": 59.91,
+   "lon": 10.75
+  },
+  {
+   "n": "Países Bajos",
+   "c": "Ámsterdam",
+   "lat": 52.37,
+   "lon": 4.9
+  },
+  {
+   "n": "Polonia",
+   "c": "Varsovia",
+   "lat": 52.23,
+   "lon": 21.01
+  },
+  {
+   "n": "Portugal",
+   "c": "Lisboa",
+   "lat": 38.72,
+   "lon": -9.14
+  },
+  {
+   "n": "Reino Unido",
+   "c": "Londres",
+   "lat": 51.51,
+   "lon": -0.13
+  },
+  {
+   "n": "República Checa",
+   "c": "Praga",
+   "lat": 50.09,
+   "lon": 14.42
+  },
+  {
+   "n": "Rumanía",
+   "c": "Bucarest",
+   "lat": 44.43,
+   "lon": 26.1
+  },
+  {
+   "n": "Rusia",
+   "c": "Moscú",
+   "lat": 55.76,
+   "lon": 37.62
+  },
+  {
+   "n": "San Marino",
+   "c": "San Marino",
+   "lat": 43.94,
+   "lon": 12.45
+  },
+  {
+   "n": "Serbia",
+   "c": "Belgrado",
+   "lat": 44.79,
+   "lon": 20.45
+  },
+  {
+   "n": "Suecia",
+   "c": "Estocolmo",
+   "lat": 59.33,
+   "lon": 18.06
+  },
+  {
+   "n": "Suiza",
+   "c": "Berna",
+   "lat": 46.95,
+   "lon": 7.45
+  },
+  {
+   "n": "Ucrania",
+   "c": "Kiev",
+   "lat": 50.45,
+   "lon": 30.52
+  },
+  {
+   "n": "Ciudad del Vaticano",
+   "c": "Ciudad del Vaticano",
+   "lat": 41.9,
+   "lon": 12.45
+  }
+ ],
+ "africa": [
+  {
+   "n": "Argelia",
+   "c": "Argel",
+   "lat": 36.75,
+   "lon": 3.06
+  },
+  {
+   "n": "Angola",
+   "c": "Luanda",
+   "lat": -8.84,
+   "lon": 13.23
+  },
+  {
+   "n": "Benín",
+   "c": "Porto Novo",
+   "lat": 6.5,
+   "lon": 2.6
+  },
+  {
+   "n": "Botsuana",
+   "c": "Gaborone",
+   "lat": -24.65,
+   "lon": 25.91
+  },
+  {
+   "n": "Burkina Faso",
+   "c": "Uagadugú",
+   "lat": 12.37,
+   "lon": -1.52
+  },
+  {
+   "n": "Burundi",
+   "c": "Gitega",
+   "lat": -3.43,
+   "lon": 29.93
+  },
+  {
+   "n": "Cabo Verde",
+   "c": "Praia",
+   "lat": 14.93,
+   "lon": -23.51
+  },
+  {
+   "n": "Camerún",
+   "c": "Yaundé",
+   "lat": 3.87,
+   "lon": 11.52
+  },
+  {
+   "n": "Chad",
+   "c": "Yamena",
+   "lat": 12.11,
+   "lon": 15.04
+  },
+  {
+   "n": "Comoras",
+   "c": "Moroni",
+   "lat": -11.7,
+   "lon": 43.26
+  },
+  {
+   "n": "Costa de Marfil",
+   "c": "Yamusukro",
+   "lat": 6.82,
+   "lon": -5.28
+  },
+  {
+   "n": "Egipto",
+   "c": "El Cairo",
+   "lat": 30.04,
+   "lon": 31.24
+  },
+  {
+   "n": "Eritrea",
+   "c": "Asmara",
+   "lat": 15.32,
+   "lon": 38.93
+  },
+  {
+   "n": "Esuatini",
+   "c": "Mbabane",
+   "lat": -26.32,
+   "lon": 31.13
+  },
+  {
+   "n": "Etiopía",
+   "c": "Adís Abeba",
+   "lat": 9.03,
+   "lon": 38.74
+  },
+  {
+   "n": "Gabón",
+   "c": "Libreville",
+   "lat": 0.42,
+   "lon": 9.45
+  },
+  {
+   "n": "Gambia",
+   "c": "Banjul",
+   "lat": 13.45,
+   "lon": -16.58
+  },
+  {
+   "n": "Ghana",
+   "c": "Acra",
+   "lat": 5.6,
+   "lon": -0.19
+  },
+  {
+   "n": "Guinea",
+   "c": "Conakri",
+   "lat": 9.64,
+   "lon": -13.58
+  },
+  {
+   "n": "Guinea-Bisáu",
+   "c": "Bisáu",
+   "lat": 11.86,
+   "lon": -15.6
+  },
+  {
+   "n": "Guinea Ecuatorial",
+   "c": "Malabo",
+   "lat": 3.75,
+   "lon": 8.78
+  },
+  {
+   "n": "Kenia",
+   "c": "Nairobi",
+   "lat": -1.29,
+   "lon": 36.82
+  },
+  {
+   "n": "Lesoto",
+   "c": "Maseru",
+   "lat": -29.32,
+   "lon": 27.48
+  },
+  {
+   "n": "Liberia",
+   "c": "Monrovia",
+   "lat": 6.3,
+   "lon": -10.8
+  },
+  {
+   "n": "Libia",
+   "c": "Trípoli",
+   "lat": 32.89,
+   "lon": 13.19
+  },
+  {
+   "n": "Madagascar",
+   "c": "Antananarivo",
+   "lat": -18.88,
+   "lon": 47.51
+  },
+  {
+   "n": "Malaui",
+   "c": "Lilongüe",
+   "lat": -13.96,
+   "lon": 33.79
+  },
+  {
+   "n": "Malí",
+   "c": "Bamako",
+   "lat": 12.65,
+   "lon": -8.0
+  },
+  {
+   "n": "Marruecos",
+   "c": "Rabat",
+   "lat": 34.02,
+   "lon": -6.83
+  },
+  {
+   "n": "Mauricio",
+   "c": "Port Louis",
+   "lat": -20.16,
+   "lon": 57.5
+  },
+  {
+   "n": "Mauritania",
+   "c": "Nuakchot",
+   "lat": 18.09,
+   "lon": -15.98
+  },
+  {
+   "n": "Mozambique",
+   "c": "Maputo",
+   "lat": -25.97,
+   "lon": 32.57
+  },
+  {
+   "n": "Namibia",
+   "c": "Windhoek",
+   "lat": -22.57,
+   "lon": 17.08
+  },
+  {
+   "n": "Níger",
+   "c": "Niamey",
+   "lat": 13.51,
+   "lon": 2.11
+  },
+  {
+   "n": "Nigeria",
+   "c": "Abuya",
+   "lat": 9.08,
+   "lon": 7.4
+  },
+  {
+   "n": "República Centroafricana",
+   "c": "Bangui",
+   "lat": 4.37,
+   "lon": 18.56
+  },
+  {
+   "n": "República del Congo",
+   "c": "Brazzaville",
+   "lat": -4.26,
+   "lon": 15.28
+  },
+  {
+   "n": "República Democrática del Congo",
+   "c": "Kinsasa",
+   "lat": -4.32,
+   "lon": 15.31
+  },
+  {
+   "n": "Ruanda",
+   "c": "Kigali",
+   "lat": -1.94,
+   "lon": 30.06
+  },
+  {
+   "n": "Santo Tomé y Príncipe",
+   "c": "Santo Tomé",
+   "lat": 0.34,
+   "lon": 6.73
+  },
+  {
+   "n": "Senegal",
+   "c": "Dakar",
+   "lat": 14.72,
+   "lon": -17.47
+  },
+  {
+   "n": "Seychelles",
+   "c": "Victoria",
+   "lat": -4.62,
+   "lon": 55.45
+  },
+  {
+   "n": "Sierra Leona",
+   "c": "Freetown",
+   "lat": 8.48,
+   "lon": -13.23
+  },
+  {
+   "n": "Somalia",
+   "c": "Mogadiscio",
+   "lat": 2.04,
+   "lon": 45.34
+  },
+  {
+   "n": "Sudáfrica",
+   "c": "Pretoria",
+   "lat": -25.75,
+   "lon": 28.19
+  },
+  {
+   "n": "Sudán",
+   "c": "Jartum",
+   "lat": 15.5,
+   "lon": 32.56
+  },
+  {
+   "n": "Sudán del Sur",
+   "c": "Yuba",
+   "lat": 4.85,
+   "lon": 31.58
+  },
+  {
+   "n": "Tanzania",
+   "c": "Dodoma",
+   "lat": -6.16,
+   "lon": 35.75
+  },
+  {
+   "n": "Togo",
+   "c": "Lomé",
+   "lat": 6.13,
+   "lon": 1.22
+  },
+  {
+   "n": "Túnez",
+   "c": "Túnez",
+   "lat": 36.81,
+   "lon": 10.18
+  },
+  {
+   "n": "Uganda",
+   "c": "Kampala",
+   "lat": 0.31,
+   "lon": 32.58
+  },
+  {
+   "n": "Yibuti",
+   "c": "Yibuti",
+   "lat": 11.59,
+   "lon": 43.15
+  },
+  {
+   "n": "Zambia",
+   "c": "Lusaka",
+   "lat": -15.39,
+   "lon": 28.32
+  },
+  {
+   "n": "Zimbabue",
+   "c": "Harare",
+   "lat": -17.83,
+   "lon": 31.05
+  }
+ ],
+ "asia": [
+  {
+   "n": "Afganistán",
+   "c": "Kabul",
+   "lat": 34.56,
+   "lon": 69.21
+  },
+  {
+   "n": "Arabia Saudí",
+   "c": "Riad",
+   "lat": 24.71,
+   "lon": 46.68
+  },
+  {
+   "n": "Armenia",
+   "c": "Ereván",
+   "lat": 40.18,
+   "lon": 44.51
+  },
+  {
+   "n": "Azerbaiyán",
+   "c": "Bakú",
+   "lat": 40.41,
+   "lon": 49.87
+  },
+  {
+   "n": "Baréin",
+   "c": "Manama",
+   "lat": 26.23,
+   "lon": 50.59
+  },
+  {
+   "n": "Bangladés",
+   "c": "Daca",
+   "lat": 23.81,
+   "lon": 90.41
+  },
+  {
+   "n": "Bután",
+   "c": "Timbu",
+   "lat": 27.47,
+   "lon": 89.64
+  },
+  {
+   "n": "Brunéi",
+   "c": "Bandar Seri Begawan",
+   "lat": 4.94,
+   "lon": 114.95
+  },
+  {
+   "n": "Camboya",
+   "c": "Nom Pen",
+   "lat": 11.56,
+   "lon": 104.92
+  },
+  {
+   "n": "Catar",
+   "c": "Doha",
+   "lat": 25.29,
+   "lon": 51.53
+  },
+  {
+   "n": "China",
+   "c": "Pekín",
+   "lat": 39.9,
+   "lon": 116.41
+  },
+  {
+   "n": "Corea del Norte",
+   "c": "Pionyang",
+   "lat": 39.02,
+   "lon": 125.75
+  },
+  {
+   "n": "Corea del Sur",
+   "c": "Seúl",
+   "lat": 37.57,
+   "lon": 126.98
+  },
+  {
+   "n": "Emiratos Árabes Unidos",
+   "c": "Abu Dabi",
+   "lat": 24.47,
+   "lon": 54.37
+  },
+  {
+   "n": "Filipinas",
+   "c": "Manila",
+   "lat": 14.6,
+   "lon": 120.98
+  },
+  {
+   "n": "Georgia",
+   "c": "Tiflis",
+   "lat": 41.72,
+   "lon": 44.79
+  },
+  {
+   "n": "India",
+   "c": "Nueva Delhi",
+   "lat": 28.61,
+   "lon": 77.21
+  },
+  {
+   "n": "Indonesia",
+   "c": "Yakarta",
+   "lat": -6.21,
+   "lon": 106.85
+  },
+  {
+   "n": "Irak",
+   "c": "Bagdad",
+   "lat": 33.31,
+   "lon": 44.36
+  },
+  {
+   "n": "Irán",
+   "c": "Teherán",
+   "lat": 35.69,
+   "lon": 51.39
+  },
+  {
+   "n": "Israel",
+   "c": "Jerusalén",
+   "lat": 31.78,
+   "lon": 35.22
+  },
+  {
+   "n": "Japón",
+   "c": "Tokio",
+   "lat": 35.68,
+   "lon": 139.65
+  },
+  {
+   "n": "Jordania",
+   "c": "Amán",
+   "lat": 31.95,
+   "lon": 35.93
+  },
+  {
+   "n": "Kazajistán",
+   "c": "Astaná",
+   "lat": 51.18,
+   "lon": 71.45
+  },
+  {
+   "n": "Kirguistán",
+   "c": "Biskek",
+   "lat": 42.87,
+   "lon": 74.59
+  },
+  {
+   "n": "Kuwait",
+   "c": "Kuwait",
+   "lat": 29.38,
+   "lon": 47.98
+  },
+  {
+   "n": "Laos",
+   "c": "Vientián",
+   "lat": 17.97,
+   "lon": 102.6
+  },
+  {
+   "n": "Líbano",
+   "c": "Beirut",
+   "lat": 33.89,
+   "lon": 35.5
+  },
+  {
+   "n": "Malasia",
+   "c": "Kuala Lumpur",
+   "lat": 3.14,
+   "lon": 101.69
+  },
+  {
+   "n": "Maldivas",
+   "c": "Malé",
+   "lat": 4.17,
+   "lon": 73.51
+  },
+  {
+   "n": "Mongolia",
+   "c": "Ulán Bator",
+   "lat": 47.89,
+   "lon": 106.91
+  },
+  {
+   "n": "Myanmar",
+   "c": "Naipyidó",
+   "lat": 19.76,
+   "lon": 96.08
+  },
+  {
+   "n": "Nepal",
+   "c": "Katmandú",
+   "lat": 27.72,
+   "lon": 85.32
+  },
+  {
+   "n": "Omán",
+   "c": "Mascate",
+   "lat": 23.61,
+   "lon": 58.59
+  },
+  {
+   "n": "Pakistán",
+   "c": "Islamabad",
+   "lat": 33.68,
+   "lon": 73.05
+  },
+  {
+   "n": "Palestina",
+   "c": "Ramala",
+   "lat": 31.9,
+   "lon": 35.2
+  },
+  {
+   "n": "Singapur",
+   "c": "Singapur",
+   "lat": 1.35,
+   "lon": 103.82
+  },
+  {
+   "n": "Siria",
+   "c": "Damasco",
+   "lat": 33.51,
+   "lon": 36.28
+  },
+  {
+   "n": "Sri Lanka",
+   "c": "Sri Jayewardenepura Kotte",
+   "lat": 6.9,
+   "lon": 79.9
+  },
+  {
+   "n": "Tailandia",
+   "c": "Bangkok",
+   "lat": 13.75,
+   "lon": 100.5
+  },
+  {
+   "n": "Tayikistán",
+   "c": "Dusambé",
+   "lat": 38.56,
+   "lon": 68.79
+  },
+  {
+   "n": "Timor Oriental",
+   "c": "Dili",
+   "lat": -8.56,
+   "lon": 125.57
+  },
+  {
+   "n": "Turkmenistán",
+   "c": "Asjabad",
+   "lat": 37.95,
+   "lon": 58.38
+  },
+  {
+   "n": "Turquía",
+   "c": "Ankara",
+   "lat": 39.93,
+   "lon": 32.86
+  },
+  {
+   "n": "Uzbekistán",
+   "c": "Taskent",
+   "lat": 41.3,
+   "lon": 69.24
+  },
+  {
+   "n": "Vietnam",
+   "c": "Hanói",
+   "lat": 21.03,
+   "lon": 105.85
+  },
+  {
+   "n": "Yemen",
+   "c": "Saná",
+   "lat": 15.35,
+   "lon": 44.21
+  }
+ ],
+ "america": [
+  {
+   "n": "Antigua y Barbuda",
+   "c": "Saint John's",
+   "lat": 17.12,
+   "lon": -61.85
+  },
+  {
+   "n": "Argentina",
+   "c": "Buenos Aires",
+   "lat": -34.61,
+   "lon": -58.38
+  },
+  {
+   "n": "Bahamas",
+   "c": "Nasáu",
+   "lat": 25.06,
+   "lon": -77.35
+  },
+  {
+   "n": "Barbados",
+   "c": "Bridgetown",
+   "lat": 13.1,
+   "lon": -59.62
+  },
+  {
+   "n": "Belice",
+   "c": "Belmopán",
+   "lat": 17.25,
+   "lon": -88.77
+  },
+  {
+   "n": "Bolivia",
+   "c": "Sucre",
+   "lat": -19.03,
+   "lon": -65.26
+  },
+  {
+   "n": "Brasil",
+   "c": "Brasilia",
+   "lat": -15.79,
+   "lon": -47.88
+  },
+  {
+   "n": "Canadá",
+   "c": "Ottawa",
+   "lat": 45.42,
+   "lon": -75.7
+  },
+  {
+   "n": "Chile",
+   "c": "Santiago",
+   "lat": -33.45,
+   "lon": -70.65
+  },
+  {
+   "n": "Colombia",
+   "c": "Bogotá",
+   "lat": 4.71,
+   "lon": -74.07
+  },
+  {
+   "n": "Costa Rica",
+   "c": "San José",
+   "lat": 9.93,
+   "lon": -84.08
+  },
+  {
+   "n": "Cuba",
+   "c": "La Habana",
+   "lat": 23.13,
+   "lon": -82.38
+  },
+  {
+   "n": "Dominica",
+   "c": "Roseau",
+   "lat": 15.3,
+   "lon": -61.39
+  },
+  {
+   "n": "Ecuador",
+   "c": "Quito",
+   "lat": -0.18,
+   "lon": -78.47
+  },
+  {
+   "n": "El Salvador",
+   "c": "San Salvador",
+   "lat": 13.69,
+   "lon": -89.22
+  },
+  {
+   "n": "Estados Unidos",
+   "c": "Washington D. C.",
+   "lat": 38.91,
+   "lon": -77.04
+  },
+  {
+   "n": "Granada",
+   "c": "Saint George's",
+   "lat": 12.06,
+   "lon": -61.75
+  },
+  {
+   "n": "Guatemala",
+   "c": "Ciudad de Guatemala",
+   "lat": 14.63,
+   "lon": -90.51
+  },
+  {
+   "n": "Guyana",
+   "c": "Georgetown",
+   "lat": 6.8,
+   "lon": -58.16
+  },
+  {
+   "n": "Haití",
+   "c": "Puerto Príncipe",
+   "lat": 18.59,
+   "lon": -72.31
+  },
+  {
+   "n": "Honduras",
+   "c": "Tegucigalpa",
+   "lat": 14.1,
+   "lon": -87.22
+  },
+  {
+   "n": "Jamaica",
+   "c": "Kingston",
+   "lat": 17.97,
+   "lon": -76.79
+  },
+  {
+   "n": "México",
+   "c": "Ciudad de México",
+   "lat": 19.43,
+   "lon": -99.13
+  },
+  {
+   "n": "Nicaragua",
+   "c": "Managua",
+   "lat": 12.11,
+   "lon": -86.24
+  },
+  {
+   "n": "Panamá",
+   "c": "Ciudad de Panamá",
+   "lat": 8.98,
+   "lon": -79.52
+  },
+  {
+   "n": "Paraguay",
+   "c": "Asunción",
+   "lat": -25.3,
+   "lon": -57.64
+  },
+  {
+   "n": "Perú",
+   "c": "Lima",
+   "lat": -12.05,
+   "lon": -77.04
+  },
+  {
+   "n": "República Dominicana",
+   "c": "Santo Domingo",
+   "lat": 18.49,
+   "lon": -69.93
+  },
+  {
+   "n": "San Cristóbal y Nieves",
+   "c": "Basseterre",
+   "lat": 17.3,
+   "lon": -62.72
+  },
+  {
+   "n": "San Vicente y las Granadinas",
+   "c": "Kingstown",
+   "lat": 13.16,
+   "lon": -61.22
+  },
+  {
+   "n": "Santa Lucía",
+   "c": "Castries",
+   "lat": 14.01,
+   "lon": -60.99
+  },
+  {
+   "n": "Surinam",
+   "c": "Paramaribo",
+   "lat": 5.87,
+   "lon": -55.17
+  },
+  {
+   "n": "Trinidad y Tobago",
+   "c": "Puerto España",
+   "lat": 10.65,
+   "lon": -61.52
+  },
+  {
+   "n": "Uruguay",
+   "c": "Montevideo",
+   "lat": -34.9,
+   "lon": -56.16
+  },
+  {
+   "n": "Venezuela",
+   "c": "Caracas",
+   "lat": 10.48,
+   "lon": -66.9
+  }
+ ],
+ "oceania": [
+  {
+   "n": "Australia",
+   "c": "Canberra",
+   "lat": -35.28,
+   "lon": 149.13
+  },
+  {
+   "n": "Fiyi",
+   "c": "Suva",
+   "lat": -18.14,
+   "lon": 178.44
+  },
+  {
+   "n": "Islas Marshall",
+   "c": "Majuro",
+   "lat": 7.09,
+   "lon": 171.38
+  },
+  {
+   "n": "Islas Salomón",
+   "c": "Honiara",
+   "lat": -9.43,
+   "lon": 159.95
+  },
+  {
+   "n": "Kiribati",
+   "c": "Tarawa Sur",
+   "lat": 1.35,
+   "lon": 173.02
+  },
+  {
+   "n": "Micronesia",
+   "c": "Palikir",
+   "lat": 6.92,
+   "lon": 158.16
+  },
+  {
+   "n": "Nauru",
+   "c": "Yaren",
+   "lat": -0.55,
+   "lon": 166.92
+  },
+  {
+   "n": "Nueva Zelanda",
+   "c": "Wellington",
+   "lat": -41.29,
+   "lon": 174.78
+  },
+  {
+   "n": "Palaos",
+   "c": "Ngerulmud",
+   "lat": 7.5,
+   "lon": 134.62
+  },
+  {
+   "n": "Papúa Nueva Guinea",
+   "c": "Port Moresby",
+   "lat": -9.48,
+   "lon": 147.15
+  },
+  {
+   "n": "Samoa",
+   "c": "Apia",
+   "lat": -13.83,
+   "lon": -171.76
+  },
+  {
+   "n": "Tonga",
+   "c": "Nuku'alofa",
+   "lat": -21.14,
+   "lon": -175.2
+  },
+  {
+   "n": "Tuvalu",
+   "c": "Funafuti",
+   "lat": -8.52,
+   "lon": 179.2
+  },
+  {
+   "n": "Vanuatu",
+   "c": "Port Vila",
+   "lat": -17.73,
+   "lon": 168.32
+  }
+ ],
+ "espana": [
+  {
+   "n": "Andalucía",
+   "c": "Sevilla",
+   "lat": 37.39,
+   "lon": -5.99
+  },
+  {
+   "n": "Aragón",
+   "c": "Zaragoza",
+   "lat": 41.65,
+   "lon": -0.88
+  },
+  {
+   "n": "Asturias",
+   "c": "Oviedo",
+   "lat": 43.36,
+   "lon": -5.84
+  },
+  {
+   "n": "Islas Baleares",
+   "c": "Palma",
+   "lat": 39.57,
+   "lon": 2.65
+  },
+  {
+   "n": "Canarias",
+   "c": "Santa Cruz de Tenerife",
+   "lat": 28.47,
+   "lon": -16.25
+  },
+  {
+   "n": "Cantabria",
+   "c": "Santander",
+   "lat": 43.46,
+   "lon": -3.8
+  },
+  {
+   "n": "Castilla-La Mancha",
+   "c": "Toledo",
+   "lat": 39.86,
+   "lon": -4.02
+  },
+  {
+   "n": "Castilla y León",
+   "c": "Valladolid",
+   "lat": 41.65,
+   "lon": -4.72
+  },
+  {
+   "n": "Cataluña",
+   "c": "Barcelona",
+   "lat": 41.39,
+   "lon": 2.17
+  },
+  {
+   "n": "Comunidad Valenciana",
+   "c": "Valencia",
+   "lat": 39.47,
+   "lon": -0.38
+  },
+  {
+   "n": "Extremadura",
+   "c": "Mérida",
+   "lat": 38.92,
+   "lon": -6.34
+  },
+  {
+   "n": "Galicia",
+   "c": "Santiago de Compostela",
+   "lat": 42.88,
+   "lon": -8.54
+  },
+  {
+   "n": "Comunidad de Madrid",
+   "c": "Madrid",
+   "lat": 40.42,
+   "lon": -3.7
+  },
+  {
+   "n": "Región de Murcia",
+   "c": "Murcia",
+   "lat": 37.99,
+   "lon": -1.13
+  },
+  {
+   "n": "Comunidad Foral de Navarra",
+   "c": "Pamplona",
+   "lat": 42.82,
+   "lon": -1.64
+  },
+  {
+   "n": "País Vasco",
+   "c": "Vitoria-Gasteiz",
+   "lat": 42.85,
+   "lon": -2.67
+  },
+  {
+   "n": "La Rioja",
+   "c": "Logroño",
+   "lat": 42.47,
+   "lon": -2.45
+  },
+  {
+   "n": "Ceuta",
+   "c": "Ceuta",
+   "lat": 35.89,
+   "lon": -5.32
+  },
+  {
+   "n": "Melilla",
+   "c": "Melilla",
+   "lat": 35.29,
+   "lon": -2.94
+  }
+ ]
+};
+</script>
+<script>
+(function(){
+  "use strict";
+
+  var CONTINENTS = [
+    { key:"europa",  label:"Europa",  accent:"#1F6E8C", noun:"país",     nounPl:"países" },
+    { key:"america", label:"América", accent:"#C1440E", noun:"país",     nounPl:"países" },
+    { key:"africa",  label:"África",  accent:"#B4790F", noun:"país",     nounPl:"países" },
+    { key:"asia",    label:"Asia",    accent:"#6B4C9A", noun:"país",     nounPl:"países" },
+    { key:"oceania", label:"Oceanía", accent:"#2E8B74", noun:"país",     nounPl:"países" },
+    { key:"espana",  label:"España",  accent:"#B23A48", noun:"comunidad", nounPl:"comunidades y ciudades autónomas" }
+  ];
+  var CONT_BY_KEY = {};
+  CONTINENTS.forEach(function(c){ CONT_BY_KEY[c.key] = c; });
+
+  var currentKey = "europa";
+  var currentMode = "mapa";
+
+  /* ---------------------------------------------------------------
+     UTILIDADES
+  ----------------------------------------------------------------*/
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+  function pickN(arr, n, exclude){
+    var pool = arr.filter(function(x){ return x !== exclude; });
+    return shuffle(pool).slice(0, n);
+  }
+  function normalize(str){
+    return String(str || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+  function escapeHtml(str){
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ---------------------------------------------------------------
+     PESTAÑAS DE CONTINENTE
+  ----------------------------------------------------------------*/
+  function renderContTabs(){
+    var wrap = document.getElementById('contTabs');
+    var html = '';
+    CONTINENTS.forEach(function(c){
+      var count = DATA[c.key].length;
+      html += '<button class="cont-tab' + (c.key === currentKey ? ' active' : '') + '" style="--accent:' + c.accent + '" data-key="' + c.key + '">' +
+        escapeHtml(c.label) + '<span class="cont-tab-count">' + count + '</span></button>';
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.cont-tab').forEach(function(btn){
+      btn.addEventListener('click', function(){ selectContinent(btn.getAttribute('data-key')); });
+    });
+  }
+
+  window.selectContinent = function(key){
+    if(!CONT_BY_KEY[key]) return;
+    currentKey = key;
+    document.querySelectorAll('.cont-tab').forEach(function(btn){
+      btn.classList.toggle('active', btn.getAttribute('data-key') === key);
+    });
+    var c = CONT_BY_KEY[key];
+    document.getElementById('introTitle').textContent = c.label;
+    document.getElementById('introText').textContent = DATA[key].length + ' ' + c.nounPl + '. Elige cómo quieres practicar.';
+    document.querySelectorAll('.panel-intro .dot').forEach(function(d){ d.style.background = c.accent; });
+    document.querySelectorAll('.mode-tab, .panel, .flashcard-kicker').forEach(function(el){ el.style.setProperty('--accent', c.accent); });
+    var nounCap = c.noun.charAt(0).toUpperCase() + c.noun.slice(1);
+    document.getElementById('optDirPC').textContent = nounCap + ' → Capital';
+    document.getElementById('optDirCP').textContent = 'Capital → ' + nounCap;
+
+    stopMapQuiz();
+    closeQuizResult();
+    if(currentMode === 'mapa'){
+      refreshMapForContinent();
+    } else {
+      resetCardDeck();
+      nextCard();
+    }
+  };
+
+  window.selectMode = function(mode){
+    currentMode = mode;
+    document.getElementById('modeBtnMapa').classList.toggle('active', mode === 'mapa');
+    document.getElementById('modeBtnTarjetas').classList.toggle('active', mode === 'tarjetas');
+    document.getElementById('panelMapa').classList.toggle('active', mode === 'mapa');
+    document.getElementById('panelTarjetas').classList.toggle('active', mode === 'tarjetas');
+    if(mode === 'mapa'){
+      if(!mapInitialized){ initMap(); mapInitialized = true; }
+      setTimeout(function(){ if(map){ map.invalidateSize(); refreshMapForContinent(); } }, 60);
+    } else {
+      if(!cardsStarted){ resetCardDeck(); nextCard(); cardsStarted = true; }
+    }
+  };
+
+  /* ---------------------------------------------------------------
+     MAPA
+  ----------------------------------------------------------------*/
+  var map = null, mapInitialized = false, markersLayer = null, markerByName = {};
+  var quizActive = false, quizQueue = [], quizIndex = 0, quizCorrect = 0, quizTarget = null;
+
+  function initMap(){
+    map = L.map('map', { scrollWheelZoom:false }).setView([20, 0], 2);
+    /* Base sin ningún texto: ni nombres de países, ni de capitales, ni de ciudades.
+       Así el propio mapa no delata la respuesta del quiz. Muestra costas, relieve
+       y fronteras administrativas, pero cero rótulos. */
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18,
+      subdomains: 'abcd',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+    if('ResizeObserver' in window){
+      new ResizeObserver(function(){ map.invalidateSize(); }).observe(document.getElementById('map'));
+    }
+  }
+
+  function pinDivIcon(cls){
+    return L.divIcon({ className:'', html:'<div class="pin-icon ' + cls + '"></div>', iconSize:[16,16], iconAnchor:[8,14] });
+  }
+
+  /* ---------------------------------------------------------------
+     PANTALLA COMPLETA
+     Todo lo relativo a señalar (empezar/terminar pregunta, clicar
+     chinchetas, ver resultado) sigue disponible dentro del mapa a
+     pantalla completa: el wrap entero entra en fullscreen, no solo
+     el lienzo de Leaflet.
+  ----------------------------------------------------------------*/
+  var EXPAND_ICON = '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+  var COMPRESS_ICON = '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>';
+
+  var fsSupported = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+  if(!fsSupported){
+    var btnFsInit = document.getElementById('btnFullscreen');
+    if(btnFsInit) btnFsInit.style.display = 'none';
+  }
+
+  window.toggleFullscreen = function(){
+    var el = document.getElementById('mapFullWrap');
+    var isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    if(!isFs){
+      if(el.requestFullscreen) el.requestFullscreen();
+      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  };
+
+  function onFullscreenChange(){
+    var isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    var icon = document.getElementById('fsIcon');
+    if(icon) icon.innerHTML = isFs ? COMPRESS_ICON : EXPAND_ICON;
+    var btnFs = document.getElementById('btnFullscreen');
+    if(btnFs) btnFs.title = isFs ? 'Salir de pantalla completa' : 'Ver a pantalla completa';
+    if(map && map.scrollWheelZoom){
+      if(isFs) map.scrollWheelZoom.enable();
+      else map.scrollWheelZoom.disable();
+    }
+    setTimeout(function(){ if(map) map.invalidateSize(); }, 120);
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+  function refreshMapForContinent(){
+    if(!map) return;
+    markersLayer.clearLayers();
+    markerByName = {};
+    var list = DATA[currentKey];
+    var bounds = [];
+    list.forEach(function(item){
+      var marker = L.marker([item.lat, item.lon], { icon: pinDivIcon('') });
+      marker.bindPopup('<b>' + escapeHtml(item.n) + '</b><br>Capital: ' + escapeHtml(item.c));
+      marker.on('click', function(){ onMarkerClick(item); });
+      marker.addTo(markersLayer);
+      markerByName[item.n] = marker;
+      bounds.push([item.lat, item.lon]);
+    });
+    if(bounds.length){
+      map.fitBounds(bounds, { padding:[30,30], maxZoom: currentKey === 'espana' ? 7 : 5 });
+    }
+    document.getElementById('mapHint').textContent = currentKey === 'espana'
+      ? '💡 En modo pregunta, te pedimos una comunidad o ciudad autónoma: toca la chincheta correcta en el mapa.'
+      : '💡 En modo pregunta, te pedimos un país por su nombre: toca la chincheta correcta en el mapa. Si fallas, te mostramos cuál era.';
+  }
+
+  function onMarkerClick(item){
+    if(!quizActive) return; /* fuera de modo pregunta, el popup normal de Leaflet ya se abre solo */
+    var marker = markerByName[item.n];
+    if(item.n === quizTarget.n){
+      marker.setIcon(pinDivIcon('ok'));
+      quizCorrect++;
+      setQuizPrompt('¡Correcto! <b>' + escapeHtml(item.n) + '</b> — ' + escapeHtml(item.c) + '.');
+      setTimeout(advanceQuiz, 850);
+    } else {
+      marker.setIcon(pinDivIcon('bad'));
+      var targetMarker = markerByName[quizTarget.n];
+      if(targetMarker) targetMarker.setIcon(pinDivIcon('target'));
+      setQuizPrompt('No era ' + escapeHtml(item.n) + '. Buscabas <b>' + escapeHtml(quizTarget.n) + '</b> (chincheta dorada).');
+      setTimeout(advanceQuiz, 1400);
+    }
+    quizActive = false; /* evita doble-clic mientras se resuelve */
+  }
+
+  function setQuizPrompt(html){ document.getElementById('quizPrompt').innerHTML = html; }
+
+  window.startMapQuiz = function(){
+    if(!map){ initMap(); mapInitialized = true; }
+    refreshMapForContinent();
+    quizQueue = shuffle(DATA[currentKey]);
+    quizIndex = 0; quizCorrect = 0;
+    document.getElementById('btnStartQuiz').style.display = 'none';
+    document.getElementById('btnStopQuiz').style.display = 'inline-flex';
+    document.getElementById('mapScore').style.display = 'inline-flex';
+    closeQuizResult();
+    askMapQuestion();
+  };
+
+  window.stopMapQuiz = function(){
+    quizActive = false;
+    document.getElementById('btnStartQuiz').style.display = 'inline-flex';
+    document.getElementById('btnStopQuiz').style.display = 'none';
+    document.getElementById('mapScore').style.display = 'none';
+    setQuizPrompt('Explora el mapa libremente (toca una chincheta para ver el país y su capital), o pulsa «Empezar a preguntar» para ponerte a prueba.');
+    if(markersLayer){ Object.keys(markerByName).forEach(function(n){ markerByName[n].setIcon(pinDivIcon('')); }); }
+  };
+
+  function askMapQuestion(){
+    if(quizIndex >= quizQueue.length){ finishMapQuiz(); return; }
+    quizTarget = quizQueue[quizIndex];
+    quizActive = true;
+    var word = currentKey === 'espana' ? 'Encuentra' : 'Encuentra';
+    setQuizPrompt(word + ' en el mapa: <b>' + escapeHtml(quizTarget.n) + '</b>');
+    document.getElementById('mapScore').textContent = 'Pregunta ' + (quizIndex + 1) + ' / ' + quizQueue.length + ' · Aciertos: ' + quizCorrect;
+  }
+
+  function advanceQuiz(){
+    quizIndex++;
+    Object.keys(markerByName).forEach(function(n){ markerByName[n].setIcon(pinDivIcon('')); });
+    askMapQuestion();
+  }
+
+  function finishMapQuiz(){
+    document.getElementById('btnStartQuiz').style.display = 'inline-flex';
+    document.getElementById('btnStopQuiz').style.display = 'none';
+    document.getElementById('mapScore').style.display = 'none';
+    var pct = Math.round((quizCorrect / quizQueue.length) * 100);
+    document.getElementById('quizResultBig').textContent = quizCorrect + ' / ' + quizQueue.length + ' (' + pct + '%)';
+    document.getElementById('quizResultText').textContent = pct === 100
+      ? '¡Te los sabes todos!'
+      : 'Sigue practicando para mejorar tu marca.';
+    document.getElementById('quizResult').classList.add('active');
+    setQuizPrompt('Ronda terminada.');
+  }
+
+  window.closeQuizResult = function(){
+    document.getElementById('quizResult').classList.remove('active');
+  };
+
+  /* ---------------------------------------------------------------
+     TARJETAS
+  ----------------------------------------------------------------*/
+  var cardsStarted = false;
+  var cardQueue = [], cardPos = 0, cardCurrent = null, cardDirection = 'pc', cardAnswered = false;
+  var stats = { correct:0, wrong:0, streak:0, seen:0 };
+
+  function loadSettings(){
+    try{
+      var s = JSON.parse(localStorage.getItem('paises_capitales_settings') || '{}');
+      if(s.direction) document.getElementById('selDireccion').value = s.direction;
+      if(s.answermode) document.getElementById('selModo').value = s.answermode;
+    }catch(e){}
+  }
+  function saveSettings(){
+    try{
+      localStorage.setItem('paises_capitales_settings', JSON.stringify({
+        direction: document.getElementById('selDireccion').value,
+        answermode: document.getElementById('selModo').value
+      }));
+    }catch(e){}
+  }
+  window.onSettingsChange = function(){
+    saveSettings();
+    nextCard();
+  };
+
+  function resetCardDeck(){
+    cardQueue = shuffle(DATA[currentKey]);
+    cardPos = 0;
+    stats = { correct:0, wrong:0, streak:0, seen:0 };
+    renderStats();
+  }
+
+  function renderStats(){
+    document.getElementById('statCorrect').textContent = stats.correct;
+    document.getElementById('statWrong').textContent = stats.wrong;
+    document.getElementById('statStreak').textContent = stats.streak;
+    document.getElementById('statSeen').textContent = stats.seen;
+  }
+
+  function currentDirection(){
+    var setting = document.getElementById('selDireccion').value;
+    if(setting === 'pc') return 'pc';
+    if(setting === 'cp') return 'cp';
+    return Math.random() < 0.5 ? 'pc' : 'cp';
+  }
+
+  window.nextCard = function(){
+    if(cardPos >= cardQueue.length){ cardQueue = shuffle(DATA[currentKey]); cardPos = 0; }
+    cardCurrent = cardQueue[cardPos++];
+    cardDirection = currentDirection();
+    cardAnswered = false;
+    stats.seen++;
+    renderStats();
+
+    var c = CONT_BY_KEY[currentKey];
+    var answerMode = document.getElementById('selModo').value;
+    var kicker = cardDirection === 'pc'
+      ? (c.key === 'espana' ? (c.noun.charAt(0).toUpperCase()+c.noun.slice(1)) + ' → Capital' : 'País → Capital')
+      : (c.key === 'espana' ? 'Capital → ' + (c.noun.charAt(0).toUpperCase()+c.noun.slice(1)) : 'Capital → País');
+    document.getElementById('cardKicker').textContent = kicker;
+
+    var promptText, correctAnswer, distractorPool;
+    if(cardDirection === 'pc'){
+      promptText = '¿Cuál es la capital de ' + (c.key === 'espana' ? '' : '') + cardCurrent.n + '?';
+      correctAnswer = cardCurrent.c;
+      distractorPool = DATA[currentKey].map(function(x){ return x.c; });
+    } else {
+      promptText = '¿' + (c.key === 'espana' ? 'De qué comunidad o ciudad es capital' : 'De qué país es capital') + ' ' + cardCurrent.c + '?';
+      correctAnswer = cardCurrent.n;
+      distractorPool = DATA[currentKey].map(function(x){ return x.n; });
+    }
+    document.getElementById('cardPrompt').textContent = promptText;
+    document.getElementById('cardFeedback').textContent = '';
+    document.getElementById('cardFeedback').className = 'flashcard-feedback';
+    document.getElementById('btnNextCard').style.display = 'none';
+
+    var choicesWrap = document.getElementById('cardChoices');
+    var typeRow = document.getElementById('cardTypeRow');
+    if(answerMode === 'escribir'){
+      choicesWrap.style.display = 'none';
+      typeRow.style.display = 'flex';
+      var input = document.getElementById('cardTypeInput');
+      input.value = ''; input.className = ''; input.disabled = false;
+      input.focus();
+    } else {
+      typeRow.style.display = 'none';
+      choicesWrap.style.display = 'grid';
+      var options = shuffle(pickN(distractorPool, 3, correctAnswer).concat([correctAnswer]));
+      choicesWrap.innerHTML = '';
+      options.forEach(function(opt){
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'choice-btn'; btn.textContent = opt;
+        btn.addEventListener('click', function(){ checkChoiceAnswer(opt, correctAnswer, btn); });
+        choicesWrap.appendChild(btn);
+      });
+    }
+  };
+
+  function registerResult(isCorrect){
+    if(isCorrect){ stats.correct++; stats.streak++; }
+    else { stats.wrong++; stats.streak = 0; }
+    renderStats();
+  }
+
+  function checkChoiceAnswer(chosen, correct, btn){
+    if(cardAnswered) return;
+    cardAnswered = true;
+    var isCorrect = chosen === correct;
+    document.querySelectorAll('#cardChoices .choice-btn').forEach(function(b){
+      b.disabled = true;
+      if(b.textContent === correct) b.classList.add('correct');
+      else if(b === btn) b.classList.add('incorrect');
+    });
+    var fb = document.getElementById('cardFeedback');
+    fb.textContent = isCorrect ? '¡Correcto!' : 'No era. La respuesta correcta es: ' + correct;
+    fb.className = 'flashcard-feedback ' + (isCorrect ? 'ok' : 'bad');
+    document.getElementById('btnNextCard').style.display = 'inline-flex';
+    registerResult(isCorrect);
+  }
+
+  window.checkTypedAnswer = function(){
+    if(cardAnswered) return;
+    var input = document.getElementById('cardTypeInput');
+    var correct = cardDirection === 'pc' ? cardCurrent.c : cardCurrent.n;
+    var userVal = normalize(input.value);
+    var correctVal = normalize(correct);
+    var isCorrect = userVal.length > 0 && (userVal === correctVal || correctVal.indexOf(userVal) === 0 && userVal.length >= 3);
+    cardAnswered = true;
+    input.disabled = true;
+    input.className = isCorrect ? 'correct' : 'incorrect';
+    var fb = document.getElementById('cardFeedback');
+    fb.textContent = isCorrect ? '¡Correcto!' : 'No era. La respuesta correcta es: ' + correct;
+    fb.className = 'flashcard-feedback ' + (isCorrect ? 'ok' : 'bad');
+    document.getElementById('btnNextCard').style.display = 'inline-flex';
+    registerResult(isCorrect);
+  };
+
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+    var typeRow = document.getElementById('cardTypeRow');
+    if(currentMode === 'tarjetas' && typeRow.style.display !== 'none'){
+      if(!cardAnswered) checkTypedAnswer();
+      else nextCard();
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     INICIO
+  ----------------------------------------------------------------*/
+  renderContTabs();
+  loadSettings();
+  window.selectContinent('europa');
+  if(!mapInitialized){ initMap(); mapInitialized = true; }
+  refreshMapForContinent();
+
+})();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>
