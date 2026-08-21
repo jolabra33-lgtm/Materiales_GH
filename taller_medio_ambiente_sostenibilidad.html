@@ -45,6 +45,7 @@
     margin:0; background:var(--paper); color:var(--ink);
     font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
     -webkit-font-smoothing:antialiased;
+    text-align:justify;
   }
   .wrap{ max-width:980px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
 
@@ -71,7 +72,7 @@
     font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
     font-size:clamp(30px, 4.2vw, 46px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
   }
-  .lede{ max-width:66ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+  .lede{ color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; text-align:justify; text-justify:inter-word; width:100%; }
 
   /* ---- Pestañas de tema ---- */
   .topic-tabs{
@@ -98,7 +99,7 @@
     display:flex; align-items:center; gap:10px;
   }
   .panel-intro .dot{ width:12px; height:12px; border-radius:50%; background:var(--accent, var(--ink)); flex:none; }
-  .panel-intro p{ margin:0; color:var(--muted); font-size:14.5px; max-width:72ch; }
+  .panel-intro p{ margin:0; color:var(--muted); font-size:14.5px; text-align:justify; text-justify:inter-word; width:100%; }
 
   /* ---- Subpestañas ---- */
   .sub-tabs{ display:flex; gap:8px; margin-bottom:18px; }
@@ -174,6 +175,7 @@
   .btn-dark{
     font-family:'Inter',sans-serif; font-weight:700; font-size:14px; border-radius:9px; padding:12px 18px;
     cursor:pointer; border:1px solid transparent; background:var(--ink); color:#fff; min-height:44px;
+    text-align:center;
   }
 
   /* ---- Pantalla completa del mapa del quiz ---- */
