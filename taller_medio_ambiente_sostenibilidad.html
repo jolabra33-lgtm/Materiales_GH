@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Medio ambiente y sostenibilidad en el mundo: grandes problemas ambientales, ecosistemas y biomas, datos de sostenibilidad y retos, con mapas reales y fotografías de acceso libre.">
+<title>Medio Ambiente y Sostenibilidad</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Medio Ambiente">
+<meta name="theme-color" content="#182338">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+  :root{
+    --ink:#182338;
+    --ink-soft:#3C4A66;
+    --muted:#5E6779;
+    --paper:#EDEFE8;
+    --card:#FFFFFF;
+    --line:#E2E0D2;
+    --lat:#1F6E8C;
+    --lon:#C1440E;
+    --gold:#B4790F;
+    --purple:#6B4C9A;
+    --teal:#2E8B74;
+    --crimson:#B23A48;
+    --good:#2E7D4F;
+    --good-soft:rgba(46,125,79,0.12);
+    --bad:#B23A2E;
+    --bad-soft:rgba(178,58,46,0.12);
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-sm:0 1px 2px rgba(20,30,50,.05);
+    --shadow-md:0 10px 28px rgba(20,30,50,.08);
+    --shadow-lg:0 20px 46px rgba(20,30,50,.14);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:980px; margin:0 auto; padding:30px 24px max(90px, env(safe-area-inset-bottom) + 40px); }
+
+  header.hero{
+    position:relative; padding:34px 36px 40px; margin-bottom:26px; border-radius:18px;
+    background:var(--ink); color:var(--paper); overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(224,168,61,0.30), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(76,153,181,0.28), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.16em; text-transform:uppercase;
+    color:#E0A83D; font-weight:500; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:#E0A83D; display:inline-block; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(30px, 4.2vw, 46px); line-height:1.05; margin:16px 0 14px; letter-spacing:-0.01em;
+  }
+  .lede{ max-width:66ch; color:rgba(237,239,232,0.82); font-size:16.5px; margin:0; }
+
+  /* ---- Pestañas de tema ---- */
+  .topic-tabs{
+    display:flex; flex-wrap:wrap; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:6px; margin-bottom:20px; box-shadow:var(--shadow-sm);
+  }
+  .topic-tab{
+    flex:1 1 auto; min-width:130px; border:none; background:transparent; color:var(--muted); font-family:'Inter', sans-serif;
+    font-weight:700; font-size:13.5px; padding:12px 10px; border-radius:10px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:7px; transition:background .15s ease, color .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .topic-tab.active{ background:var(--accent, var(--ink)); color:#fff; box-shadow:var(--shadow-sm); }
+  @media (hover:hover) and (pointer:fine){
+    .topic-tab:not(.active):hover{ background:rgba(24,35,56,0.06); color:var(--ink); }
+  }
+
+  .topic-panel{ display:none; }
+  .topic-panel.active{ display:block; }
+
+  .panel-intro{ margin-bottom:18px; }
+  .panel-intro h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:25px; margin:0 0 6px; color:var(--ink);
+    display:flex; align-items:center; gap:10px;
+  }
+  .panel-intro .dot{ width:12px; height:12px; border-radius:50%; background:var(--accent, var(--ink)); flex:none; }
+  .panel-intro p{ margin:0; color:var(--muted); font-size:14.5px; max-width:72ch; }
+
+  /* ---- Subpestañas ---- */
+  .sub-tabs{ display:flex; gap:8px; margin-bottom:18px; }
+  .sub-tab{
+    flex:1; border:1px solid var(--line); background:var(--card); color:var(--muted); font-family:'Inter', sans-serif;
+    font-weight:700; font-size:14px; padding:12px 14px; border-radius:11px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px; transition:all .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .sub-tab.active{ background:var(--accent, var(--ink)); color:#fff; border-color:transparent; box-shadow:var(--shadow-sm); }
+  @media (hover:hover) and (pointer:fine){
+    .sub-tab:not(.active):hover{ background:rgba(24,35,56,0.05); }
+  }
+  .sub-panel{ display:none; }
+  .sub-panel.active{ display:block; }
+
+  /* ---- Tarjetas de caso de estudio ---- */
+  .case-grid{ display:grid; grid-template-columns:1fr; gap:20px; }
+  .case-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-md); overflow:hidden; border-top:3px solid var(--accent, var(--ink));
+  }
+  .case-media{ display:grid; grid-template-columns:1fr; gap:1px; background:var(--line); }
+  @media (min-width:680px){ .case-media{ grid-template-columns:1fr 1fr; } }
+  .mini-map{ height:260px; background:#dfe3e6; }
+  .case-photo{ margin:0; position:relative; background:#000; height:260px; overflow:hidden; }
+  .case-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .case-photo figcaption{
+    position:absolute; left:0; right:0; bottom:0; padding:8px 12px;
+    background:linear-gradient(to top, rgba(0,0,0,0.72), transparent);
+    color:#fff; font-size:11.5px; line-height:1.4;
+  }
+  .case-photo figcaption a{ color:#fff; text-decoration:underline; text-decoration-color:rgba(255,255,255,0.5); }
+  .case-body{ padding:20px 22px 22px; }
+  .case-kicker{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:0.07em;
+    color:var(--accent, var(--muted)); font-weight:600; margin-bottom:6px;
+  }
+  .case-body h3{ font-family:'Fraunces', serif; font-weight:600; font-size:20px; margin:0 0 10px; color:var(--ink); }
+  .case-body p{ margin:0; color:var(--ink-soft); font-size:14.5px; }
+
+  /* ---- Tarjetas compactas (sin foto, solo mapa satelital) ---- */
+  .compact-card .case-media{ grid-template-columns:1fr; }
+  .compact-card .mini-map{ height:240px; }
+
+  /* ---- Quiz ---- */
+  .quiz-bar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:14px;
+    background:#F7F6EF; border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 16px;
+  }
+  .quiz-prompt{ flex:1 1 260px; font-size:14.5px; color:var(--ink-soft); }
+  .quiz-prompt b{ color:var(--ink); font-family:'Fraunces', serif; font-size:16px; }
+  .quiz-score{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--ink-soft);
+    background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+  }
+  #quizMap{ height:340px; border-radius:var(--radius-sm); border:1px solid var(--line); background:#dfe3e6; margin-bottom:14px; }
+  .quiz-choices{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .choice-btn{
+    background:#fff; border:1.5px solid var(--line); border-radius:var(--radius-sm); padding:13px 14px;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; color:var(--ink); cursor:pointer;
+    min-height:48px; text-align:center; justify-content:center; transition:all .12s ease; display:flex; align-items:center;
+  }
+  .choice-btn.correct{ background:var(--good-soft); border-color:var(--good); color:var(--good); }
+  .choice-btn.incorrect{ background:var(--bad-soft); border-color:var(--bad); color:var(--bad); }
+  .choice-btn:disabled{ cursor:default; }
+  @media (hover:hover) and (pointer:fine){
+    .choice-btn:not(:disabled):hover{ border-color:var(--accent, var(--ink)); transform:translateY(-1px); }
+  }
+  .quiz-feedback{ min-height:24px; margin-bottom:12px; font-size:14.5px; font-weight:600; }
+  .quiz-feedback.ok{ color:var(--good); }
+  .quiz-feedback.bad{ color:var(--bad); }
+  .btn-dark{
+    font-family:'Inter',sans-serif; font-weight:700; font-size:14px; border-radius:9px; padding:12px 18px;
+    cursor:pointer; border:1px solid transparent; background:var(--ink); color:#fff; min-height:44px;
+  }
+
+  /* ---- Pantalla completa del mapa del quiz ---- */
+  .map-full-wrap{ position:relative; }
+  .map-inner{ position:relative; }
+  .fullscreen-btn{
+    position:absolute; top:10px; right:10px; z-index:500;
+    width:40px; height:40px; padding:0; min-height:0; border-radius:9px;
+    background:var(--ink); color:var(--paper); border:1px solid rgba(255,255,255,0.18);
+    box-shadow:var(--shadow-md); display:flex; align-items:center; justify-content:center;
+  }
+  .fullscreen-btn svg{ width:16px; height:16px; flex:none; }
+  .exit-fullscreen-btn{
+    display:none; position:fixed; top:max(14px, env(safe-area-inset-top) + 10px);
+    left:50%; transform:translateX(-50%); z-index:99999;
+    background:var(--ink); color:var(--paper); border:1px solid rgba(255,255,255,0.2);
+    border-radius:999px; padding:11px 20px 11px 15px; align-items:center; gap:8px;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:13.5px; box-shadow:var(--shadow-lg);
+  }
+  .exit-fullscreen-btn svg{ width:16px; height:16px; flex:none; }
+  .map-full-wrap:fullscreen .exit-fullscreen-btn,
+  .map-full-wrap:-webkit-full-screen .exit-fullscreen-btn{ display:flex; }
+  .map-full-wrap:fullscreen, .map-full-wrap:-webkit-full-screen{
+    background:var(--paper); padding:16px; display:flex; flex-direction:column; overflow:auto;
+  }
+  .map-full-wrap:fullscreen .quiz-bar, .map-full-wrap:-webkit-full-screen .quiz-bar{ flex:0 0 auto; }
+  .map-full-wrap:fullscreen .map-inner, .map-full-wrap:-webkit-full-screen .map-inner{ flex:1 1 auto; min-height:0; display:flex; }
+  .map-full-wrap:fullscreen #quizMap, .map-full-wrap:-webkit-full-screen #quizMap{
+    flex:1 1 auto; height:auto; min-height:0; width:100%;
+  }
+  .map-full-wrap:fullscreen .quiz-choices, .map-full-wrap:-webkit-full-screen .quiz-choices{ flex:0 0 auto; margin-top:14px; }
+  .map-full-wrap:fullscreen .quiz-feedback, .map-full-wrap:-webkit-full-screen .quiz-feedback{ flex:0 0 auto; }
+  @media (hover:hover) and (pointer:fine){
+    .fullscreen-btn:hover{ background:#2A3B5C; }
+    .exit-fullscreen-btn:hover{ background:#2A3B5C; }
+  }
+
+  /* ---- Pantalla completa de los mapas de casos de estudio ---- */
+  .mini-map-wrap{ position:relative; }
+  .mini-map-fs-btn{
+    position:absolute; top:8px; right:8px; z-index:500;
+    width:34px; height:34px; padding:0; min-height:0; border-radius:8px;
+    background:var(--ink); color:var(--paper); border:1px solid rgba(255,255,255,0.18);
+    box-shadow:var(--shadow-md); display:flex; align-items:center; justify-content:center;
+  }
+  .mini-map-fs-btn svg{ width:14px; height:14px; flex:none; }
+  .mini-map-wrap:fullscreen .exit-fullscreen-btn,
+  .mini-map-wrap:-webkit-full-screen .exit-fullscreen-btn{ display:flex; }
+  .mini-map-wrap:fullscreen, .mini-map-wrap:-webkit-full-screen{
+    background:var(--paper); padding:16px; display:flex; flex-direction:column; overflow:auto;
+  }
+  .mini-map-wrap:fullscreen .mini-map, .mini-map-wrap:-webkit-full-screen .mini-map{
+    flex:1 1 auto; height:auto; min-height:0; width:100%;
+  }
+  @media (hover:hover) and (pointer:fine){
+    .mini-map-fs-btn:hover{ background:#2A3B5C; }
+  }
+
+  /* ---- Bloques de teoría / retos ---- */
+  .info-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-sm); padding:20px 22px; margin-bottom:16px; border-left:3px solid var(--accent, var(--ink));
+  }
+  .info-card h3{ font-family:'Fraunces', serif; font-weight:600; font-size:18px; margin:0 0 8px; color:var(--ink); }
+  .info-card p{ margin:0; color:var(--ink-soft); font-size:14.5px; }
+  .info-card p + p{ margin-top:10px; }
+
+  .stat-row{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
+  .stat-tile{
+    flex:1 1 200px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:16px 18px; box-shadow:var(--shadow-sm);
+  }
+  .stat-tile .num{ font-family:'IBM Plex Mono', monospace; font-size:28px; font-weight:600; color:var(--ink); display:block; }
+  .stat-tile .lbl{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+
+  .source-note{ font-size:12px; color:var(--muted); margin:6px 0 24px; }
+  .source-note a{ color:var(--muted); }
+
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+  footer p + p{ margin-top:6px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:18px 14px 70px; }
+    header.hero{ padding:26px 20px 30px; }
+    .mini-map, .case-photo{ height:200px; }
+    .topic-tab{ font-size:12px; padding:10px 6px; min-width:100px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Geografía · Medio ambiente y sostenibilidad</div>
+      <h1>Medio Ambiente y Sostenibilidad</h1>
+      <p class="lede">Los grandes problemas ambientales del planeta, los ecosistemas que los sufren, los datos que miden hasta dónde llega el daño y los retos —y algunas soluciones— para un futuro sostenible, con mapas reales navegables y fotografías de acceso libre de cada caso de estudio.</p>
+    </div>
+  </header>
+
+  <div class="topic-tabs" id="topicTabs">
+    <button class="topic-tab active" data-topic="problemas" style="--accent:#B23A48">Problemas ambientales</button>
+    <button class="topic-tab" data-topic="ecosistemas" style="--accent:#2E8B74">Ecosistemas y biomas</button>
+    <button class="topic-tab" data-topic="espana" style="--accent:#C1440E">El caso de España</button>
+    <button class="topic-tab" data-topic="datos" style="--accent:#1F6E8C">Sostenibilidad y datos</button>
+    <button class="topic-tab" data-topic="retos" style="--accent:#6B4C9A">Retos y soluciones</button>
+  </div>
+
+  <!-- ============== PROBLEMAS AMBIENTALES ============== -->
+  <div class="topic-panel active" id="panel-problemas">
+    <div class="panel-intro">
+      <h2><span class="dot" style="background:#B23A48"></span>Grandes problemas ambientales del mundo</h2>
+      <p>Del deshielo del Ártico a la contaminación de las playas más remotas, la huella humana sobre el planeta se puede ver —literalmente— desde el espacio. Explora seis casos reales, con su emplazamiento navegable y una fotografía de cada lugar.</p>
+    </div>
+
+    <div class="case-grid">
+
+      <div class="case-card" style="--accent:#2E8B74">
+        <div class="case-media">
+          <div class="mini-map" data-lat="-10.0" data-lon="-63.0" data-zoom="8" data-tiles="sat" aria-label="Mapa satélite de la deforestación en Rondônia, Brasil"></div>
+          <figure class="case-photo">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Fires_and_Deforestation_on_the_Amazon_Frontier%2C_Rondonia%2C_Brazil_-_August_12%2C_2007.jpg" alt="Incendios y deforestación en la frontera amazónica de Rondônia, Brasil" loading="lazy">
+            <figcaption>Deforestación en Rondônia (Brasil) · <a href="https://commons.wikimedia.org/wiki/File:Fires_and_Deforestation_on_the_Amazon_Frontier,_Rondonia,_Brazil_-_August_12,_2007.jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+          </figure>
+        </div>
+        <div class="case-body">
+          <div class="case-kicker">Rondônia, Brasil</div>
+          <h3>Deforestación amazónica</h3>
+          <p>El avance de la ganadería y el cultivo de soja ha ido comiéndose la selva amazónica desde sus bordes, dejando ese característico patrón de «espina de pez» que se ve desde satélite: carreteras que penetran en el bosque y desde las que se ramifican los desmontes. Rondônia, en el oeste de Brasil, es una de las zonas donde ese avance ha sido más rápido e intenso en las últimas décadas.</p>
+        </div>
+      </div>
+
+      <div class="case-card" style="--accent:#1F6E8C">
+        <div class="case-media">
+          <div class="mini-map" data-lat="72.0" data-lon="-40.0" data-zoom="5" data-tiles="sat" aria-label="Mapa satélite del casquete de hielo de Groenlandia"></div>
+          <figure class="case-photo">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Early_Melt_on_the_Greenland_Ice_Sheet_(33354485670).jpg" alt="Deshielo temprano en el casquete de hielo de Groenlandia" loading="lazy">
+            <figcaption>Deshielo del casquete de Groenlandia · <a href="https://commons.wikimedia.org/wiki/File:Early_Melt_on_the_Greenland_Ice_Sheet_(33354485670).jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+          </figure>
+        </div>
+        <div class="case-body">
+          <div class="case-kicker">Groenlandia</div>
+          <h3>Deshielo del Ártico</h3>
+          <p>El Ártico se está calentando entre tres y cuatro veces más rápido que la media mundial. El casquete de hielo de Groenlandia pierde cada año miles de millones de toneladas de hielo, lo que contribuye de forma directa a la subida del nivel del mar y altera corrientes oceánicas de las que depende el clima de medio planeta.</p>
+        </div>
+      </div>
+
+      <div class="case-card" style="--accent:#B4790F">
+        <div class="case-media">
+          <div class="mini-map" data-lat="-8.72" data-lon="115.17" data-zoom="13" aria-label="Mapa real de una playa de Bali, Indonesia"></div>
+          <figure class="case-photo">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Bali_beach_pollution.jpg" alt="Contaminación por plástico en una playa de Bali, Indonesia" loading="lazy">
+            <figcaption>Playa contaminada de plástico, Bali (Indonesia) · <a href="https://commons.wikimedia.org/wiki/File:Bali_beach_pollution.jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+          </figure>
+        </div>
+        <div class="case-body">
+          <div class="case-kicker">Bali, Indonesia</div>
+          <h3>Contaminación por plásticos</h3>
+          <p>Cada año llegan al océano varios millones de toneladas de plástico, arrastradas sobre todo por ríos de Asia y África que carecen de una gestión adecuada de residuos. Las corrientes marinas concentran buena parte en grandes acumulaciones oceánicas, pero también en playas remotas como las de Bali, donde la temporada de lluvias arrastra basura desde toda la cuenca.</p>
+        </div>
+      </div>
+
+      <div class="case-card" style="--accent:#C1440E">
+        <div class="case-media">
+          <div class="mini-map" data-lat="13.0" data-lon="14.0" data-zoom="8" data-tiles="sat" aria-label="Mapa satélite del lago Chad, África"></div>
+          <figure class="case-photo">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/ShrinkingLakeChad-1973-1997-EO.jpg" alt="Comparación satelital de la reducción del lago Chad entre 1973 y 1997" loading="lazy">
+            <figcaption>Reducción del lago Chad, 1973-1997 · <a href="https://commons.wikimedia.org/wiki/File:ShrinkingLakeChad-1973-1997-EO.jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+          </figure>
+        </div>
+        <div class="case-body">
+          <div class="case-kicker">Lago Chad, Sahel</div>
+          <h3>Desertización del Sahel</h3>
+          <p>El lago Chad ha perdido más del 90% de su superficie desde los años sesenta por el aumento de las extracciones de agua para riego y por la disminución de las lluvias. Millones de personas de Chad, Níger, Nigeria y Camerún dependían de sus aguas, y su retroceso ha agravado los conflictos por los recursos en una de las regiones más frágiles del planeta.</p>
+        </div>
+      </div>
+
+      <div class="case-card compact-card" style="--accent:#B23A48">
+        <div class="case-media">
+          <div class="mini-map" data-lat="-32.0" data-lon="150.0" data-zoom="6" data-tiles="sat" aria-label="Mapa satélite de los incendios forestales en el sureste de Australia"></div>
+        </div>
+        <div class="case-body">
+          <div class="case-kicker">Nueva Gales del Sur, Australia</div>
+          <h3>Incendios forestales</h3>
+          <p>La temporada de incendios de 2019-2020 en Australia quemó más de 18 millones de hectáreas, mató a cerca de 3.000 millones de animales según estimaciones de la WWF y cubrió de humo ciudades enteras a cientos de kilómetros de distancia, visible incluso desde satélite. El aumento de las olas de calor y las sequías está alargando y agravando las temporadas de incendios en todo el planeta.</p>
+        </div>
+      </div>
+
+      <div class="case-card" style="--accent:#6B4C9A">
+        <div class="case-media">
+          <div class="mini-map" data-lat="28.6139" data-lon="77.2090" data-zoom="10" aria-label="Mapa real de Delhi, India"></div>
+          <figure class="case-photo">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Delhi_air_pollution_2019.jpg" alt="Contaminación del aire y smog sobre Delhi, India" loading="lazy">
+            <figcaption>Smog sobre Delhi (India) · <a href="https://commons.wikimedia.org/wiki/File:Delhi_air_pollution_2019.jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+          </figure>
+        </div>
+        <div class="case-body">
+          <div class="case-kicker">Delhi, India</div>
+          <h3>Contaminación del aire urbano</h3>
+          <p>Cada invierno, la quema de rastrojos agrícolas, el tráfico y las industrias cercanas cubren Delhi de un smog tan denso que los niveles de partículas llegan a superar 50 veces el límite considerado seguro por la Organización Mundial de la Salud. La contaminación del aire causa varios millones de muertes prematuras al año en el mundo, la mayoría en grandes ciudades de Asia.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============== ECOSISTEMAS Y BIOMAS ============== -->
+  <div class="topic-panel" id="panel-ecosistemas">
+    <div class="panel-intro">
+      <h2><span class="dot" style="background:#2E8B74"></span>Ecosistemas y biomas del mundo</h2>
+      <p>El clima determina qué vegetación puede crecer en cada lugar, y esa vegetación dibuja patrones de color muy distintos vistos desde el satélite. Estos mapas usan vista satélite para que se aprecien bien esos patrones.</p>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab active" id="subBtnTeoria" onclick="selectBiomaSub('teoria')">Los seis biomas</button>
+      <button class="sub-tab" id="subBtnQuiz" onclick="selectBiomaSub('quiz')">Pon a prueba tu ojo</button>
+    </div>
+
+    <div class="sub-panel active" id="subPanelTeoria">
+      <div class="case-grid">
+
+        <div class="case-card" style="--accent:#2E8B74">
+          <div class="case-media">
+            <div class="mini-map" data-lat="-3.4" data-lon="-62.2" data-zoom="10" data-tiles="sat" aria-label="Mapa satélite de la selva amazónica"></div>
+            <figure class="case-photo">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Aerial_view_of_the_Amazon_Rainforest.jpg" alt="Vista aérea de la selva amazónica" loading="lazy">
+              <figcaption>Selva amazónica, cerca de Manaus (Brasil) · <a href="https://commons.wikimedia.org/wiki/File:Aerial_view_of_the_Amazon_Rainforest.jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+            </figure>
+          </div>
+          <div class="case-body">
+            <div class="case-kicker">Amazonia, Brasil</div>
+            <h3>Selva tropical</h3>
+            <p>Junto al ecuador, donde llueve todo el año y no hay estación seca, crece la vegetación más densa y biodiversa del planeta: un manto verde continuo, sin apenas suelo visible, que alberga más de la mitad de las especies terrestres del mundo en apenas el 6% de su superficie.</p>
+          </div>
+        </div>
+
+        <div class="case-card" style="--accent:#B4790F">
+          <div class="case-media">
+            <div class="mini-map" data-lat="23.0" data-lon="10.0" data-zoom="7" data-tiles="sat" aria-label="Mapa satélite del desierto del Sahara"></div>
+            <figure class="case-photo">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/The_Sahara_desert.jpg" alt="Dunas del desierto del Sahara" loading="lazy">
+              <figcaption>Desierto del Sahara · <a href="https://commons.wikimedia.org/wiki/File:The_Sahara_desert.jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+            </figure>
+          </div>
+          <div class="case-body">
+            <div class="case-kicker">Norte de África</div>
+            <h3>Desierto</h3>
+            <p>Con menos de 250 mm de lluvia al año, el Sahara es el mayor desierto cálido del mundo: un mar de arena y roca desnuda de casi 9 millones de km², visible desde satélite como una gran mancha ocre casi sin vegetación, que se extiende desde el Atlántico hasta el mar Rojo.</p>
+          </div>
+        </div>
+
+        <div class="case-card compact-card" style="--accent:#1F6E8C">
+          <div class="case-media">
+            <div class="mini-map" data-lat="70.0" data-lon="140.0" data-zoom="6" data-tiles="sat" aria-label="Mapa satélite de la tundra siberiana"></div>
+          </div>
+          <div class="case-body">
+            <div class="case-kicker">Siberia, Rusia</div>
+            <h3>Tundra</h3>
+            <p>Más allá del círculo polar ártico, donde el subsuelo permanece helado casi todo el año (el permafrost), solo sobreviven musgos, líquenes y arbustos bajos. Es uno de los ecosistemas más vulnerables al cambio climático: el deshielo del permafrost libera a la atmósfera metano y CO₂ acumulados durante milenios.</p>
+          </div>
+        </div>
+
+        <div class="case-card" style="--accent:#C1440E">
+          <div class="case-media">
+            <div class="mini-map" data-lat="-2.5" data-lon="34.8" data-zoom="9" data-tiles="sat" aria-label="Mapa satélite de la sabana del Serengeti"></div>
+            <figure class="case-photo">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Eastern_Serengeti_2012_05_31_2828_(7522638524).jpg" alt="Paisaje de sabana en el Serengeti, Tanzania" loading="lazy">
+              <figcaption>Sabana del Serengeti (Tanzania) · <a href="https://commons.wikimedia.org/wiki/File:Eastern_Serengeti_2012_05_31_2828_(7522638524).jpg" target="_blank" rel="noopener">foto en Wikimedia Commons</a></figcaption>
+            </figure>
+          </div>
+          <div class="case-body">
+            <div class="case-kicker">Serengeti, Tanzania</div>
+            <h3>Sabana</h3>
+            <p>Entre el bosque tropical y el desierto, la sabana combina una estación húmeda y otra muy seca, con pastizales salpicados de árboles dispersos como el baobab o la acacia. El Serengeti, en el este de África, sostiene la mayor migración de grandes mamíferos del planeta, con más de un millón de ñus desplazándose cada año en busca de pastos.</p>
+          </div>
+        </div>
+
+        <div class="case-card compact-card" style="--accent:#6B4C9A">
+          <div class="case-media">
+            <div class="mini-map" data-lat="37.5" data-lon="-81.0" data-zoom="8" data-tiles="sat" aria-label="Mapa satélite de un bosque templado en los Apalaches"></div>
+          </div>
+          <div class="case-body">
+            <div class="case-kicker">Apalaches, Estados Unidos</div>
+            <h3>Bosque templado</h3>
+            <p>En las latitudes medias, con cuatro estaciones bien diferenciadas, crecen bosques de árboles caducifolios —robles, hayas, arces— que pierden la hoja en otoño. Desde satélite se distinguen por su color verde más apagado que la selva tropical y por el mosaico estacional de sus copas, muy visible en otoño en cordilleras como los Apalaches.</p>
+          </div>
+        </div>
+
+        <div class="case-card compact-card" style="--accent:#2E8B74">
+          <div class="case-media">
+            <div class="mini-map" data-lat="-18.3" data-lon="147.7" data-zoom="10" data-tiles="sat" aria-label="Mapa satélite de la Gran Barrera de Coral, Australia"></div>
+          </div>
+          <div class="case-body">
+            <div class="case-kicker">Queensland, Australia</div>
+            <h3>Arrecife de coral</h3>
+            <p>La Gran Barrera de Coral, frente a la costa de Queensland, es la mayor estructura viva del planeta: casi 2.300 km de arrecifes visibles incluso desde satélite por su característico color turquesa. El aumento de la temperatura del mar está provocando episodios recurrentes de blanqueamiento coralino que amenazan a uno de los ecosistemas más biodiversos del océano.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="sub-panel" id="subPanelQuiz">
+      <section class="panel" style="background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-md); padding:22px 24px 26px;">
+        <div class="map-full-wrap" id="quizFullWrap">
+          <div class="quiz-bar">
+            <div class="quiz-prompt" id="quizPrompt">Mira el mapa satélite y adivina qué bioma es. Pulsa «Empezar» para jugar.</div>
+            <div>
+              <button class="btn-dark" id="btnStartQuiz" onclick="startBiomaQuiz()">Empezar</button>
+              <span class="quiz-score" id="quizScore" style="display:none;"></span>
+            </div>
+          </div>
+          <div class="map-inner">
+            <button type="button" class="fullscreen-btn" id="btnFullscreen" title="Ver a pantalla completa" aria-label="Ver el mapa a pantalla completa" onclick="toggleFullscreen()">
+              <svg id="fsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
+            <div id="quizMap"></div>
+          </div>
+          <button type="button" class="exit-fullscreen-btn" id="btnExitFullscreen" title="Salir de pantalla completa" aria-label="Salir de pantalla completa" onclick="toggleFullscreen()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            Salir de pantalla completa
+          </button>
+          <div class="quiz-choices" id="quizChoices"></div>
+          <p class="quiz-feedback" id="quizFeedback"></p>
+          <div style="text-align:center;">
+            <button id="btnNextQuiz" onclick="nextBiomaQuestion()" style="display:none;" class="btn-dark">Siguiente →</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============== EL CASO DE ESPAÑA ============== -->
+  <div class="topic-panel" id="panel-espana">
+    <div class="panel-intro">
+      <h2><span class="dot" style="background:#C1440E"></span>El caso de España</h2>
+      <p>España concentra en un territorio relativamente pequeño una enorme diversidad de retos ambientales: humedales amenazados, incendios cada vez más extremos, sequía crónica y, al mismo tiempo, una de las mayores redes de espacios protegidos de la Unión Europea.</p>
+    </div>
+    <div class="case-grid">
+
+      <article class="case-card">
+        <figure class="case-photo">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Vista_de_las_marismas_del_Parque_Do%C3%B1ana.jpg" alt="Marismas del Parque Nacional de Doñana" loading="lazy">
+        </figure>
+        <div class="case-body">
+          <h3>Doñana: un humedal en crisis hídrica</h3>
+          <p>El Parque Nacional de Doñana, uno de los humedales más importantes de Europa y refugio de aves migratorias, lleva más de una década perdiendo superficie de marisma por la sobreexplotación de acuíferos para regadío agrícola y por sequías cada vez más prolongadas.</p>
+          <div class="mini-map" data-lat="37.02" data-lon="-6.44" data-zoom="10"></div>
+        </div>
+      </article>
+
+      <article class="case-card">
+        <figure class="case-photo">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Mar_Menor._Vista_a%C3%A9rea.jpg" alt="Vista aérea del Mar Menor" loading="lazy">
+        </figure>
+        <div class="case-body">
+          <h3>Mar Menor: eutrofización de una laguna única</h3>
+          <p>La laguna salada más grande de Europa sufre episodios recurrentes de eutrofización —proliferación de algas y muerte masiva de peces por falta de oxígeno— provocados por el vertido de nitratos procedentes de la agricultura intensiva del Campo de Cartagena.</p>
+          <div class="mini-map" data-lat="37.70" data-lon="-0.78" data-zoom="11"></div>
+        </div>
+      </article>
+
+      <article class="case-card">
+        <figure class="case-photo">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Wildfire_in_Andalusia%2C_Spain_ESA23458283.jpeg" alt="Incendio forestal en Andalucía visto desde satélite" loading="lazy">
+        </figure>
+        <div class="case-body">
+          <h3>Incendios forestales en Andalucía</h3>
+          <p>Los veranos cada vez más cálidos y secos, unidos al abandono rural, alargan la temporada de incendios en el sur peninsular. Grandes incendios forestales arrasan cada año miles de hectáreas de monte mediterráneo, con consecuencias para la biodiversidad y la erosión del suelo.</p>
+          <div class="mini-map" data-lat="37.4" data-lon="-5.6" data-zoom="8" data-tiles="sat"></div>
+        </div>
+      </article>
+
+      <article class="case-card">
+        <figure class="case-photo">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Vista_de_Picos_de_Europa.JPG" alt="Vista de los Picos de Europa" loading="lazy">
+        </figure>
+        <div class="case-body">
+          <h3>Picos de Europa: la Red Natura 2000</h3>
+          <p>España es el mayor contribuyente de la Unión Europea a la Red Natura 2000, con en torno a una cuarta parte de su territorio bajo alguna figura de protección. Los Picos de Europa, primer parque nacional español (1918), ejemplifican este esfuerzo de conservación de espacios de alta montaña.</p>
+          <div class="mini-map" data-lat="43.19" data-lon="-4.85" data-zoom="10"></div>
+        </div>
+      </article>
+
+      <article class="case-card">
+        <figure class="case-photo">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Almeria_Desierto_de_Tabernas_by_Maksym_Abramov.jpg" alt="Desierto de Tabernas, Almería" loading="lazy">
+        </figure>
+        <div class="case-body">
+          <h3>Tabernas: el único desierto de Europa</h3>
+          <p>El desierto de Tabernas, en Almería, es un símbolo de un proceso más amplio: según las estimaciones más recientes con metodología armonizada de la UE, más de la mitad del territorio español presenta algún grado de riesgo de desertización, debido a la combinación de sequía, sobreexplotación del suelo y cambio climático.</p>
+          <div class="mini-map" data-lat="37.09" data-lon="-2.40" data-zoom="10" data-tiles="sat"></div>
+        </div>
+      </article>
+
+      <article class="case-card">
+        <figure class="case-photo">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Sau_reservoir_Spain.jpg" alt="Embalse de Sau con la torre del antiguo campanario visible" loading="lazy">
+        </figure>
+        <div class="case-body">
+          <h3>El pantano de Sau: sequía y embalses</h3>
+          <p>La sequía plurianual que sufrió Cataluña entre 2021 y 2024 dejó al embalse de Sau, en la cuenca del Ter, en mínimos históricos, dejando al descubierto la torre del antiguo pueblo de Sant Romà de Sau. Es la imagen más repetida de la crisis del agua en la España mediterránea.</p>
+          <div class="mini-map" data-lat="41.97" data-lon="2.40" data-zoom="12"></div>
+        </div>
+      </article>
+
+    </div>
+    <p class="source-note">Fuentes: Ministerio para la Transición Ecológica (MITECO), Red Natura 2000 – Comisión Europea, y estimaciones de riesgo de desertización con metodología armonizada de la UE.</p>
+  </div>
+
+  <!-- ============== SOSTENIBILIDAD Y DATOS ============== -->
+  <div class="topic-panel" id="panel-datos">
+    <div class="panel-intro">
+      <h2><span class="dot" style="background:#1F6E8C"></span>Sostenibilidad: los datos del planeta</h2>
+      <p>Tres cifras que resumen hasta dónde llega hoy el desafío ambiental global.</p>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-tile">
+        <span class="num">17,6%</span>
+        <span class="lbl">de la tierra y aguas continentales del planeta está bajo alguna figura de protección (2024), frente al objetivo del 30% para 2030 (Protected Planet Report / UNEP-WCMC)</span>
+      </div>
+      <div class="stat-tile">
+        <span class="num">1,44°C</span>
+        <span class="lbl">por encima de los niveles preindustriales estuvo la temperatura media global en 2025; 2015-2025 es la década más cálida registrada (OMM)</span>
+      </div>
+      <div class="stat-tile">
+        <span class="num">73%</span>
+        <span class="lbl">de declive medio sufrieron las poblaciones de fauna silvestre vigiladas entre 1970 y 2020 (WWF, Living Planet Report 2024)</span>
+      </div>
+    </div>
+
+    <div class="info-card" style="--accent:#1F6E8C">
+      <h3>El objetivo «30x30»</h3>
+      <p>En la cumbre de Montreal de 2022, casi 200 países se comprometieron a proteger el 30% de la tierra y el 30% del océano del planeta antes de 2030. Hoy la protección terrestre ronda el 17,6% y la marina apenas el 8,4%, lo que significa que en poco más de media década habría que más que duplicar la superficie terrestre protegida y casi triplicar la marina para cumplir el objetivo.</p>
+    </div>
+
+    <div class="info-card" style="--accent:#B23A48">
+      <h3>Un planeta cada vez más caliente</h3>
+      <p>El Acuerdo de París de 2015 fijó como límite deseable no superar 1,5°C de calentamiento respecto a la era preindustrial. Los últimos años han estado ya muy cerca —o por encima temporalmente— de ese umbral, y la Organización Meteorológica Mundial prevé que las temperaturas se mantengan en niveles récord durante, al menos, los próximos cinco años, debido a la acumulación de gases de efecto invernadero en la atmósfera.</p>
+    </div>
+
+    <p class="source-note">Fuentes: <a href="https://www.unep-wcmc.org/en/news/world-must-act-faster-to-protect-30-of-planet" target="_blank" rel="noopener">UNEP-WCMC, Protected Planet Report 2024</a> · <a href="https://wmo.int/news/media-centre/wmo-confirms-2025-was-one-of-warmest-years-record" target="_blank" rel="noopener">Organización Meteorológica Mundial, confirmación de 2025 como uno de los años más cálidos registrados</a> · <a href="https://www.worldwildlife.org/publications/2024-living-planet-report/" target="_blank" rel="noopener">WWF, Living Planet Report 2024</a>.</p>
+  </div>
+
+  <!-- ============== RETOS Y SOLUCIONES ============== -->
+  <div class="topic-panel" id="panel-retos">
+    <div class="panel-intro">
+      <h2><span class="dot" style="background:#6B4C9A"></span>Retos ambientales y soluciones</h2>
+      <p>El planeta se enfrenta a varias crisis ambientales a la vez, pero también a un número creciente de respuestas.</p>
+    </div>
+
+    <div class="info-card" style="--accent:#B23A48">
+      <h3>Cambio climático</h3>
+      <p>El calentamiento global, causado sobre todo por la quema de combustibles fósiles, altera patrones de lluvia, intensifica olas de calor, sequías e inundaciones, y amenaza con hacer inhabitables regiones enteras. Es el reto ambiental que condiciona a todos los demás, y el que exige una respuesta más coordinada a escala internacional.</p>
+    </div>
+    <div class="info-card" style="--accent:#2E8B74">
+      <h3>Pérdida de biodiversidad</h3>
+      <p>La destrucción de hábitats, la sobreexplotación de especies, la contaminación y el cambio climático están detrás del declive del 73% en las poblaciones de fauna silvestre vigiladas desde 1970. Algunos científicos hablan ya de una sexta extinción masiva, esta vez causada por la actividad humana.</p>
+    </div>
+    <div class="info-card" style="--accent:#1F6E8C">
+      <h3>Contaminación de plásticos y océanos</h3>
+      <p>Se calcula que hay más de 170 billones de fragmentos de plástico flotando en los océanos del mundo. Buena parte se descompone en microplásticos que ya se han detectado en el agua potable, la sal de mesa y hasta en la sangre humana, con efectos todavía en estudio sobre la salud.</p>
+    </div>
+    <div class="info-card" style="--accent:#B4790F">
+      <h3>Agotamiento de recursos naturales</h3>
+      <p>La humanidad consume hoy recursos naturales —agua, suelo fértil, madera, minerales— a un ritmo superior al que el planeta puede regenerar. El «día de la sobrecapacidad de la Tierra», el día del año en que se agotan los recursos que el planeta puede producir en doce meses, ha ido llegando cada vez antes en las últimas décadas.</p>
+    </div>
+    <div class="info-card" style="--accent:#6B4C9A">
+      <h3>Economía circular y soluciones</h3>
+      <p>Frente al modelo lineal de «extraer, fabricar, tirar», crece la apuesta por una economía circular que reutiliza, repara y recicla materiales; por las energías renovables; por la restauración de ecosistemas degradados; y por figuras de protección ambiental cada vez más extendidas, desde parques nacionales hasta áreas marinas protegidas.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>Herramienta creada para el aula de Geografía. Los mapas se cargan en directo desde OpenStreetMap y Esri; las fotografías proceden de Wikimedia Commons con licencia libre y enlazan a su ficha y autoría original.</p>
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------
+     PESTAÑAS DE TEMA
+  ----------------------------------------------------------------*/
+  document.querySelectorAll('.topic-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var topic = btn.getAttribute('data-topic');
+      document.querySelectorAll('.topic-tab').forEach(function(b){ b.classList.toggle('active', b === btn); });
+      document.querySelectorAll('.topic-panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById('panel-' + topic).classList.add('active');
+    });
+  });
+
+  window.selectBiomaSub = function(which){
+    document.getElementById('subBtnTeoria').classList.toggle('active', which === 'teoria');
+    document.getElementById('subBtnQuiz').classList.toggle('active', which === 'quiz');
+    document.getElementById('subPanelTeoria').classList.toggle('active', which === 'teoria');
+    document.getElementById('subPanelQuiz').classList.toggle('active', which === 'quiz');
+    if(which === 'quiz' && !quizMapInitialized){
+      initQuizMap();
+      quizMapInitialized = true;
+    } else if(which === 'quiz' && quizMap){
+      setTimeout(function(){ quizMap.invalidateSize(); }, 60);
+    }
+  };
+
+  /* ---------------------------------------------------------------
+     MAPAS DE REFERENCIA (perezosos). data-tiles="sat" usa vista
+     satélite (para que se vean bien los patrones de vegetación);
+     por defecto usa el callejero real de OpenStreetMap.
+  ----------------------------------------------------------------*/
+  function initLazyMaps(){
+    var els = document.querySelectorAll('.mini-map[data-lat]');
+    var observer = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          loadMiniMap(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '250px' }) : null;
+    els.forEach(function(el){
+      if(observer) observer.observe(el);
+      else loadMiniMap(el);
+    });
+  }
+
+  function loadMiniMap(el){
+    if(el._loaded) return;
+    el._loaded = true;
+    var lat = parseFloat(el.getAttribute('data-lat'));
+    var lon = parseFloat(el.getAttribute('data-lon'));
+    var zoom = parseInt(el.getAttribute('data-zoom'), 10) || 14;
+    var m = L.map(el, { scrollWheelZoom:false }).setView([lat, lon], zoom);
+    if(el.getAttribute('data-tiles') === 'sat'){
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+      }).addTo(m);
+    } else {
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+      }).addTo(m);
+    }
+    el._miniMap = m;
+  }
+
+  /* ---------------------------------------------------------------
+     QUIZ: IDENTIFICA EL BIOMA
+     Vista satélite (sin ningún rótulo de por sí).
+  ----------------------------------------------------------------*/
+  var BIOMA_LABELS = {
+    selva: 'Selva tropical', desierto: 'Desierto', tundra: 'Tundra', sabana: 'Sabana', templado: 'Bosque templado', arrecife: 'Arrecife de coral'
+  };
+  var QUIZ_POOL = [
+    { type:'selva', city:'Cuenca amazónica (Brasil)', lat:-3.4, lon:-62.2, zoom:10 },
+    { type:'selva', city:'Cuenca del Congo (R. D. del Congo)', lat:0.5, lon:17.5, zoom:9 },
+    { type:'selva', city:'Borneo (Indonesia)', lat:0.5, lon:114.0, zoom:9 },
+    { type:'desierto', city:'Desierto del Sahara (Argelia)', lat:23.0, lon:10.0, zoom:7 },
+    { type:'desierto', city:'Desierto de Atacama (Chile)', lat:-24.5, lon:-69.25, zoom:10 },
+    { type:'desierto', city:'Desierto de Simpson (Australia)', lat:-25.0, lon:137.0, zoom:8 },
+    { type:'tundra', city:'Tundra siberiana (Rusia)', lat:70.0, lon:140.0, zoom:7 },
+    { type:'tundra', city:'Vertiente Norte de Alaska (EE. UU.)', lat:70.0, lon:-150.0, zoom:7 },
+    { type:'tundra', city:'Nunavut (Canadá)', lat:68.0, lon:-95.0, zoom:7 },
+    { type:'sabana', city:'Serengeti (Tanzania)', lat:-2.5, lon:34.8, zoom:9 },
+    { type:'sabana', city:'Sahel senegalés (Senegal)', lat:13.0, lon:-14.0, zoom:8 },
+    { type:'sabana', city:'Kimberley (Australia)', lat:-16.0, lon:127.0, zoom:8 },
+    { type:'templado', city:'Montes Apalaches (EE. UU.)', lat:37.5, lon:-81.0, zoom:9 },
+    { type:'templado', city:'Selva Negra (Alemania)', lat:48.2, lon:8.15, zoom:10 },
+    { type:'templado', city:'Hokkaido (Japón)', lat:43.5, lon:142.5, zoom:9 },
+    { type:'arrecife', city:'Gran Barrera de Coral (Australia)', lat:-18.3, lon:147.7, zoom:10 },
+    { type:'arrecife', city:'Atolones de Maldivas', lat:3.2, lon:73.0, zoom:10 },
+    { type:'arrecife', city:'Arrecife de Belice', lat:17.3, lon:-87.8, zoom:10 }
+  ];
+
+  var quizMap = null, quizMapInitialized = false, quizQueue = [], quizIndex = 0, quizCorrect = 0, quizCurrent = null, quizAnswered = false;
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function initQuizMap(){
+    quizMap = L.map('quizMap', { scrollWheelZoom:false, zoomControl:false }).setView([20, 0], 2);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 18,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    }).addTo(quizMap);
+  }
+
+  window.startBiomaQuiz = function(){
+    if(!quizMap){ initQuizMap(); quizMapInitialized = true; }
+    quizQueue = shuffle(QUIZ_POOL);
+    quizIndex = 0; quizCorrect = 0;
+    document.getElementById('btnStartQuiz').style.display = 'none';
+    document.getElementById('quizScore').style.display = 'inline-flex';
+    askQuestion();
+  };
+
+  function askQuestion(){
+    if(quizIndex >= quizQueue.length){ quizQueue = shuffle(QUIZ_POOL); quizIndex = 0; }
+    quizCurrent = quizQueue[quizIndex];
+    quizAnswered = false;
+    document.getElementById('quizPrompt').innerHTML = '¿Qué bioma es este? <b>' + (quizIndex + 1) + ' / ' + quizQueue.length + '</b>';
+    document.getElementById('quizScore').textContent = 'Aciertos: ' + quizCorrect + ' / ' + quizIndex;
+    document.getElementById('quizFeedback').textContent = '';
+    document.getElementById('quizFeedback').className = 'quiz-feedback';
+    document.getElementById('btnNextQuiz').style.display = 'none';
+
+    setTimeout(function(){
+      quizMap.invalidateSize();
+      quizMap.setView([quizCurrent.lat, quizCurrent.lon], quizCurrent.zoom);
+    }, 30);
+
+    var choicesWrap = document.getElementById('quizChoices');
+    choicesWrap.innerHTML = '';
+    Object.keys(BIOMA_LABELS).forEach(function(key){
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'choice-btn'; btn.textContent = BIOMA_LABELS[key];
+      btn.addEventListener('click', function(){ checkAnswer(key, btn); });
+      choicesWrap.appendChild(btn);
+    });
+  }
+
+  function checkAnswer(chosenKey, btn){
+    if(quizAnswered) return;
+    quizAnswered = true;
+    var isCorrect = chosenKey === quizCurrent.type;
+    if(isCorrect) quizCorrect++;
+    document.querySelectorAll('#quizChoices .choice-btn').forEach(function(b){
+      b.disabled = true;
+      var key = Object.keys(BIOMA_LABELS).find(function(k){ return BIOMA_LABELS[k] === b.textContent; });
+      if(key === quizCurrent.type) b.classList.add('correct');
+      else if(b === btn) b.classList.add('incorrect');
+    });
+    var fb = document.getElementById('quizFeedback');
+    fb.textContent = isCorrect
+      ? '¡Correcto! ' + quizCurrent.city + ' tiene un bioma de ' + BIOMA_LABELS[quizCurrent.type].toLowerCase() + '.'
+      : 'No era. ' + quizCurrent.city + ' tiene un bioma de ' + BIOMA_LABELS[quizCurrent.type].toLowerCase() + '.';
+    fb.className = 'quiz-feedback ' + (isCorrect ? 'ok' : 'bad');
+    quizIndex++;
+    document.getElementById('quizScore').textContent = 'Aciertos: ' + quizCorrect + ' / ' + quizIndex;
+    document.getElementById('btnNextQuiz').style.display = 'inline-flex';
+  }
+
+  window.nextBiomaQuestion = function(){ askQuestion(); };
+
+  /* ---------------------------------------------------------------
+     Pantalla completa: el wrap entero entra en fullscreen, no solo el
+     lienzo de Leaflet.
+  ----------------------------------------------------------------*/
+  var EXPAND_ICON = '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+  var COMPRESS_ICON = '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>';
+
+  var fsSupported = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+  if(!fsSupported){
+    var btnFsInit = document.getElementById('btnFullscreen');
+    if(btnFsInit) btnFsInit.style.display = 'none';
+  }
+
+  window.toggleFullscreen = function(){
+    var el = document.getElementById('quizFullWrap');
+    var isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    if(!isFs){
+      if(el.requestFullscreen) el.requestFullscreen();
+      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  };
+
+  function onFullscreenChange(){
+    var quizWrapEl = document.getElementById('quizFullWrap');
+    var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    var isFs = !!fsEl && fsEl === quizWrapEl;
+    var icon = document.getElementById('fsIcon');
+    if(icon) icon.innerHTML = isFs ? COMPRESS_ICON : EXPAND_ICON;
+    var btnFs = document.getElementById('btnFullscreen');
+    if(btnFs) btnFs.title = isFs ? 'Salir de pantalla completa' : 'Ver a pantalla completa';
+    if(quizMap && quizMap.scrollWheelZoom){
+      if(isFs) quizMap.scrollWheelZoom.enable();
+      else quizMap.scrollWheelZoom.disable();
+    }
+    if(isFs) setTimeout(function(){ if(quizMap) quizMap.invalidateSize(); }, 120);
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+  /* ---------------------------------------------------------------
+     Pantalla completa de los mapas de casos de estudio (mini-map)
+     Cada mini-map se envuelve en tiempo de ejecución (no hace falta
+     tocar el HTML de cada tarjeta) con su propio botón de expandir
+     y su propio botón de salir de pantalla completa.
+  ----------------------------------------------------------------*/
+  function initMiniMapFullscreen(){
+    if(!fsSupported) return;
+    document.querySelectorAll('.mini-map').forEach(function(mapEl){
+      if(mapEl.closest('.mini-map-wrap')) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'mini-map-wrap';
+      mapEl.parentNode.insertBefore(wrap, mapEl);
+      wrap.appendChild(mapEl);
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mini-map-fs-btn';
+      btn.title = 'Ver a pantalla completa';
+      btn.setAttribute('aria-label', 'Ver el mapa a pantalla completa');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + EXPAND_ICON + '</svg>';
+      btn.addEventListener('click', function(){ toggleMiniMapFullscreen(wrap); });
+      wrap.appendChild(btn);
+
+      var exitBtn = document.createElement('button');
+      exitBtn.type = 'button';
+      exitBtn.className = 'exit-fullscreen-btn';
+      exitBtn.title = 'Salir de pantalla completa';
+      exitBtn.setAttribute('aria-label', 'Salir de pantalla completa');
+      exitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + COMPRESS_ICON + '</svg> Salir de pantalla completa';
+      exitBtn.addEventListener('click', function(){ toggleMiniMapFullscreen(wrap); });
+      wrap.appendChild(exitBtn);
+    });
+  }
+
+  window.toggleMiniMapFullscreen = function(wrap){
+    var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if(fsEl !== wrap){
+      if(wrap.requestFullscreen) wrap.requestFullscreen();
+      else if(wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+    } else {
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  };
+
+  function onMiniMapFullscreenChange(){
+    var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    document.querySelectorAll('.mini-map-wrap').forEach(function(wrap){
+      var btn = wrap.querySelector('.mini-map-fs-btn');
+      var icon = btn ? btn.querySelector('svg') : null;
+      var active = (wrap === fsEl);
+      if(icon) icon.innerHTML = active ? COMPRESS_ICON : EXPAND_ICON;
+      if(btn) btn.title = active ? 'Salir de pantalla completa' : 'Ver a pantalla completa';
+      if(active){
+        var mapEl = wrap.querySelector('.mini-map');
+        var mapInst = mapEl && mapEl._miniMap;
+        setTimeout(function(){ if(mapInst) mapInst.invalidateSize(); }, 120);
+      }
+    });
+  }
+  document.addEventListener('fullscreenchange', onMiniMapFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onMiniMapFullscreenChange);
+
+  /* ---------------------------------------------------------------
+     INICIO
+  ----------------------------------------------------------------*/
+  initMiniMapFullscreen();
+  initLazyMaps();
+
+})();
+</script>
+</body>
+<!-- BOTÓN VOLVER AL INICIO -->
+<a href="index.html" style="position: fixed; bottom: 24px; left: 24px; z-index: 99999; background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, background-color 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.backgroundColor='#1e293b';" onmouseout="this.style.transform='translateY(0)'; this.style.backgroundColor='#0f172a';">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Volver al Inicio
+</a>
+</html>
