@@ -1798,15 +1798,65 @@ const DATA = {
     /* Base sin ningún texto: ni nombres de países, ni de capitales, ni de ciudades.
        Así el propio mapa no delata la respuesta del quiz. Muestra costas, relieve
        y fronteras administrativas, pero cero rótulos. */
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-      maxZoom: 18,
-      subdomains: 'abcd',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxNativeZoom: 9,
+      maxZoom: 12,
+      attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, NOAA, Natural Earth'
     }).addTo(map);
+    /* Fronteras entre países (solo líneas, sin rótulos) */
+    /* Datos oficiales de Natural Earth (dominio público), escala 1:50 millones.
+       Si falla la descarga, se usa una versión más ligera como respaldo. */
+    var BORDER_SOURCES = [
+      'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_0_countries.geojson',
+      'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_110m_admin_0_countries.geojson'
+    ];
+    function loadBorders(i){
+      if(i >= BORDER_SOURCES.length) return;
+      fetch(BORDER_SOURCES[i])
+        .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(geo){
+          L.geoJSON(geo, {
+            interactive: false,
+            renderer: L.canvas({ padding: 0.5 }),
+            style: { color:'#3C4A66', weight:1.1, opacity:0.85, fillColor:'#FFFFFF', fillOpacity:0.12 }
+          }).addTo(map);
+        })
+        .catch(function(){ loadBorders(i + 1); });
+    }
+    loadBorders(0);
     markersLayer = L.layerGroup().addTo(map);
     if('ResizeObserver' in window){
       new ResizeObserver(function(){ map.invalidateSize(); }).observe(document.getElementById('map'));
     }
+  }
+
+  /* Límites de las comunidades autónomas (solo se dibujan en la pestaña España) */
+  var REGIONS_URL = 'https://cdn.jsdelivr.net/gh/codeforgermany/click_that_hood@main/public/data/spain-communities.geojson';
+  var regionsData = null, regionsLayer = null, regionsLoading = false;
+
+  function drawRegions(){
+    if(!map || !regionsData) return;
+    if(regionsLayer){ map.removeLayer(regionsLayer); regionsLayer = null; }
+    if(currentKey !== 'espana') return;
+    regionsLayer = L.geoJSON(regionsData, {
+      interactive: false,
+      renderer: L.canvas({ padding: 0.5 }),
+      style: { color:'#B23A48', weight:1.6, opacity:0.9, fillColor:'#B23A48', fillOpacity:0.06 }
+    }).addTo(map);
+  }
+
+  function updateRegions(){
+    if(currentKey !== 'espana'){
+      if(regionsLayer && map){ map.removeLayer(regionsLayer); regionsLayer = null; }
+      return;
+    }
+    if(regionsData){ drawRegions(); return; }
+    if(regionsLoading) return;
+    regionsLoading = true;
+    fetch(REGIONS_URL)
+      .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(geo){ regionsData = geo; regionsLoading = false; drawRegions(); })
+      .catch(function(){ regionsLoading = false; });
   }
 
   function pinDivIcon(cls){
@@ -1873,6 +1923,7 @@ const DATA = {
     if(bounds.length){
       map.fitBounds(bounds, { padding:[30,30], maxZoom: currentKey === 'espana' ? 7 : 5 });
     }
+    updateRegions();
     document.getElementById('mapHint').textContent = currentKey === 'espana'
       ? '💡 En modo pregunta, te pedimos una comunidad o ciudad autónoma: toca la chincheta correcta en el mapa.'
       : '💡 En modo pregunta, te pedimos un país por su nombre: toca la chincheta correcta en el mapa. Si fallas, te mostramos cuál era.';
